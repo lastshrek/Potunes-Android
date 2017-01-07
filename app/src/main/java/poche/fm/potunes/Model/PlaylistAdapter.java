@@ -1,19 +1,23 @@
 package poche.fm.potunes.Model;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
 import java.util.List;
 
 import poche.fm.potunes.R;
+import poche.fm.potunes.TrackListActivity;
 
 /**
  * Created by purchas on 2017/1/7.
@@ -47,8 +51,22 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
             mContext = parent.getContext();
         }
         View view = LayoutInflater.from(mContext).inflate(R.layout.playlist_item, parent, false);
+        // 点击事件
+        final ViewHolder holder = new ViewHolder(view);
+        holder.cardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int position = holder.getAdapterPosition();
 
-        return new ViewHolder(view);
+                Playlist playlist = mPlaylist.get(position);
+
+                Intent intent = new Intent(mContext, TrackListActivity.class);
+
+                intent.putExtra();
+            }
+        });
+
+        return holder;
     }
 
     @Override
