@@ -206,8 +206,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void initPlaylists() {
-        Log.d("success", "解析歌单");
-
         playlists.clear();
 
         new Thread(new Runnable() {
@@ -232,7 +230,9 @@ public class MainActivity extends AppCompatActivity
 
     private void parseJSONWithGSON(String jsonData) {
         Gson gson = new Gson();
+
         List<Playlist> datas = gson.fromJson(jsonData, new TypeToken<List<Playlist>>(){}.getType());
+
         for (Playlist playlist : datas) {
             playlists.add(playlist);
         }
@@ -242,6 +242,7 @@ public class MainActivity extends AppCompatActivity
         Message msg = Message.obtain();
         msg.what = TEST;
         msg.obj = playlists;
+
         sHandler.sendMessage(msg);
     }
 
@@ -250,7 +251,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void run() {
                 try {
-                    initPlaylists();
+                    Thread.sleep(2000);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -263,6 +264,6 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
             }
-        });
+        }).start();
     }
 }
