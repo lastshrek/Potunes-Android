@@ -3,8 +3,11 @@ package poche.fm.potunes;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Message;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -45,6 +48,32 @@ public class MainActivity extends AppCompatActivity
     private GoogleApiClient client;
     private List<Playlist> playlists = new ArrayList<>();
     private PlaylistAdapter adapter;
+    private SwipeRefreshLayout swipeRefresh;
+    protected static final int TEST = 1;
+
+
+    private Handler sHandler = new Handler() {
+        public void handleMessage(android.os.Message msg)
+        {
+            switch (msg.what)
+            {
+                case TEST:
+                    //可以执行UI操作
+                    Log.i("----------------------","123" + msg.what);
+                    RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+                    Log.d("RecyclerView加载完成", "onCreate: ");
+
+                    GridLayoutManager layoutManager = new GridLayoutManager(MainActivity.this, 1);
+                    recyclerView.setLayoutManager(layoutManager);
+                    adapter = new PlaylistAdapter((List<Playlist>) msg.obj);
+                    recyclerView.setAdapter(adapter);
+                    adapter.notifyDataSetChanged();
+                    break;
+            }
+        }
+    };
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,12 +98,18 @@ public class MainActivity extends AppCompatActivity
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
         // init Playlists
         initPlaylists();
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        // init Refresh
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeColors(R.color.colorPrimary);
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                refreshPlaylists();
+            }
+        });
 
-        GridLayoutManager layoutManager = new GridLayoutManager(this, 1);
-        recyclerView.setLayoutManager(layoutManager);
-        adapter = new PlaylistAdapter(playlists);
-        recyclerView.setAdapter(adapter);
+
+
     }
 
     @Override
@@ -171,6 +206,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void initPlaylists() {
+        Log.d("success", "解析歌单");
+
         playlists.clear();
 
         new Thread(new Runnable() {
@@ -200,5 +237,32 @@ public class MainActivity extends AppCompatActivity
             playlists.add(playlist);
         }
 
+        Log.d("加载播放列表完成", "onCreate: ");
+
+        Message msg = Message.obtain();
+        msg.what = TEST;
+        msg.obj = playlists;
+        sHandler.sendMessage(msg);
+    }
+
+    public void refreshPlaylists() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    initPlaylists();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        initPlaylists();
+                        adapter.notifyDataSetChanged();
+                        swipeRefresh.setRefreshing(false);
+                    }
+                });
+            }
+        });
     }
 }

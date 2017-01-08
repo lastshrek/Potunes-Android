@@ -10,7 +10,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
@@ -62,7 +61,9 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
 
                 Intent intent = new Intent(mContext, TrackListActivity.class);
 
-                intent.putExtra();
+                intent.putExtra(TrackListActivity.PLAYLIST_ID, playlist.getID());
+
+                mContext.startActivity(intent);
             }
         });
 
