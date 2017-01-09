@@ -39,13 +39,13 @@ public class TrackListActivity extends AppCompatActivity {
 
     protected static final int TRACK = 1;
 
-    private ActionBarDrawerToggle mDrawerToggle;
-
     private ActionBar actionBar;
 
     private Handler sHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
+
             switch (msg.what) {
+
                 case TRACK:
 
                     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.tracklist_recycler_view);
@@ -56,7 +56,7 @@ public class TrackListActivity extends AppCompatActivity {
 
                     recyclerView.setLayoutManager(layoutManager);
 
-                    adapter = new TrackAdapter((List<Track>) msg.obj);
+                    adapter = new TrackAdapter((ArrayList<Track>) msg.obj);
 
                     recyclerView.setAdapter(adapter);
 
@@ -75,15 +75,19 @@ public class TrackListActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
 
-        int playlist_id = intent.getIntExtra(PLAYLIST_ID, -1);
+        if (intent != null) {
 
-        initTracks(playlist_id);
+            int playlist_id = intent.getIntExtra(PLAYLIST_ID, -1);
+
+            initTracks(playlist_id);
+
+
+        }
+
+
 
         actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
-        actionBar.setDisplayShowHomeEnabled(false);
-        actionBar.setDisplayUseLogoEnabled(false);
-
         CharSequence title = intent.getStringExtra(TITLE);
         actionBar.setTitle(title);
 
@@ -131,7 +135,7 @@ public class TrackListActivity extends AppCompatActivity {
             public void run() {
                 try {
                     Gson gson = new Gson();
-                    List<Track> datas = gson.fromJson(jsonData, new TypeToken<List<Track>>(){}.getType());
+                    ArrayList<Track> datas = gson.fromJson(jsonData, new TypeToken<List<Track>>(){}.getType());
 
                     for (Track track : datas) {
                         tracks.add(track);

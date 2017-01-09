@@ -3,6 +3,7 @@
     package="poche.fm.potunes">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -22,7 +23,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".TrackListActivity">
+        <activity
+            android:name=".TrackListActivity"
+            >
             <intent-filter>
                 <action android:name="fm.poche.potunes.Action_START" />
 
@@ -37,6 +40,10 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
+        <activity android:name=".PlayerActivity"
+            android:theme="@style/TransparentTheme">
+
+        </activity>
     </application>
 
 </manifest>

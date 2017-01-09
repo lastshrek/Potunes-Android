@@ -1,10 +1,12 @@
 package poche.fm.potunes.Model;
 
+import java.io.Serializable;
+
 /**
  * Created by purchas on 2017/1/8.
  */
 
-public class Track {
+public class Track implements Serializable {
 
     private int id;
     private String name;
