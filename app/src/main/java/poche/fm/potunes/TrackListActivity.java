@@ -3,11 +3,15 @@ package poche.fm.potunes;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -18,7 +22,6 @@ import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.Model.TrackAdapter;
 
@@ -27,18 +30,22 @@ public class TrackListActivity extends AppCompatActivity {
 
     public static final String PLAYLIST_ID = "playlist_id";
 
+    public static final String TITLE = "playlist_title";
+
+
     private List<Track> tracks = new ArrayList<>();
 
     private TrackAdapter adapter;
 
     protected static final int TRACK = 1;
 
+    private ActionBarDrawerToggle mDrawerToggle;
+
+    private ActionBar actionBar;
 
     private Handler sHandler = new Handler() {
-        public void handleMessage(android.os.Message msg)
-        {
-            switch (msg.what)
-            {
+        public void handleMessage(android.os.Message msg) {
+            switch (msg.what) {
                 case TRACK:
 
                     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.tracklist_recycler_view);
@@ -72,6 +79,27 @@ public class TrackListActivity extends AppCompatActivity {
 
         initTracks(playlist_id);
 
+        actionBar = getSupportActionBar();
+        actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setDisplayShowHomeEnabled(false);
+        actionBar.setDisplayUseLogoEnabled(false);
+
+        CharSequence title = intent.getStringExtra(TITLE);
+        actionBar.setTitle(title);
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()){
+            case android.R.id.home: //对用户按home icon的处理，本例只需关闭activity，就可返回上一activity，即主activity。
+                Log.d("", "onOptionsItemSelected: ");
+                onBackPressed();
+                return true;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     public void initTracks(final int playlist_id) {
@@ -119,7 +147,5 @@ public class TrackListActivity extends AppCompatActivity {
                 }
             }
         }).start();
-
-
     }
 }

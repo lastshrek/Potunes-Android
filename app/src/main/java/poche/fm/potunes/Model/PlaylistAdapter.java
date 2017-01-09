@@ -63,6 +63,8 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
 
                 intent.putExtra(TrackListActivity.PLAYLIST_ID, playlist.getID());
 
+                intent.putExtra(TrackListActivity.TITLE, playlist.getTitle());
+
                 mContext.startActivity(intent);
             }
         });
