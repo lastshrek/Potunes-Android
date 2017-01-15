@@ -17,7 +17,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.facebook.drawee.view.SimpleDraweeView;
@@ -27,29 +26,11 @@ import java.util.ArrayList;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
-import poche.fm.potunes.utils.ThemeUtils;
 import poche.fm.potunes.widgets.TintImageView;
-import poche.fm.potunes.widgets.TintProgressBar;
 
 
 public class QuciControlsFragment extends Fragment {
-    public Runnable mUpdateProgress = new Runnable() {
-        @Override
-        public void run() {
-//            Log.d(TAG, "run: current" + currentTime);
-//            Log.d(TAG, "run: " + duration);
-//            mProgress.setMax(duration);
-//            mProgress.setProgress(position);
-//
-//            if (!isPause) {
-//                mProgress.postDelayed(mUpdateProgress, 50);
-//            } else {
-//                mProgress.removeCallbacks(this);
-//            }
 
-
-        }
-    };
     public Activity mContext;
 
     private TintImageView mPlayPause;
@@ -140,12 +121,12 @@ public class QuciControlsFragment extends Fragment {
         });
 
 
-        regiterReceiver();
+        registeReceiver();
 
         return rootView;
     }
 
-    private void regiterReceiver() {
+    private void registeReceiver() {
         //定义和注册广播接收器
         quickReceiver = new QuickReceiver();
         IntentFilter filter = new IntentFilter();
@@ -161,19 +142,22 @@ public class QuciControlsFragment extends Fragment {
         public void onReceive(Context context, Intent intent) {
 
             isPause = false;
+
             String action = intent.getAction();
+
             currentTime = intent.getIntExtra("currentTime", -1);
 
             if (action.equals(MUSIC_CURRENT)) {
+
+                duration = intent.getIntExtra("duration", -1);
+
                 if (duration > 0) {
+                    Log.d(TAG, "onReceive: " + getActivity());
                     int progress = currentTime * 100 / duration;
                     mProgress.setProgress(progress);
+
                 }
 
-
-
-            } else if (action.equals(MUSIC_DURATION)) {
-                duration = intent.getIntExtra("duration", -1);
                 position = intent.getIntExtra("position", -1);
                 tracks =  (ArrayList<Track>) intent.getSerializableExtra("tracks");
                 Track track = tracks.get(position);
@@ -183,19 +167,14 @@ public class QuciControlsFragment extends Fragment {
                 mTitle.setText(track.getTitle());
                 mArtist.setText(track.getArtist());
 
-            } else if (action.equals(UPDATE_ACTION)) {
-                Log.d(TAG, "onReceive: position" + position);
+            }  else if (action.equals(UPDATE_ACTION)) {
                 Track track = tracks.get(position);
                 url = track.getUrl();
-                Log.d(TAG, "onReceive: url" + url);
                 if (position >= 0) {
                     // 设置专辑封面
 
                 }
                 if (position == 0) {
-//                    finalProgress.setText(MediaUtil.formatTime(tracks.get(
-//                            position).getDuration()));
-//                    isPause = true;
                 }
             }
         }
@@ -224,6 +203,7 @@ public class QuciControlsFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+        getActivity().unregisterReceiver(quickReceiver);
     }
 
     public interface OnFragmentInteractionListener {

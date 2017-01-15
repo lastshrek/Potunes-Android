@@ -43,7 +43,7 @@
         <activity
             android:name=".PlayerActivity"
             android:theme="@style/TransparentTheme"
-            android:launchMode="singleTop"/>
+            android:launchMode="singleTask"/>
 
         <service
             android:name=".Model.PlayerService"

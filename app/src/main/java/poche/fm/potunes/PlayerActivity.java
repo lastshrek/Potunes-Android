@@ -280,17 +280,17 @@ public class PlayerActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+
             currentTime = intent.getIntExtra("currentTime", -1);
+
             if (action.equals(MUSIC_CURRENT)) {
                 mStart.setText(MediaUtil.formatTime(currentTime));
                 mSeekbar.setProgress(currentTime);
-            } else if (action.equals(MUSIC_DURATION)) {
                 int duration = intent.getIntExtra("duration", -1);
                 mSeekbar.setMax(duration);
                 mEnd.setText(MediaUtil.formatTime(duration - currentTime));
-            } else if (action.equals(UPDATE_ACTION)) {
+            }  else if (action.equals(UPDATE_ACTION)) {
                 position = intent.getIntExtra("current", -1);
-                Log.d(TAG, "onReceive: postion " + position);
                 Track track = tracks.get(position);
                 url = track.getUrl();
                 if (position >= 0) {
@@ -302,8 +302,6 @@ public class PlayerActivity extends AppCompatActivity {
                     mArtist.setText(track.getArtist());
                 }
                 if (position == 0) {
-//                    finalProgress.setText(MediaUtil.formatTime(tracks.get(
-//                            position).getDuration()));
                     isPause = true;
                 }
             }

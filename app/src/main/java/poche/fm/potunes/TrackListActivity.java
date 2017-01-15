@@ -87,9 +87,15 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
 
 
 
-        quickControls = QuciControlsFragment.newInstance();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
+
+        if (quickControls == null) {
+            quickControls = QuciControlsFragment.newInstance();
+            ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
+        } else {
+            ft.show(quickControls).commitAllowingStateLoss();
+        }
+
 
     }
 

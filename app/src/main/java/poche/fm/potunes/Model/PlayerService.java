@@ -7,11 +7,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.MediaPlayer;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,7 @@ import poche.fm.potunes.domain.AppConstant;
  */
 
 @SuppressLint("NewApi")
+
 public class PlayerService extends Service {
 
     private MediaPlayer mediaPlayer; //媒体播放器对象
@@ -53,6 +56,11 @@ public class PlayerService extends Service {
                     currentTime = mediaPlayer.getCurrentPosition(); // 获取当前音乐播放的位置
                     Intent intent = new Intent();
                     intent.setAction(MUSIC_CURRENT);
+                    intent.putExtra("duration", duration);
+                    Log.d(TAG, "onPrepared: 当前的歌曲时长" + duration);
+
+                    intent.putExtra("tracks", tracks);
+                    intent.putExtra("position", current);
                     intent.putExtra("currentTime", currentTime);
                     sendBroadcast(intent); // 给PlayerActivity发送广播
                     handler.sendEmptyMessageDelayed(1, 1000);
@@ -214,6 +222,7 @@ public class PlayerService extends Service {
         }
     }
 
+
     @Override
     public void onDestroy() {
         if (mediaPlayer != null) {
@@ -240,13 +249,7 @@ public class PlayerService extends Service {
             if (currentTime > 0) { // 如果音乐不是从头播放
                 mediaPlayer.seekTo(currentTime);
             }
-            Intent intent = new Intent();
-            intent.setAction(MUSIC_DURATION);
             duration = mediaPlayer.getDuration();
-            intent.putExtra("duration", duration);
-            intent.putExtra("tracks", tracks);
-            intent.putExtra("position", current);
-            sendBroadcast(intent);
         }
     }
 
@@ -270,4 +273,12 @@ public class PlayerService extends Service {
             }
         }
     }
+
+    //此方法是为了可以在Acitity中获得服务的实例
+    public class ServiceBinder extends Binder {
+        public PlayerService getService() {
+            return PlayerService.this;
+        }
+    }
 }
+
