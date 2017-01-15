@@ -9,4 +9,9 @@
     <string name="play_pause">play or pause</string>
     <string name="skip_next">skip to next</string>
     <string name="skip_prev">skip to previous</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="queue_is_empty">播放队列为空</string>
+
 </resources>

@@ -4,6 +4,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.Handler;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,6 +17,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import com.facebook.drawee.backends.pipeline.Fresco;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
@@ -31,9 +34,10 @@ import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.PlaylistAdapter;
+import poche.fm.potunes.fragment.QuciControlsFragment;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener , QuciControlsFragment.OnFragmentInteractionListener {
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -43,6 +47,7 @@ public class MainActivity extends AppCompatActivity
     private List<Playlist> playlists = new ArrayList<>();
     private PlaylistAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
+    private QuciControlsFragment quickControls;
     protected static final int TEST = 1;
 
 
@@ -72,6 +77,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Fresco.initialize(MainActivity.this);
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -94,7 +100,7 @@ public class MainActivity extends AppCompatActivity
         initPlaylists();
         // init Refresh
         swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
-        swipeRefresh.setColorSchemeColors(R.color.colorPrimary);
+        swipeRefresh.setColorSchemeColors(R.color.colorAccent);
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -102,7 +108,14 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        quickControls = QuciControlsFragment.newInstance();
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
 
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri) {
 
     }
 

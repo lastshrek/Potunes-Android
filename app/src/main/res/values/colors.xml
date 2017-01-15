@@ -5,5 +5,13 @@
     <color name="colorAccent">#ff4081</color>
     <color name="fullscreen_line_color">#E5FFFFFF</color>
     <color name="fullscreen_secondary_line_color">#E5CCCCCC</color>
+    <color name="bottomSheetNormalBackground">#f9ffffff</color>
+    <color name="theme_color_primary">#d20000</color>
+    <color name="menu_transparent">#00FFFFFF</color>
+    <color name="menu_item_grey">#ffdbdbdb</color>
+    <color name="theme_color_common_section">#ffe6e8e9</color>
+    <color name="white">#ffffff</color>
+    <color name="actionbarTabUnselected">#D3D3D3</color>
+
 
 </resources>

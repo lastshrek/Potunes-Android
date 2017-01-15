@@ -1,8 +1,10 @@
 package poche.fm.potunes;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -24,9 +26,10 @@ import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.Model.TrackAdapter;
+import poche.fm.potunes.fragment.QuciControlsFragment;
 
 
-public class TrackListActivity extends AppCompatActivity {
+public class TrackListActivity extends AppCompatActivity implements QuciControlsFragment.OnFragmentInteractionListener{
 
     public static final String PLAYLIST_ID = "playlist_id";
 
@@ -40,6 +43,7 @@ public class TrackListActivity extends AppCompatActivity {
     protected static final int TRACK = 1;
 
     private ActionBar actionBar;
+    private QuciControlsFragment quickControls;
 
     private Handler sHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
@@ -69,28 +73,39 @@ public class TrackListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        Log.d("tracklist", "onCreate: ");
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.tracklist_layout);
 
         Intent intent = getIntent();
 
-        if (intent != null) {
+        int playlist_id = intent.getIntExtra(PLAYLIST_ID, -1);
 
-            int playlist_id = intent.getIntExtra(PLAYLIST_ID, -1);
-
-            initTracks(playlist_id);
-
-
-        }
+        initTracks(playlist_id);
 
 
 
+        quickControls = QuciControlsFragment.newInstance();
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
+
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Intent intent = getIntent();
         actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
         CharSequence title = intent.getStringExtra(TITLE);
         actionBar.setTitle(title);
-
     }
 
     @Override
@@ -98,6 +113,7 @@ public class TrackListActivity extends AppCompatActivity {
         switch(item.getItemId()){
             case android.R.id.home: //对用户按home icon的处理，本例只需关闭activity，就可返回上一activity，即主activity。
                 Log.d("", "onOptionsItemSelected: ");
+                overridePendingTransition(0,0);
                 onBackPressed();
                 return true;
             default:

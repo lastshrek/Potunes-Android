@@ -1,5 +1,6 @@
 package poche.fm.potunes.Model;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.CardView;
@@ -65,7 +66,13 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
 
                 intent.putExtra(TrackListActivity.TITLE, playlist.getTitle());
 
+                Activity activity = (Activity)mContext;
+
+
                 mContext.startActivity(intent);
+
+                activity.overridePendingTransition(0, 0);
+
             }
         });
 

@@ -25,7 +25,7 @@
         </activity>
         <activity
             android:name=".TrackListActivity"
-            >
+            android:parentActivityName=".MainActivity">
             <intent-filter>
                 <action android:name="fm.poche.potunes.Action_START" />
 
@@ -40,10 +40,15 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <activity android:name=".PlayerActivity"
-            android:theme="@style/TransparentTheme">
+        <activity
+            android:name=".PlayerActivity"
+            android:parentActivityName=".TrackListActivity"
+            android:theme="@style/TransparentTheme" />
 
-        </activity>
+        <service
+            android:name=".Model.PlayerService"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>

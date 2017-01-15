@@ -1,5 +1,6 @@
 package poche.fm.potunes.Model;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
@@ -12,12 +13,11 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
+import poche.fm.potunes.domain.AppConstant;
 
 /**
  * Created by purchas on 2017/1/8.
@@ -63,16 +63,28 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
 
                 Log.d("", "onClick: " + track.getTitle());
 
-                Intent intent = new Intent(mContext, PlayerActivity.class);
+                Intent intent = new Intent();
 
-                mContext.startActivity(intent);
+//                intent.putExtra(PlayerActivity.TRACKLIST, mTrackList);
+//
+//                intent.putExtra(PlayerActivity.TRACKID, position);
 
-                //
-                intent.putExtra(PlayerActivity.TRACKLIST, mTrackList);
+                intent.putExtra("url", track.getUrl());
+
+                intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
+
+                intent.putExtra("TRACKS", mTrackList);
+
+
+
+
+                intent.setClass(mContext, PlayerService.class);
+
+                Activity activity = (Activity) mContext;
+
+                activity.startService(intent);
 //
-                intent.putExtra(PlayerActivity.TRACKID, position);
-//
-                mContext.startActivity(intent);
+
             }
         });
         return holder;

@@ -2,7 +2,10 @@ package poche.fm.potunes;
 
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
@@ -16,30 +19,58 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
+import poche.fm.potunes.Model.Player;
 import poche.fm.potunes.Model.Track;
 
 public class PlayerActivity extends AppCompatActivity {
 
     private TextView mStart;
-
+    // 传值用
     public static final String TRACKLIST = "tracklist";
     public static final String TRACKID = "trackid";
     public static final String ALBUM = "ALBUM";
+    public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION";        //控制动作
 
-    private MediaPlayer mediaPlayer = new MediaPlayer();
+
+    private Player player; //播放器
+    private ProgressBar mLoading;
+
+    private static final int PROCESSING = 1;
+    private static final int FAILURE = -1;
+
+    private Handler handler = new UIHandler();
+
+    private final class UIHandler extends Handler{
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case PROCESSING: //更新进度
+                    mLoading.setProgress(msg.getData().getInt("size"));
+                    float num = (float) mLoading.getProgress() / (float) mLoading.getMax();
+                    int result = (int) (num * 100);
+
+                    if (mLoading.getProgress() == mLoading.getMax()) {
+                        Toast.makeText(getApplicationContext(), "缓冲完成", Toast.LENGTH_LONG).show();
+                    }
+                    break;
+                case FAILURE:
+                    Toast.makeText(getApplicationContext(), "缓冲失败", Toast.LENGTH_LONG).show();
+
+            }
+        }
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.player_layout);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("");
 
         //initials
         ImageView mBackgroundImage = (ImageView) findViewById(R.id.background_image);
@@ -54,9 +85,11 @@ public class PlayerActivity extends AppCompatActivity {
         TextView mLine1 = (TextView) findViewById(R.id.line1);
         TextView mLine2 = (TextView) findViewById(R.id.line2);
         TextView mLine3 = (TextView) findViewById(R.id.line3);
-        ProgressBar mLoading = (ProgressBar) findViewById(R.id.progressBar1);
+
+        mLoading = (ProgressBar) findViewById(R.id.progressBar1);
         View mControllers = findViewById(R.id.controllers);
         mControllers.setVisibility(View.VISIBLE);
+
 
         Intent intent = getIntent();
 
@@ -70,83 +103,16 @@ public class PlayerActivity extends AppCompatActivity {
         mLine1.setText(track.getTitle());
         mLine2.setText(track.getArtist());
 
-        try {
-            mediaPlayer.setDataSource(track.getUrl());
-            mediaPlayer.prepare();
-            mediaPlayer.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        player = new Player(mSeekbar);
+
+        player.pause();
+        player.playUrl(track.getUrl());
+        player.play();
 
 
-        mSkipNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MediaControllerCompat.TransportControls controls =
-                        getSupportMediaController().getTransportControls();
-                controls.skipToNext();
-            }
-        });
 
-        mSkipPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MediaControllerCompat.TransportControls controls =
-                        getSupportMediaController().getTransportControls();
-                controls.skipToPrevious();
-            }
-        });
 
-        mPlayPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PlaybackStateCompat state = getSupportMediaController().getPlaybackState();
-                if (state != null) {
-                    MediaControllerCompat.TransportControls controls =
-                            getSupportMediaController().getTransportControls();
-                    switch (state.getState()) {
-                        case PlaybackStateCompat.STATE_PLAYING: // fall through
-                        case PlaybackStateCompat.STATE_BUFFERING:
-                            controls.pause();
-//                            stopSeekbarUpdate();
-                            break;
-                        case PlaybackStateCompat.STATE_PAUSED:
-                        case PlaybackStateCompat.STATE_STOPPED:
-                            controls.play();
-//                            scheduleSeekbarUpdate();
-                            break;
-                        default:
-//                            LogHelper.d(TAG, "onClick with state ", state.getState());
-                    }
-                }
-            }
-        });
 
-        mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mStart.setText(DateUtils.formatElapsedTime(progress / 1000));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-//                stopSeekbarUpdate();
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                getSupportMediaController().getTransportControls().seekTo(seekBar.getProgress());
-//                scheduleSeekbarUpdate();
-            }
-        });
-
-        // Only update from the intent if we are not recreating from a config change:
-        if (savedInstanceState == null) {
-//            updateFromParams(getIntent());
-        }
-
-//        mMediaBrowser = new MediaBrowserCompat(this,
-//                new ComponentName(this, MusicService.class), mConnectionCallback, null);
 
 
     }
@@ -156,8 +122,9 @@ public class PlayerActivity extends AppCompatActivity {
         switch(item.getItemId()){
             case android.R.id.home:
                 Log.d("", "onOptionsItemSelected: ");
-                onDestroy();
+//                onDestroy();
                 onBackPressed();
+                finish();
                 return true;
             default:
                 break;
@@ -168,9 +135,9 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected  void onDestroy() {
         super.onDestroy();
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-        }
+//        if (player != null) {
+//            player.stop();
+//            player = null;
+//        }
     }
 }
