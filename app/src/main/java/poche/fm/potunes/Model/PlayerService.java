@@ -41,6 +41,7 @@ public class PlayerService extends Service {
     public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION";        //控制动作
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT";  //当前音乐播放时间更新动作
     public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";//新音乐长度更新动作
+    public static final String TAG = "PlayerService";//新音乐长度更新动作
 
     /**
      * handler用来接收消息，来发送广播更新播放时间
@@ -63,14 +64,12 @@ public class PlayerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("service", "service created");
         mediaPlayer = new MediaPlayer();
 
         //设置音乐播放完成时的监听器
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                Log.d("播放完成", "onCompletion: " + status);
                 if (status == 1) {
                     mediaPlayer.start();
                 } else if (status == 2) {
@@ -86,14 +85,15 @@ public class PlayerService extends Service {
                     if (current <= tracks.size() - 1) {
                         sendIntent(current);
                         path = tracks.get(current).getUrl();
+                        play(0);
                     } else {
                         mediaPlayer.seekTo(0);
                         current = 0;
                         sendIntent(current);
+
                     }
                 } else if (status == 4) {
                     current = getRandomIndex(tracks.size() - 1);
-                    Log.d("currentIndex->>", "" + current);
                     sendIntent(current);
                     path = tracks.get(current).getUrl();
                     play(0);
@@ -130,9 +130,11 @@ public class PlayerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d("", "onStartCommand: ");
+
         path = intent.getStringExtra("url"); //歌曲路径
-        current = intent.getIntExtra("listPosition", -1);
+        current = intent.getIntExtra("position", -1);
+        Log.d("", "onStartCommand: " + current);
+
         msg = intent.getIntExtra("MSG", 0);
         tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
@@ -219,7 +221,6 @@ public class PlayerService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-
     }
     /**
      *
@@ -242,7 +243,9 @@ public class PlayerService extends Service {
             Intent intent = new Intent();
             intent.setAction(MUSIC_DURATION);
             duration = mediaPlayer.getDuration();
-            intent.putExtra("duration", duration);  //通过Intent来传递歌曲的总长度
+            intent.putExtra("duration", duration);
+            intent.putExtra("tracks", tracks);
+            intent.putExtra("position", current);
             sendBroadcast(intent);
         }
     }

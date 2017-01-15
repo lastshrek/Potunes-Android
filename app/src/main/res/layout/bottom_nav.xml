@@ -41,7 +41,8 @@
                 android:layout_height="23dp"
                 android:ellipsize="marquee"
                 android:maxLines="1"
-                android:textSize="17dp" />
+                android:textSize="12dp"
+                android:textColor="@color/colorAccent"/>
 
             <TextView
                 android:id="@+id/playbar_singer"
@@ -80,11 +81,12 @@
             app:imageTint="@color/theme_color_primary"
             android:src="@drawable/playbar_btn_next" />
     </LinearLayout>
-    <poche.fm.potunes.widgets.TintProgressBar
+    <ProgressBar
         android:id="@+id/song_progress_normal"
         style="@style/Widget.AppCompat.ProgressBar.Horizontal"
         android:layout_width="match_parent"
         android:layout_height="10dp"
-        android:progress="30"
-        app:progressTint="@color/theme_color_primary" />
+        android:max="100"
+        android:visibility="visible"
+        />
 </LinearLayout>

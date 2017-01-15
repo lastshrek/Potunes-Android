@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
+import poche.fm.potunes.fragment.QuciControlsFragment;
 
 /**
  * Created by purchas on 2017/1/8.
@@ -61,13 +62,15 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
 
                 Track track = mTrackList.get(position);
 
-                Log.d("", "onClick: " + track.getTitle());
+                Intent playerIntent = new Intent(mContext, PlayerActivity.class);
+
+                playerIntent.putExtra(PlayerActivity.TRACKLIST, mTrackList);
+
+                playerIntent.putExtra(PlayerActivity.TRACKID, position);
+
+                mContext.startActivity(playerIntent);
 
                 Intent intent = new Intent();
-
-//                intent.putExtra(PlayerActivity.TRACKLIST, mTrackList);
-//
-//                intent.putExtra(PlayerActivity.TRACKID, position);
 
                 intent.putExtra("url", track.getUrl());
 
@@ -75,14 +78,16 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
 
                 intent.putExtra("TRACKS", mTrackList);
 
-
-
+                intent.putExtra("position", position);
 
                 intent.setClass(mContext, PlayerService.class);
 
                 Activity activity = (Activity) mContext;
 
                 activity.startService(intent);
+
+
+
 //
 
             }

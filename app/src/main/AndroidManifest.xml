@@ -42,13 +42,17 @@
 
         <activity
             android:name=".PlayerActivity"
-            android:parentActivityName=".TrackListActivity"
-            android:theme="@style/TransparentTheme" />
+            android:theme="@style/TransparentTheme"
+            android:launchMode="singleTop"/>
 
         <service
             android:name=".Model.PlayerService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true">
+            <intent-filter>
+                <action android:name="fm.poche.media.MUSIC_SERVICE" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

@@ -1,22 +1,31 @@
 package poche.fm.potunes.fragment;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.facebook.drawee.view.SimpleDraweeView;
 
-import poche.fm.potunes.Model.PlayerService;
+import java.util.ArrayList;
+
+import poche.fm.potunes.Model.Track;
+import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.utils.ThemeUtils;
 import poche.fm.potunes.widgets.TintImageView;
@@ -24,19 +33,21 @@ import poche.fm.potunes.widgets.TintProgressBar;
 
 
 public class QuciControlsFragment extends Fragment {
-    private TintProgressBar mProgress;
     public Runnable mUpdateProgress = new Runnable() {
         @Override
         public void run() {
-//            long position = MusicPlayer.position();
-//            mProgress.setMax((int) MusicPlayer.duration());
-//            mProgress.setProgress((int) position);
+//            Log.d(TAG, "run: current" + currentTime);
+//            Log.d(TAG, "run: " + duration);
+//            mProgress.setMax(duration);
+//            mProgress.setProgress(position);
 //
-//            if (MusicPlayer.isPlaying()) {
+//            if (!isPause) {
 //                mProgress.postDelayed(mUpdateProgress, 50);
 //            } else {
 //                mProgress.removeCallbacks(this);
 //            }
+
+
         }
     };
     public Activity mContext;
@@ -50,8 +61,29 @@ public class QuciControlsFragment extends Fragment {
     private LinearLayout layout;
     private boolean duetoplaypause = false;
     private static  QuciControlsFragment fragment;
+    private ProgressBar mProgress;
+
 
     private OnFragmentInteractionListener mListener;
+    private QuickReceiver quickReceiver;
+
+    private int currentTime; // 当前歌曲播放时间
+    private int position; // 播放歌曲在tracks的位置
+    private int duration;
+    private ArrayList<Track> tracks;
+    private String url; // 歌曲路径
+    private boolean isPause; // 暂停
+
+
+
+
+    public static final String TRACKLIST = "TRACKLIST";
+    public static final String TRACKID = "TRACK_ID";
+    public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT"; // 音乐当前时间改变动作
+    public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";// 音乐播放长度改变动作
+    public static final String UPDATE_ACTION = "fm.poche.action.UPDATE_ACTION"; // 更新动作
+    public static final String TAG = "QuickControlsFragment"; // 更新动作
+
 
     public QuciControlsFragment() {
         // Required empty public constructor
@@ -62,13 +94,6 @@ public class QuciControlsFragment extends Fragment {
         return new QuciControlsFragment();
     }
 
-//    @Override
-//    public void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        if (getArguments() != null) {
-//
-//        }
-//    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -76,18 +101,16 @@ public class QuciControlsFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.bottom_nav, container, false);
         this.rootView = rootView;
         mPlayPause = (TintImageView) rootView.findViewById(R.id.control);
-        mProgress = (TintProgressBar) rootView.findViewById(R.id.song_progress_normal);
+        mProgress = (ProgressBar) rootView.findViewById(R.id.song_progress_normal);
+
+
         mTitle = (TextView) rootView.findViewById(R.id.playbar_info);
         mArtist = (TextView) rootView.findViewById(R.id.playbar_singer);
         mAlbumArt = (SimpleDraweeView) rootView.findViewById(R.id.playbar_img);
         next = (ImageView) rootView.findViewById(R.id.play_next);
         playQueue = (ImageView) rootView.findViewById(R.id.play_list);
 
-        mProgress.setMax(100);
-        mProgress.setProgress(50);
-        mProgress.setProgressTintList(ThemeUtils.getThemeColorStateList(mContext, R.color.colorAccent));
         mPlayPause.setImageResource(R.drawable.playbar_btn_play);
-
         mPlayPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -95,27 +118,6 @@ public class QuciControlsFragment extends Fragment {
                 mPlayPause.setImageResource(R.drawable.playbar_btn_play);
                 mPlayPause.setImageTintList(R.color.theme_color_primary);
 
-//                mPlayPause.setImageResource(MusicPlayer.isPlaying() ? R.drawable.playbar_btn_pause
-//                        : R.drawable.playbar_btn_play);
-//                mPlayPause.setImageTintList(R.color.theme_color_primary);
-//
-//                if (MusicPlayer.getQueueSize() == 0) {
-//                    Toast.makeText(MainApplication.context, getResources().getString(R.string.queue_is_empty),
-//                            Toast.LENGTH_SHORT).show();
-//                } else {
-//                    HandlerUtil.getInstance(MainApplication.context).postDelayed(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            MusicPlayer.playOrPause();
-//                        }
-//                    }, 60);
-//                }
-
-//                if (MusicPlayer.getQueueSize() == 0) {
-//
-//                } else {
-//
-//                }
 
             }
         });
@@ -124,7 +126,79 @@ public class QuciControlsFragment extends Fragment {
         playQueue.setImageResource(R.drawable.playbar_btn_playlist);
         next.setImageResource(R.drawable.playbar_btn_next);
 
+        rootView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent playerIntent = new Intent(mContext, PlayerActivity.class);
+
+                playerIntent.putExtra(PlayerActivity.TRACKLIST, tracks);
+
+                playerIntent.putExtra(PlayerActivity.TRACKID, position);
+
+                mContext.startActivity(playerIntent);
+            }
+        });
+
+
+        regiterReceiver();
+
         return rootView;
+    }
+
+    private void regiterReceiver() {
+        //定义和注册广播接收器
+        quickReceiver = new QuickReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UPDATE_ACTION);
+        filter.addAction(MUSIC_CURRENT);
+        filter.addAction(MUSIC_DURATION);
+        getActivity().registerReceiver(quickReceiver, filter);
+    }
+
+    public class QuickReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            isPause = false;
+            String action = intent.getAction();
+            currentTime = intent.getIntExtra("currentTime", -1);
+
+            if (action.equals(MUSIC_CURRENT)) {
+                if (duration > 0) {
+                    int progress = currentTime * 100 / duration;
+                    mProgress.setProgress(progress);
+                }
+
+
+
+            } else if (action.equals(MUSIC_DURATION)) {
+                duration = intent.getIntExtra("duration", -1);
+                position = intent.getIntExtra("position", -1);
+                tracks =  (ArrayList<Track>) intent.getSerializableExtra("tracks");
+                Track track = tracks.get(position);
+                String thumb = track.getCover();
+                Glide.with(getActivity().getBaseContext()).load(thumb).into(mAlbumArt);
+                // 歌手名
+                mTitle.setText(track.getTitle());
+                mArtist.setText(track.getArtist());
+
+            } else if (action.equals(UPDATE_ACTION)) {
+                Log.d(TAG, "onReceive: position" + position);
+                Track track = tracks.get(position);
+                url = track.getUrl();
+                Log.d(TAG, "onReceive: url" + url);
+                if (position >= 0) {
+                    // 设置专辑封面
+
+                }
+                if (position == 0) {
+//                    finalProgress.setText(MediaUtil.formatTime(tracks.get(
+//                            position).getDuration()));
+//                    isPause = true;
+                }
+            }
+        }
     }
 
     // TODO: Rename method, update argument and hook method into UI event
