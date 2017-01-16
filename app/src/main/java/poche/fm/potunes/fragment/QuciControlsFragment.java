@@ -110,6 +110,7 @@ public class QuciControlsFragment extends Fragment {
         rootView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Intent playerIntent = new Intent(mContext, PlayerActivity.class);
 
                 playerIntent.putExtra(PlayerActivity.TRACKLIST, tracks);
@@ -117,6 +118,7 @@ public class QuciControlsFragment extends Fragment {
                 playerIntent.putExtra(PlayerActivity.TRACKID, position);
 
                 mContext.startActivity(playerIntent);
+
             }
         });
 
@@ -155,7 +157,6 @@ public class QuciControlsFragment extends Fragment {
                     Log.d(TAG, "onReceive: " + getActivity());
                     int progress = currentTime * 100 / duration;
                     mProgress.setProgress(progress);
-
                 }
 
                 position = intent.getIntExtra("position", -1);
@@ -202,7 +203,6 @@ public class QuciControlsFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        mListener = null;
         getActivity().unregisterReceiver(quickReceiver);
     }
 

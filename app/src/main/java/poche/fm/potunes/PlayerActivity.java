@@ -186,13 +186,15 @@ public class PlayerActivity extends AppCompatActivity {
                         intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
                         intent.setPackage(getPackageName());
                         getBaseContext().startService(intent);
-
                         isPause = false;
                     } else {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPlayDrawable);
                         intent.setAction("fm.poche.media.MUSIC_SERVICE");
                         intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
+                        intent.putExtra("url", tracks.get(position).getUrl());
+                        intent.putExtra("position", position);
+                        intent.putExtra("TRACKS", tracks);
                         intent.setPackage(getPackageName());
                         startService(intent);
                         isPause = true;

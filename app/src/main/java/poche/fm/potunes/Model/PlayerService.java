@@ -57,8 +57,6 @@ public class PlayerService extends Service {
                     Intent intent = new Intent();
                     intent.setAction(MUSIC_CURRENT);
                     intent.putExtra("duration", duration);
-                    Log.d(TAG, "onPrepared: 当前的歌曲时长" + duration);
-
                     intent.putExtra("tracks", tracks);
                     intent.putExtra("position", current);
                     intent.putExtra("currentTime", currentTime);
@@ -274,11 +272,5 @@ public class PlayerService extends Service {
         }
     }
 
-    //此方法是为了可以在Acitity中获得服务的实例
-    public class ServiceBinder extends Binder {
-        public PlayerService getService() {
-            return PlayerService.this;
-        }
-    }
 }
 
