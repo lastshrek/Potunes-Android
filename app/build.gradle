@@ -36,6 +36,8 @@ dependencies {
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.squareup.okhttp3:okhttp:3.5.0'
     compile 'com.facebook.fresco:fresco:0.9.0'
-
+    compile 'com.joanzapata.iconify:android-iconify-material:2.2.2' // (v2.0.0)
+    compile 'com.joanzapata.iconify:android-iconify-material-community:2.2.2' // (v1.4.57)
+    compile 'com.joanzapata.iconify:android-iconify:2.2.2'
     testCompile 'junit:junit:4.12'
 }

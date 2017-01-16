@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
-import poche.fm.potunes.fragment.QuciControlsFragment;
 
 /**
  * Created by purchas on 2017/1/8.
@@ -61,14 +59,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
                 int position = holder.getAdapterPosition();
 
                 Track track = mTrackList.get(position);
-
-                Intent playerIntent = new Intent(mContext, PlayerActivity.class);
-
-                playerIntent.putExtra(PlayerActivity.TRACKLIST, mTrackList);
-
-                playerIntent.putExtra(PlayerActivity.TRACKID, position);
-
-                mContext.startActivity(playerIntent);
 
                 Intent intent = new Intent();
 

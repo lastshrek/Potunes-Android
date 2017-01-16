@@ -19,6 +19,7 @@ import java.util.List;
 
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.domain.AppConstant;
+import poche.fm.potunes.fragment.QuciControlsFragment;
 
 /**
  * Created by purchas on 2017/1/14.
@@ -60,6 +61,7 @@ public class PlayerService extends Service {
                     intent.putExtra("tracks", tracks);
                     intent.putExtra("position", current);
                     intent.putExtra("currentTime", currentTime);
+                    intent.putExtra("isplaying", mediaPlayer.isPlaying());
                     sendBroadcast(intent); // 给PlayerActivity发送广播
                     handler.sendEmptyMessageDelayed(1, 1000);
                 }
@@ -110,6 +112,7 @@ public class PlayerService extends Service {
         myReceiver = new MyReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(PlayerActivity.CTL_ACTION);
+        filter.addAction(QuciControlsFragment.CTL_ACTION);
         registerReceiver(myReceiver, filter);
     }
 
@@ -139,10 +142,11 @@ public class PlayerService extends Service {
 
         path = intent.getStringExtra("url"); //歌曲路径
         current = intent.getIntExtra("position", -1);
-        Log.d("", "onStartCommand: " + current);
 
         msg = intent.getIntExtra("MSG", 0);
         tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
+
+        Log.d(TAG, "onStartCommand: " + msg);
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
             play(0);
         } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {    //暂停
@@ -189,6 +193,7 @@ public class PlayerService extends Service {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             isPause = true;
+
         }
     }
 

@@ -20,6 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.joanzapata.iconify.Iconify;
+import com.joanzapata.iconify.fonts.MaterialCommunityModule;
+import com.joanzapata.iconify.fonts.MaterialModule;
 
 import java.util.ArrayList;
 
@@ -103,6 +106,10 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        Iconify.with(new MaterialModule())
+                .with(new MaterialCommunityModule())
+                .with(new MaterialCommunityModule());
+
         setContentView(R.layout.player_layout);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("");
@@ -174,15 +181,17 @@ public class PlayerActivity extends AppCompatActivity {
     }
     
     private class ViewOnclickListener implements View.OnClickListener {
-        Intent intent = new Intent();
+
+
         @Override
         public void onClick(View v) {
+            Intent intent = new Intent();
+            intent.setAction("fm.poche.media.MUSIC_SERVICE");
             switch (v.getId()) {
                 case R.id.play_pause:
                     if (isPause) {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPauseDrawable);
-                        intent.setAction("fm.poche.media.MUSIC_SERVICE");
                         intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
                         intent.setPackage(getPackageName());
                         getBaseContext().startService(intent);
@@ -190,15 +199,14 @@ public class PlayerActivity extends AppCompatActivity {
                     } else {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPlayDrawable);
-                        intent.setAction("fm.poche.media.MUSIC_SERVICE");
                         intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
-                        intent.putExtra("url", tracks.get(position).getUrl());
-                        intent.putExtra("position", position);
-                        intent.putExtra("TRACKS", tracks);
-                        intent.setPackage(getPackageName());
-                        startService(intent);
                         isPause = true;
                     }
+                    intent.putExtra("url", tracks.get(position).getUrl());
+                    intent.putExtra("position", position);
+                    intent.putExtra("TRACKS", tracks);
+                    intent.setPackage(getPackageName());
+                    getBaseContext().startService(intent);
                     break;
 
                 default:
@@ -210,7 +218,6 @@ public class PlayerActivity extends AppCompatActivity {
     public void next_music() {
         position = position + 1;
         if (position <= tracks.size() - 1) {
-            showTrackInfo(position);
             Intent intent = new Intent();
             intent.setAction("fm.poche.media.MUSIC_SERVICE");
             intent.putExtra("url", tracks.get(position).getUrl());
@@ -230,7 +237,6 @@ public class PlayerActivity extends AppCompatActivity {
     public void previous_music() {
         position = position - 1;
         if (position >= 0) {
-            showTrackInfo(position);
             url = tracks.get(position).getUrl();
             Intent intent = new Intent();
             intent.setAction("fm.poche.media.MUSIC_SERVICE");

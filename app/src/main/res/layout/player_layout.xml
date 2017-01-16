@@ -117,6 +117,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp">
 
+                <com.joanzapata.iconify.widget.IconTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I {fa-heart-o} to {fa-code} on {fa-android}"
+                    android:shadowColor="#22000000"
+                    android:shadowDx="0"
+                    android:shadowDy="5"
+                    android:shadowRadius="1"
+                    android:textSize="30sp"
+                    android:textColor="#2A9BDA"/>
+
                 <ImageView
                     android:id="@+id/prev"
                     android:layout_width="0dp"
