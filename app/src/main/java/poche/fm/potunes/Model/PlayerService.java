@@ -6,16 +6,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.List;
 
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.domain.AppConstant;
@@ -78,34 +78,34 @@ public class PlayerService extends Service {
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                if (status == 1) {
-                    mediaPlayer.start();
-                } else if (status == 2) {
-                    current++;
-                    if (current > tracks.size() -1) {
-                        current = 0;
-                    }
-                    sendIntent(current);
-                    path = tracks.get(current).getUrl();
-                    play(0);
-                } else if (status == 3) {
-                    current++;
-                    if (current <= tracks.size() - 1) {
-                        sendIntent(current);
-                        path = tracks.get(current).getUrl();
-                        play(0);
-                    } else {
-                        mediaPlayer.seekTo(0);
-                        current = 0;
-                        sendIntent(current);
-
-                    }
-                } else if (status == 4) {
-                    current = getRandomIndex(tracks.size() - 1);
-                    sendIntent(current);
-                    path = tracks.get(current).getUrl();
-                    play(0);
+            if (status == 1) {
+                mediaPlayer.start();
+            } else if (status == 2) {
+                current++;
+                if (current > tracks.size() -1) {
+                    current = 0;
                 }
+                sendIntent(current);
+                path = tracks.get(current).getUrl();
+                play(0);
+            } else if (status == 3) {
+                current++;
+                if (current <= tracks.size() - 1) {
+                    sendIntent(current);
+                    path = tracks.get(current).getUrl();
+                    play(0);
+                } else {
+                    mediaPlayer.seekTo(0);
+                    current = 0;
+                    sendIntent(current);
+
+                }
+            } else if (status == 4) {
+                current = getRandomIndex(tracks.size() - 1);
+                sendIntent(current);
+                path = tracks.get(current).getUrl();
+                play(0);
+            }
             }
         });
 
@@ -142,7 +142,6 @@ public class PlayerService extends Service {
 
         path = intent.getStringExtra("url"); //歌曲路径
         current = intent.getIntExtra("position", -1);
-
         msg = intent.getIntExtra("MSG", 0);
         tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
 
@@ -157,7 +156,8 @@ public class PlayerService extends Service {
             resume();
         } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
             previous();
-        } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {     //下一首
+        } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
+            //下一首
             next();
         } else if (msg == AppConstant.PlayerMsg.PROGRESS_CHANGE) {  //进度更新
             currentTime = intent.getIntExtra("progress", -1);
@@ -206,11 +206,26 @@ public class PlayerService extends Service {
 
     private void previous() {
         sendIntent(current);
+        if (status == 4) {
+            getindex();
+            return;
+        }
         play(0);
     }
 
     private void next() {
         sendIntent(current);
+        if (status == 4) {
+            getindex();
+            return;
+        }
+        play(0);
+    }
+
+    private void getindex() {
+        current = getRandomIndex(tracks.size() - 1);
+        sendIntent(current);
+        path = tracks.get(current).getUrl();
         play(0);
     }
 
@@ -252,7 +267,19 @@ public class PlayerService extends Service {
             if (currentTime > 0) { // 如果音乐不是从头播放
                 mediaPlayer.seekTo(currentTime);
             }
+            //通过Intent来传递歌曲的总长度
+            Intent intent = new Intent();
+            intent.setAction(MUSIC_DURATION);
             duration = mediaPlayer.getDuration();
+            intent.putExtra("duration", duration);
+            sendBroadcast(intent);
+            // 存储长度
+            duration = mediaPlayer.getDuration();
+            SharedPreferences preferences=getSharedPreferences("user",Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor=preferences.edit();
+            editor.putInt("duration", duration);
+            editor.commit();
+
         }
     }
 

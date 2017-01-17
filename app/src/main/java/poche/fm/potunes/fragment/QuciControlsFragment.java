@@ -82,22 +82,25 @@ public class QuciControlsFragment extends Fragment {
         mAlbumArt = (SimpleDraweeView) rootView.findViewById(R.id.playbar_img);
         next = (ImageView) rootView.findViewById(R.id.play_next);
         playQueue = (ImageView) rootView.findViewById(R.id.play_list);
-
         mPlayPause.setImageResource(R.drawable.playbar_btn_play);
         mPlayPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
                 intent.setAction("fm.poche.media.MUSIC_SERVICE");
+
                 if (isPause == true) {
-                    mPlayPause.setImageResource(R.drawable.playbar_btn_play);
+                    mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
+
                     intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
                     isPause = false;
                 } else {
-                    mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
+                    mPlayPause.setImageResource(R.drawable.playbar_btn_play);
+
                     intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
                     isPause = true;
                 }
+
                 intent.putExtra("url", tracks.get(position).getUrl());
                 intent.putExtra("position", position);
                 intent.putExtra("TRACKS", tracks);
@@ -108,6 +111,7 @@ public class QuciControlsFragment extends Fragment {
 
 
         playQueue.setImageResource(R.drawable.playbar_btn_playlist);
+
         next.setImageResource(R.drawable.playbar_btn_next);
         next.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -117,7 +121,6 @@ public class QuciControlsFragment extends Fragment {
         });
 
         rootView.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v) {
 
@@ -128,7 +131,6 @@ public class QuciControlsFragment extends Fragment {
                 playerIntent.putExtra(PlayerActivity.TRACKID, position);
 
                 mContext.startActivity(playerIntent);
-
             }
         });
 
@@ -180,16 +182,13 @@ public class QuciControlsFragment extends Fragment {
 
                 boolean isPlaying = intent.getBooleanExtra("isplaying", false);
 
+
                 isPause = !isPlaying;
 
-                if (isPause == true) {
-                    mPlayPause.setImageResource(R.drawable.playbar_btn_play);
-
-                } else {
+                if (isPause == false) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
 
                 }
-                duration = intent.getIntExtra("duration", -1);
 
                 if (duration > 0) {
                     int progress = currentTime * 100 / duration;
@@ -207,7 +206,9 @@ public class QuciControlsFragment extends Fragment {
                     mArtist.setText(track.getArtist());
                 }
 
-
+            } else if (action.equals(MUSIC_DURATION)) {
+                duration = intent.getIntExtra("duration", -1);
+                mProgress.setMax(100);
             }
         }
     }
