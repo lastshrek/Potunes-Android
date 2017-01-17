@@ -35,7 +35,7 @@ public class PlayerService extends Service {
     private boolean isPause; //暂停
     private int current = 0; //记录当前在播放的音乐
     private ArrayList<Track> tracks;
-    private int status = 3; //播放状态，默认顺序播放
+    private int status = 0; //播放状态，默认顺序播放
     private MyReceiver myReceiver; //自定义广播接收器
     private int currentTime;
     private int duration;
@@ -80,7 +80,7 @@ public class PlayerService extends Service {
             public void onCompletion(MediaPlayer mp) {
             if (status == 1) {
                 mediaPlayer.start();
-            } else if (status == 2) {
+            } else if (status == 0) {
                 current++;
                 if (current > tracks.size() -1) {
                     current = 0;
@@ -88,19 +88,7 @@ public class PlayerService extends Service {
                 sendIntent(current);
                 path = tracks.get(current).getUrl();
                 play(0);
-            } else if (status == 3) {
-                current++;
-                if (current <= tracks.size() - 1) {
-                    sendIntent(current);
-                    path = tracks.get(current).getUrl();
-                    play(0);
-                } else {
-                    mediaPlayer.seekTo(0);
-                    current = 0;
-                    sendIntent(current);
-
-                }
-            } else if (status == 4) {
+            }  else if (status == 2) {
                 current = getRandomIndex(tracks.size() - 1);
                 sendIntent(current);
                 path = tracks.get(current).getUrl();
@@ -140,12 +128,15 @@ public class PlayerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
+        SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
+        int shuffle = preferences.getInt("shuffle", 0);
+        status = shuffle;
+
         path = intent.getStringExtra("url"); //歌曲路径
         current = intent.getIntExtra("position", -1);
         msg = intent.getIntExtra("MSG", 0);
         tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
 
-        Log.d(TAG, "onStartCommand: " + msg);
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
             play(0);
         } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {    //暂停
@@ -165,6 +156,8 @@ public class PlayerService extends Service {
         } else if (msg == AppConstant.PlayerMsg.PLAYING_MSG) {
             handler.sendEmptyMessage(1);
         }
+
+
 
         return super.onStartCommand(intent,flags, startId);
     }
@@ -205,29 +198,37 @@ public class PlayerService extends Service {
     }
 
     private void previous() {
-        sendIntent(current);
-        if (status == 4) {
-            getindex();
-            return;
+        if (status == 0) {
+            if (current == 0) {
+                current = tracks.size() - 1;
+            } else {
+                current = current - 1;
+            }
+        } else if (status == 2) {
+            current = (int) (Math.random() * (tracks.size() - 1));
         }
+        sendIntent(current);
+        path = tracks.get(current).getUrl();
+        sendIntent(current);
         play(0);
     }
 
     private void next() {
-        sendIntent(current);
-        if (status == 4) {
-            getindex();
-            return;
-        }
-        play(0);
-    }
+       if (status == 0) {
+            if (current == tracks.size() - 1) {
+                current = 0;
+            } else {
+                current = current + 1;
 
-    private void getindex() {
-        current = getRandomIndex(tracks.size() - 1);
+            }
+        } else if (status == 2) {
+            current = (int) (Math.random() * (tracks.size() - 1));
+        }
         sendIntent(current);
         path = tracks.get(current).getUrl();
         play(0);
     }
+
 
     private void stop() {
         if (mediaPlayer != null) {
@@ -287,18 +288,18 @@ public class PlayerService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             int control = intent.getIntExtra("control", -1);
+            Log.d(TAG, "onReceive: " + control);
             switch (control) {
                 case 1:
-                    status = 1; //单曲循环
+                    status = 0; // 列表循环
                     break;
                 case 2:
-                    status = 2; // 列表循环
+                    status = 1; // 单曲循环
                     break;
                 case 3:
-                    status = 3; // 顺序播放
+                    status = 2; // 随机播放
                     break;
-                case 4:
-                    status = 4; // 随机播放
+                default:
                     break;
             }
         }

@@ -75,7 +75,7 @@ public class PlayerActivity extends AppCompatActivity {
     private boolean isPause; // 暂停
     private int duration;
 
-    // 0:noshuffle, 1:shuffle, 2:single
+    // 0:noshuffle, 1:single, 2:shuffle
     private int shuffle;
 
 
@@ -109,23 +109,20 @@ public class PlayerActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.player_layout);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("");
-
-
         findViewById();
         // 设置监听器
         setViewOnclickListener();
         registeReceiver();
 
-
-
     }
 
     private void findViewById() {
+
+        setContentView(R.layout.player_layout);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("");
         //initials
         mBackgroundImage = (ImageView) findViewById(R.id.background_image);
 
@@ -134,7 +131,6 @@ public class PlayerActivity extends AppCompatActivity {
         mShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_shuffle).colorRes(R.color.white).sizeDp(40);
         mSingle = new IconDrawable(this, Iconify.IconValue.zmdi_repeat_one).colorRes(R.color.white).sizeDp(40);
         mRepeat.setImageDrawable(mNoShuffle);
-        shuffle = 0;
 
         mPlayPause = (TintImageView) findViewById(R.id.play_pause);
         mPauseDrawable = new IconDrawable(this, Iconify.IconValue.zmdi_pause_circle_outline).colorRes(R.color.white).sizeDp(40);
@@ -151,14 +147,15 @@ public class PlayerActivity extends AppCompatActivity {
         mSeekbar = (SeekBar) findViewById(R.id.seekBar1);
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         duration = preferences.getInt("duration", -1);
-        shuffle = preferences.getInt("shuffle", 0);
+        shuffle = preferences.getInt("shuffle", -1);
+        Log.d(TAG, "findViewById: " + shuffle);
 
         if (shuffle == 0) {
             mRepeat.setImageDrawable(mNoShuffle);
         } else if (shuffle == 1) {
-            mRepeat.setImageDrawable(mShuffle);
-        } else {
             mRepeat.setImageDrawable(mSingle);
+        } else {
+            mRepeat.setImageDrawable(mShuffle);
         }
         mSeekbar.setMax(duration);
 
@@ -245,24 +242,18 @@ public class PlayerActivity extends AppCompatActivity {
                         Toast.makeText(PlayerActivity.this, "单曲循环",
                                 Toast.LENGTH_SHORT).show();
                         shuffle = 1;
-                        shuffleMusic(1);
-                        shuffleIntent.putExtra("shuffleState", true);
                     } else if (shuffle == 1) {
                         mRepeat.setImageDrawable(mShuffle);
                         Toast.makeText(PlayerActivity.this, "随机播放",
                                 Toast.LENGTH_SHORT).show();
                         shuffle = 2;
-                        shuffleMusic(4);
-
                     } else if (shuffle == 2) {
                         mRepeat.setImageDrawable(mNoShuffle);
-                        Toast.makeText(PlayerActivity.this, "列表播放",
+                        Toast.makeText(PlayerActivity.this, "列表循环",
                                 Toast.LENGTH_SHORT).show();
                         shuffle = 0;
-                        shuffleMusic(2);
                     }
-
-
+                    shuffleMusic(shuffle);
                     sendBroadcast(shuffleIntent);
                     // 存储播放状态
                     SharedPreferences preferences=getSharedPreferences("user",Context.MODE_PRIVATE);
@@ -309,7 +300,7 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     public void next_music() {
-        position = position + 1;
+
         if (position <= tracks.size() - 1) {
             Intent intent = new Intent();
             intent.setAction("fm.poche.media.MUSIC_SERVICE");
@@ -328,7 +319,14 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     public void previous_music() {
-        position = position - 1;
+        if (shuffle == 1) {
+            int now = position;
+            position = now;
+        } else if (shuffle == 2) {
+            position = (int) (Math.random() * (tracks.size() - 1));
+        } else if (shuffle == 0) {
+            position = position + 1;
+        }
         if (position >= 0) {
             url = tracks.get(position).getUrl();
             Intent intent = new Intent();
@@ -346,11 +344,6 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
-    public void repeat_one(int control) {
-        Intent intent = new Intent(CTL_ACTION);
-        intent.putExtra("control", 1);
-        sendBroadcast(intent);
-    }
 
     public void shuffleMusic(int control) {
         Intent intent = new Intent(CTL_ACTION);
