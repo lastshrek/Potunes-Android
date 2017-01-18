@@ -71,6 +71,7 @@ public class QuciControlsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
         View rootView = inflater.inflate(R.layout.bottom_nav, container, false);
         this.rootView = rootView;
         mPlayPause = (TintImageView) rootView.findViewById(R.id.control);
@@ -126,9 +127,7 @@ public class QuciControlsFragment extends Fragment {
 
                 Intent playerIntent = new Intent(mContext, PlayerActivity.class);
 
-                playerIntent.putExtra(PlayerActivity.TRACKLIST, tracks);
-
-                playerIntent.putExtra(PlayerActivity.TRACKID, position);
+                playerIntent.putExtra("TRACKS", tracks);
 
                 mContext.startActivity(playerIntent);
             }
@@ -141,22 +140,13 @@ public class QuciControlsFragment extends Fragment {
     }
 
     public void next_music() {
-        position = position + 1;
-        if (position <= tracks.size() - 1) {
-            Intent intent = new Intent();
-            intent.setAction("fm.poche.media.MUSIC_SERVICE");
-            intent.putExtra("url", tracks.get(position).getUrl());
-            intent.putExtra("position", position);
-            intent.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
-            intent.putExtra("TRACKS", tracks);
-            intent.setPackage(((Activity) mContext).getPackageName());
-            mContext.startService(intent);
-
-        } else {
-            position = tracks.size() - 1;
-            Toast.makeText(mContext, "没有下一首了", Toast.LENGTH_SHORT)
-                    .show();
-        }
+        Log.d(TAG, "next_music==============================: tracks" + tracks);
+        Intent intent = new Intent();
+        intent.setAction("fm.poche.media.MUSIC_SERVICE");
+        intent.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
+        intent.putExtra("TRACKS", tracks);
+        intent.setPackage(((Activity) mContext).getPackageName());
+        mContext.startService(intent);
     }
 
     private void registeReceiver() {
@@ -187,7 +177,6 @@ public class QuciControlsFragment extends Fragment {
 
                 if (isPause == false) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
-
                 }
 
                 if (duration > 0) {
@@ -195,19 +184,14 @@ public class QuciControlsFragment extends Fragment {
                     mProgress.setProgress(progress);
                 }
 
-                position = intent.getIntExtra("position", -1);
-                tracks =  (ArrayList<Track>) intent.getSerializableExtra("tracks");
-                if (tracks != null) {
-                    Track track = tracks.get(position);
-                    String thumb = track.getCover();
-                    Glide.with(mContext).load(thumb).into(mAlbumArt);
-                    // 歌手名
-                    mTitle.setText(track.getTitle());
-                    mArtist.setText(track.getArtist());
-                }
+                String thumb = intent.getStringExtra("url");
+                Glide.with(mContext).load(thumb).into(mAlbumArt);
+                mTitle.setText(intent.getStringExtra("title"));
+                mArtist.setText(intent.getStringExtra("artist"));
 
             } else if (action.equals(MUSIC_DURATION)) {
                 duration = intent.getIntExtra("duration", -1);
+                tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
                 mProgress.setMax(100);
             }
         }
@@ -235,6 +219,19 @@ public class QuciControlsFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         getActivity().unregisterReceiver(quickReceiver);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Log.d(TAG, "onCreateView: 返回----------------------" + tracks);
+
+        if (tracks != null) {
+            Log.d(TAG, "onStart:=========================== " + tracks.size());
+
+        } else {
+            Log.d(TAG, "onStart: ========================tracks为空");
+        }
     }
 
     public interface OnFragmentInteractionListener {

@@ -6,10 +6,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.Icon;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.content.ContextCompat;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -167,11 +165,11 @@ public class PlayerActivity extends AppCompatActivity {
         View mControllers = findViewById(R.id.controllers);
         mControllers.setVisibility(View.VISIBLE);
 
-        // 设置页面信息
         Intent intent = getIntent();
-        position = intent.getIntExtra(TRACKID, -1);
-        tracks =  (ArrayList<Track>) intent.getSerializableExtra(TRACKLIST);
-        showTrackInfo(position);
+        Bundle bundle = intent.getExtras();
+        tracks = (ArrayList<Track>) bundle.getSerializable("TRACKS");
+
+
 
         isPause = false;
 
@@ -189,15 +187,7 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
-    private void showTrackInfo(int position) {
-        Track track = tracks.get(position);
-        // 设置专辑封面
-        String thumb = track.getCover();
-        Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
-        // 歌手名
-        mTitle.setText(track.getTitle());
-        mArtist.setText(track.getArtist());
-    }
+
 
     private void setViewOnclickListener() {
         ViewOnclickListener clickListener = new ViewOnclickListener();
@@ -228,8 +218,8 @@ public class PlayerActivity extends AppCompatActivity {
                         isPause = true;
                     }
                     intent.putExtra("url", tracks.get(position).getUrl());
-                    intent.putExtra("position", position);
                     intent.putExtra("TRACKS", tracks);
+                    intent.putExtra("position", position);
                     intent.setPackage(getPackageName());
                     getBaseContext().startService(intent);
                     break;
@@ -256,8 +246,8 @@ public class PlayerActivity extends AppCompatActivity {
                     shuffleMusic(shuffle);
                     sendBroadcast(shuffleIntent);
                     // 存储播放状态
-                    SharedPreferences preferences=getSharedPreferences("user",Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor=preferences.edit();
+                    SharedPreferences preference = getSharedPreferences("user",Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = preference.edit();
                     editor.putInt("shuffle", shuffle);
                     editor.commit();
 
@@ -301,47 +291,21 @@ public class PlayerActivity extends AppCompatActivity {
 
     public void next_music() {
 
-        if (position <= tracks.size() - 1) {
-            Intent intent = new Intent();
-            intent.setAction("fm.poche.media.MUSIC_SERVICE");
-            intent.putExtra("url", tracks.get(position).getUrl());
-            intent.putExtra("position", position);
-            intent.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
-            intent.putExtra("TRACKS", tracks);
-            intent.setPackage(getPackageName());
-            startService(intent);
-
-        } else {
-            position = tracks.size() - 1;
-            Toast.makeText(PlayerActivity.this, "没有下一首了", Toast.LENGTH_SHORT)
-                    .show();
-        }
+        Intent intent = new Intent();
+        intent.setAction("fm.poche.media.MUSIC_SERVICE");
+        intent.putExtra("TRACKS", tracks);
+        intent.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
+        intent.setPackage(getPackageName());
+        startService(intent);
     }
 
     public void previous_music() {
-        if (shuffle == 1) {
-            int now = position;
-            position = now;
-        } else if (shuffle == 2) {
-            position = (int) (Math.random() * (tracks.size() - 1));
-        } else if (shuffle == 0) {
-            position = position + 1;
-        }
-        if (position >= 0) {
-            url = tracks.get(position).getUrl();
-            Intent intent = new Intent();
-            intent.setAction("fm.poche.media.MUSIC_SERVICE");
-            intent.putExtra("url", url);
-            intent.putExtra("TRACKS", tracks);
-            intent.putExtra("position", position);
-            intent.putExtra("MSG", AppConstant.PlayerMsg.PRIVIOUS_MSG);
-            intent.setPackage(getPackageName());
-            startService(intent);
-        } else {
-            position = 0;
-            Toast.makeText(PlayerActivity.this, "没有上一首了", Toast.LENGTH_SHORT)
-                    .show();
-        }
+        Intent intent = new Intent();
+        intent.setAction("fm.poche.media.MUSIC_SERVICE");
+        intent.putExtra("TRACKS", tracks);
+        intent.putExtra("MSG", AppConstant.PlayerMsg.PRIVIOUS_MSG);
+        intent.setPackage(getPackageName());
+        startService(intent);
     }
 
 
@@ -368,11 +332,8 @@ public class PlayerActivity extends AppCompatActivity {
     public void audioTrackChange(int progress) {
         Intent intent = new Intent();
         intent.setAction("fm.poche.media.MUSIC_SERVICE");
-        intent.putExtra("url", url);
-        intent.putExtra("position", position);
         intent.putExtra("MSG", AppConstant.PlayerMsg.PROGRESS_CHANGE);
         intent.putExtra("progress", progress);
-        intent.putExtra("TRACKS", tracks);
         intent.setPackage(getPackageName());
         startService(intent);
     }
@@ -401,6 +362,7 @@ public class PlayerActivity extends AppCompatActivity {
             String action = intent.getAction();
 
             currentTime = intent.getIntExtra("currentTime", -1);
+            tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
 
             if (action.equals(MUSIC_CURRENT)) {
                 mStart.setText(MediaUtil.formatTime(currentTime));
@@ -409,6 +371,11 @@ public class PlayerActivity extends AppCompatActivity {
                 if (duration > 0) {
                     mEnd.setText(MediaUtil.formatTime(duration - currentTime));
                 }
+
+                String thumb = intent.getStringExtra("url");
+                Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
+                mTitle.setText(intent.getStringExtra("title"));
+                mArtist.setText(intent.getStringExtra("artist"));
 
             }  else if (action.equals(UPDATE_ACTION)) {
                 position = intent.getIntExtra("current", -1);
@@ -427,6 +394,7 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             } else if (action.equals(MUSIC_DURATION)) {
                 duration = intent.getIntExtra("duration", -1);
+                tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
                 mSeekbar.setMax(duration);
             }
         }
@@ -436,8 +404,6 @@ public class PlayerActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()){
             case android.R.id.home:
-                Log.d("", "onOptionsItemSelected: ");
-//                onDestroy();
                 onBackPressed();
                 finish();
                 return true;

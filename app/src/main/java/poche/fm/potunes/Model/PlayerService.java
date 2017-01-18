@@ -8,8 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
-import android.os.Binder;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -57,13 +55,15 @@ public class PlayerService extends Service {
                     currentTime = mediaPlayer.getCurrentPosition(); // 获取当前音乐播放的位置
                     Intent intent = new Intent();
                     intent.setAction(MUSIC_CURRENT);
-                    intent.putExtra("duration", duration);
-                    intent.putExtra("tracks", tracks);
-                    intent.putExtra("position", current);
-                    intent.putExtra("currentTime", currentTime);
+                    Track track = tracks.get(current);
+                    intent.putExtra("url", track.getCover());
+                    intent.putExtra("artist", track.getArtist());
+                    intent.putExtra("title", track.getTitle());
                     intent.putExtra("isplaying", mediaPlayer.isPlaying());
+                    intent.putExtra("currentTime", currentTime);
                     sendBroadcast(intent); // 给PlayerActivity发送广播
                     handler.sendEmptyMessageDelayed(1, 1000);
+
                 }
             }
         }
@@ -73,6 +73,7 @@ public class PlayerService extends Service {
     public void onCreate() {
         super.onCreate();
         mediaPlayer = new MediaPlayer();
+        Log.d(TAG, "onCreate: =======================");
 
         //设置音乐播放完成时的监听器
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -117,6 +118,8 @@ public class PlayerService extends Service {
     protected void sendIntent(int current) {
         Intent sendIntent = new Intent(UPDATE_ACTION);
         sendIntent.putExtra("current", current);
+        sendIntent.putExtra("TRACKS", tracks);
+
         sendBroadcast(sendIntent);
     }
 
@@ -128,13 +131,18 @@ public class PlayerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
+        Log.d(TAG, "onStartCommand: ====================");
+
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         int shuffle = preferences.getInt("shuffle", 0);
         status = shuffle;
+        current = preferences.getInt("position", 0);
+
+        Log.d(TAG, "onStartCommand: current" + current);
 
         path = intent.getStringExtra("url"); //歌曲路径
-        current = intent.getIntExtra("position", -1);
         msg = intent.getIntExtra("MSG", 0);
+
         tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
 
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
@@ -148,6 +156,7 @@ public class PlayerService extends Service {
         } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
             previous();
         } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
+            tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
             //下一首
             next();
         } else if (msg == AppConstant.PlayerMsg.PROGRESS_CHANGE) {  //进度更新
@@ -204,8 +213,6 @@ public class PlayerService extends Service {
             } else {
                 current = current - 1;
             }
-        } else if (status == 2) {
-            current = (int) (Math.random() * (tracks.size() - 1));
         }
         sendIntent(current);
         path = tracks.get(current).getUrl();
@@ -219,7 +226,6 @@ public class PlayerService extends Service {
                 current = 0;
             } else {
                 current = current + 1;
-
             }
         } else if (status == 2) {
             current = (int) (Math.random() * (tracks.size() - 1));
@@ -273,12 +279,14 @@ public class PlayerService extends Service {
             intent.setAction(MUSIC_DURATION);
             duration = mediaPlayer.getDuration();
             intent.putExtra("duration", duration);
+            intent.putExtra("TRACKS", tracks);
             sendBroadcast(intent);
             // 存储长度
             duration = mediaPlayer.getDuration();
             SharedPreferences preferences=getSharedPreferences("user",Context.MODE_PRIVATE);
             SharedPreferences.Editor editor=preferences.edit();
             editor.putInt("duration", duration);
+            editor.putInt("position", current);
             editor.commit();
 
         }

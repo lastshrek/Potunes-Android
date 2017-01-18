@@ -4,8 +4,8 @@
     android:layout_height="72dp"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <ImageView
-        android:id="@+id/track_cover"
+    <com.malinskiy.materialicons.widget.IconTextView
+        android:id="@+id/more_image"
         android:layout_width="40dp"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
@@ -23,7 +23,7 @@
         android:paddingRight="10dp">
 
         <TextView
-            android:id="@+id/track_title"
+            android:id="@+id/more_title"
             tools:text="The Best Music EVAH1111 FOREVER YOUNG I'M AWESOME!!!11^H^H"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -32,30 +32,8 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="15dp"/>
-        <TextView
-            android:id="@+id/track_artist"
-            tools:text="John Doe, his brothers, his sisters, his pets and his more than amazing band"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:ellipsize="marquee"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="?android:attr/textColorSecondary"
-            android:textSize="13dp"/>
 
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/track_item_menu"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_alignParentRight="true"
-        android:layout_gravity="center_vertical"
-        android:layout_centerVertical="true"
-        android:background="?android:attr/selectableItemBackground"
-        android:paddingLeft="15dp"
-        android:paddingRight="15dp"
-        android:scaleType="centerInside"
-        android:src="@drawable/list_icn_more" />
 
 </RelativeLayout>

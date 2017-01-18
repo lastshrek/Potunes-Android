@@ -26,22 +26,20 @@ import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.Model.TrackAdapter;
+import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
 
-public class TrackListActivity extends AppCompatActivity implements QuciControlsFragment.OnFragmentInteractionListener{
+public class TrackListActivity extends AppCompatActivity implements QuciControlsFragment.OnFragmentInteractionListener, MoreFragment.OnFragmentInteractionListener{
 
     public static final String PLAYLIST_ID = "playlist_id";
 
     public static final String TITLE = "playlist_title";
 
-
     private List<Track> tracks = new ArrayList<>();
 
     private TrackAdapter adapter;
-
     protected static final int TRACK = 1;
-
     private ActionBar actionBar;
     private QuciControlsFragment quickControls;
 
@@ -129,7 +127,6 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
     }
 
     public void initTracks(final int playlist_id) {
-        Log.d("加载歌曲列表", "initTracks: ");
         tracks.clear();
         new Thread(new Runnable() {
             @Override
@@ -158,12 +155,9 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
                 try {
                     Gson gson = new Gson();
                     ArrayList<Track> datas = gson.fromJson(jsonData, new TypeToken<List<Track>>(){}.getType());
-
                     for (Track track : datas) {
                         tracks.add(track);
                     }
-                    Log.d("歌曲获取完成", "onCreate: ");
-
                     Message msg = Message.obtain();
                     msg.what = TRACK;
                     msg.obj = tracks;
