@@ -70,7 +70,7 @@ public class PlayerActivity extends AppCompatActivity {
     private int position; // 播放歌曲在tracks的位置
     private String url; // 歌曲路径
     private ArrayList<Track> tracks;
-    private boolean isPause; // 暂停
+    private boolean isPlaying; // 暂停
     private int duration;
 
     // 0:noshuffle, 1:single, 2:shuffle
@@ -133,7 +133,6 @@ public class PlayerActivity extends AppCompatActivity {
         mPlayPause = (TintImageView) findViewById(R.id.play_pause);
         mPauseDrawable = new IconDrawable(this, Iconify.IconValue.zmdi_pause_circle_outline).colorRes(R.color.white).sizeDp(40);
         mPlayDrawable = new IconDrawable(this, Iconify.IconValue.zmdi_play_circle_outline).colorRes(R.color.white).sizeDp(40);
-        mPlayPause.setImageDrawable(mPauseDrawable);
         mSkipNext = (IconTextView) findViewById(R.id.play_next);
         mSkipPrev = (IconTextView) findViewById(R.id.play_prev);
         Iconify.addIcons(mSkipPrev);
@@ -145,8 +144,12 @@ public class PlayerActivity extends AppCompatActivity {
         mSeekbar = (SeekBar) findViewById(R.id.seekBar1);
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         duration = preferences.getInt("duration", -1);
-        shuffle = preferences.getInt("shuffle", -1);
-        Log.d(TAG, "findViewById: " + shuffle);
+        shuffle = preferences.getInt("shuffle", 0);
+
+        Log.d(TAG, "findViewById: ============shufle" + shuffle);
+        if (shuffle == -1) {
+            shuffle = 0;
+        }
 
         if (shuffle == 0) {
             mRepeat.setImageDrawable(mNoShuffle);
@@ -168,10 +171,15 @@ public class PlayerActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         tracks = (ArrayList<Track>) bundle.getSerializable("TRACKS");
+        isPlaying = intent.getBooleanExtra("isPlaying", false);
+        Log.d(TAG, "findViewById: ==========" + isPlaying);
 
+        if (isPlaying == false) {
+            mPlayPause.setImageDrawable(mPlayDrawable);
 
-
-        isPause = false;
+        } else {
+            mPlayPause.setImageDrawable(mPauseDrawable);
+        }
 
         mSkipNext.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -204,27 +212,27 @@ public class PlayerActivity extends AppCompatActivity {
             intent.setAction("fm.poche.media.MUSIC_SERVICE");
             switch (v.getId()) {
                 case R.id.play_pause:
-                    if (isPause) {
+                    Log.d(TAG, "onClick: ============" + isPlaying);
+                    if (!isPlaying) {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPauseDrawable);
                         intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
                         intent.setPackage(getPackageName());
                         getBaseContext().startService(intent);
-                        isPause = false;
+                        isPlaying = false;
                     } else {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPlayDrawable);
                         intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
-                        isPause = true;
+                        isPlaying = true;
                     }
                     intent.putExtra("url", tracks.get(position).getUrl());
-                    intent.putExtra("TRACKS", tracks);
                     intent.putExtra("position", position);
                     intent.setPackage(getPackageName());
                     getBaseContext().startService(intent);
                     break;
                 case R.id.play_repeat:
-                    Log.d(TAG, "onClick: 点击了随机按钮");
+                    Log.d(TAG, "onClick: 点击了随机按钮==========" + shuffle);
                     Intent shuffleIntent = new Intent(SHUFFLE_ACTION);
 
                     if(shuffle == 0) {
@@ -350,7 +358,6 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         unregisterReceiver(playerReceiver);
-        Log.d(TAG, "onStop: ");
 
         super.onStop();
     }
@@ -362,7 +369,6 @@ public class PlayerActivity extends AppCompatActivity {
             String action = intent.getAction();
 
             currentTime = intent.getIntExtra("currentTime", -1);
-            tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
 
             if (action.equals(MUSIC_CURRENT)) {
                 mStart.setText(MediaUtil.formatTime(currentTime));
@@ -376,7 +382,6 @@ public class PlayerActivity extends AppCompatActivity {
                 Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
                 mTitle.setText(intent.getStringExtra("title"));
                 mArtist.setText(intent.getStringExtra("artist"));
-
             }  else if (action.equals(UPDATE_ACTION)) {
                 position = intent.getIntExtra("current", -1);
                 Track track = tracks.get(position);
@@ -390,7 +395,7 @@ public class PlayerActivity extends AppCompatActivity {
                     mArtist.setText(track.getArtist());
                 }
                 if (position == 0) {
-                    isPause = true;
+                    isPlaying = false;
                 }
             } else if (action.equals(MUSIC_DURATION)) {
                 duration = intent.getIntExtra("duration", -1);

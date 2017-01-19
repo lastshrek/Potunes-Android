@@ -47,7 +47,7 @@ public class QuciControlsFragment extends Fragment {
     private int duration;
     private String url;
     private ArrayList<Track> tracks;
-    private boolean isPause; // 暂停
+    private boolean isPlaying; // 暂停
 
 
 
@@ -88,23 +88,24 @@ public class QuciControlsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
+
                 intent.setAction("fm.poche.media.MUSIC_SERVICE");
+                Log.d(TAG, "onClick: ================" + isPlaying);
 
-                if (isPause == true) {
+
+                if (isPlaying == false) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
-
                     intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
-                    isPause = false;
+                    isPlaying = true;
                 } else {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_play);
-
                     intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
-                    isPause = true;
+                    isPlaying = false;
                 }
+                Log.d(TAG, "onClick: ================" + isPlaying);
 
                 intent.putExtra("url", tracks.get(position).getUrl());
                 intent.putExtra("position", position);
-                intent.putExtra("TRACKS", tracks);
                 intent.setPackage(getActivity().getPackageName());
                 mContext.startService(intent);
             }
@@ -129,6 +130,10 @@ public class QuciControlsFragment extends Fragment {
 
                 playerIntent.putExtra("TRACKS", tracks);
 
+                playerIntent.putExtra("isPlaying", isPlaying);
+
+                Log.d(TAG, "onClick: =============" + isPlaying);
+
                 mContext.startActivity(playerIntent);
             }
         });
@@ -140,7 +145,6 @@ public class QuciControlsFragment extends Fragment {
     }
 
     public void next_music() {
-        Log.d(TAG, "next_music==============================: tracks" + tracks);
         Intent intent = new Intent();
         intent.setAction("fm.poche.media.MUSIC_SERVICE");
         intent.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
@@ -170,12 +174,13 @@ public class QuciControlsFragment extends Fragment {
 
                 currentTime = intent.getIntExtra("currentTime", -1);
 
-                boolean isPlaying = intent.getBooleanExtra("isplaying", false);
+                boolean isMediaPlaying = intent.getBooleanExtra("isPlaying", false);
 
+                isPlaying = isMediaPlaying;
 
-                isPause = !isPlaying;
-
-                if (isPause == false) {
+                if (isPlaying == false) {
+                    mPlayPause.setImageResource(R.drawable.playbar_btn_play);
+                } else {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
                 }
 
@@ -224,14 +229,6 @@ public class QuciControlsFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "onCreateView: 返回----------------------" + tracks);
-
-        if (tracks != null) {
-            Log.d(TAG, "onStart:=========================== " + tracks.size());
-
-        } else {
-            Log.d(TAG, "onStart: ========================tracks为空");
-        }
     }
 
     public interface OnFragmentInteractionListener {

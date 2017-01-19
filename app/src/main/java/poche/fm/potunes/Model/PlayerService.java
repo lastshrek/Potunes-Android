@@ -11,11 +11,19 @@ import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import poche.fm.potunes.PlayerActivity;
+import poche.fm.potunes.R;
+import poche.fm.potunes.TrackListActivity;
 import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
@@ -32,7 +40,7 @@ public class PlayerService extends Service {
     private int msg;
     private boolean isPause; //暂停
     private int current = 0; //记录当前在播放的音乐
-    private ArrayList<Track> tracks;
+    private ArrayList<Track> tracks = new ArrayList<>();
     private int status = 0; //播放状态，默认顺序播放
     private MyReceiver myReceiver; //自定义广播接收器
     private int currentTime;
@@ -43,7 +51,7 @@ public class PlayerService extends Service {
     public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION";        //控制动作
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT";  //当前音乐播放时间更新动作
     public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";//新音乐长度更新动作
-    public static final String TAG = "PlayerService";//新音乐长度更新动作
+    public static final String TAG = "PlayerService";
 
     /**
      * handler用来接收消息，来发送广播更新播放时间
@@ -59,7 +67,7 @@ public class PlayerService extends Service {
                     intent.putExtra("url", track.getCover());
                     intent.putExtra("artist", track.getArtist());
                     intent.putExtra("title", track.getTitle());
-                    intent.putExtra("isplaying", mediaPlayer.isPlaying());
+                    intent.putExtra("isPlaying", mediaPlayer.isPlaying());
                     intent.putExtra("currentTime", currentTime);
                     sendBroadcast(intent); // 给PlayerActivity发送广播
                     handler.sendEmptyMessageDelayed(1, 1000);
@@ -131,23 +139,31 @@ public class PlayerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        Log.d(TAG, "onStartCommand: ====================");
 
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         int shuffle = preferences.getInt("shuffle", 0);
         status = shuffle;
         current = preferences.getInt("position", 0);
 
-        Log.d(TAG, "onStartCommand: current" + current);
 
         path = intent.getStringExtra("url"); //歌曲路径
         msg = intent.getIntExtra("MSG", 0);
 
-        tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
+        //获取本地Tracks数据
+        String json = preferences.getString("Tracks", "Tracks");
+        Gson gson = new Gson();
+        tracks.clear();
+        ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
+        for (Track track : datas) {
+            tracks.add(track);
+        }
+        Log.d(TAG, "onStartCommand: ==========" + msg);
 
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
             play(0);
-        } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {    //暂停
+        } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {
+            Log.d(TAG, "onStartCommand: =====点击暂停");
+            //暂停
             pause();
         } else if (msg == AppConstant.PlayerMsg.STOP_MSG) {     //停止
             stop();
@@ -156,7 +172,7 @@ public class PlayerService extends Service {
         } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
             previous();
         } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
-            tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
+            Log.d(TAG, "onStartCommand:===============下一首" + tracks);
             //下一首
             next();
         } else if (msg == AppConstant.PlayerMsg.PROGRESS_CHANGE) {  //进度更新
@@ -170,6 +186,7 @@ public class PlayerService extends Service {
 
         return super.onStartCommand(intent,flags, startId);
     }
+
 
 
     /**
@@ -195,8 +212,9 @@ public class PlayerService extends Service {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             isPause = true;
-
         }
+        Log.d(TAG, "pause: 点击了暂停" + mediaPlayer.isPlaying());
+
     }
 
     private void resume() {

@@ -1,6 +1,8 @@
 package poche.fm.potunes;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
@@ -140,6 +142,11 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
 
                     Response response = client.newCall(request).execute();
                     String responseData = response.body().string();
+                    //将json存到本地
+                    SharedPreferences preference = getSharedPreferences("user", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = preference.edit();
+                    editor.putString("Tracks", responseData);
+                    editor.commit();
                     parseJSONWithGSON(responseData);
                 } catch (Exception e) {
                     e.printStackTrace();
