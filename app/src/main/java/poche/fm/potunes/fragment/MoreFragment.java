@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.DialogFragment;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -20,8 +21,8 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import poche.fm.potunes.Model.MusicFlowAdapter;
-import poche.fm.potunes.Model.MusicInfo;
 import poche.fm.potunes.Model.OverFlowItem;
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.handler.HandlerUtil;
 
@@ -38,12 +39,15 @@ public class MoreFragment extends DialogFragment {
     private RecyclerView recyclerView;
     private LinearLayoutManager layoutManager;
     private String args;
-    private String musicName, artist, albumId, albumName;
+    private String title, artist, cover, url;
+    private int trackID;
     private Context mContext;
     private Handler mHandler;
     private long playlistId = -1;
     private MusicFlowAdapter musicFlowAdapter;
-    private MusicInfo adapterMusicInfo;
+    private Track adapterMusicInfo;
+
+    private String TAG = "MoreFragment:";
 
 
     public MoreFragment() {
@@ -51,9 +55,13 @@ public class MoreFragment extends DialogFragment {
     }
 
     // TODO: Rename and change types and number of parameters
-    public static MoreFragment newInstance(String id, int startFrom) {
+    public static MoreFragment newInstance(Track track, int startFrom) {
         MoreFragment fragment = new MoreFragment();
         Bundle args = new Bundle();
+        Log.d("", "newInstance: " + track.getTitle());
+        args.putParcelable("track", track);
+        args.putInt("track_id", track.getID());
+        fragment.setArguments(args);
         return fragment;
     }
 
@@ -87,18 +95,29 @@ public class MoreFragment extends DialogFragment {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setHasFixedSize(true);
         getTracks();
+        setClick();
+//        setItemDecoration();
         return view;
 
     }
 
+    //设置分割线
+    private void setItemDecoration() {
+        RecyclerView.ItemDecoration itemDecoration = new DividerItemDecoration(mContext, poche.fm.potunes.widgets.DividerItemDecoration.VERTICAL_LIST);
+        recyclerView.addItemDecoration(itemDecoration);
+    }
+
     private void getTracks() {
-
-        adapterMusicInfo = new MusicInfo();
-
-        artist = adapterMusicInfo.artist;
-        albumId = adapterMusicInfo.albumId + "";
-        albumName = adapterMusicInfo.albumName;
-        musicName = adapterMusicInfo.musicName;
+        adapterMusicInfo = getArguments().getParcelable("track");
+//        int trackid = getArguments().getInt("track_id");
+        if (adapterMusicInfo == null) {
+            adapterMusicInfo = new Track();
+        }
+        artist = adapterMusicInfo.getArtist();
+        title = adapterMusicInfo.getTitle();
+        trackID = adapterMusicInfo.getID();
+        cover = adapterMusicInfo.getCover();
+        url = adapterMusicInfo.getUrl();
         topTitle.setText("选择您想进行的操作");
         heightPercent = 0.3;
         setMusicInfo();
@@ -120,6 +139,24 @@ public class MoreFragment extends DialogFragment {
         information.setTitle(title);
         information.setAvatar(zString);
         mTrackInfo.add(information); //将新的info对象加入到信息列表中
+    }
+
+    public void setClick() {
+        musicFlowAdapter.setOnItemClickListener(new MusicFlowAdapter.OnRecyclerViewItemClickListener() {
+            @Override
+            public void onItemClick(View view, String data) {
+                switch (Integer.parseInt(data)) {
+                    case 0:
+                        Log.d(TAG, "onItemClick: 下载");
+                        break;
+                    case 1:
+                        Log.d(TAG, "onItemClick: 分享");
+                        break;
+                    case 2:
+                        Log.d(TAG, "onItemClick: 设为铃声");
+                } 
+            }
+        });
     }
 
     // TODO: Rename method, update argument and hook method into UI event

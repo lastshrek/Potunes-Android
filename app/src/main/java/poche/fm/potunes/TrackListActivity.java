@@ -16,6 +16,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -35,15 +36,16 @@ import poche.fm.potunes.fragment.QuciControlsFragment;
 public class TrackListActivity extends AppCompatActivity implements QuciControlsFragment.OnFragmentInteractionListener, MoreFragment.OnFragmentInteractionListener{
 
     public static final String PLAYLIST_ID = "playlist_id";
-
     public static final String TITLE = "playlist_title";
-
     private List<Track> tracks = new ArrayList<>();
-
     private TrackAdapter adapter;
     protected static final int TRACK = 1;
     private ActionBar actionBar;
     private QuciControlsFragment quickControls;
+    private Toolbar toolbar;
+    private String TAG = "TrackListActivity";
+
+
 
     private Handler sHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
@@ -85,7 +87,20 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
 
         initTracks(playlist_id);
 
-
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Log.d(TAG, "onCreate: " + toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+            actionBar = getSupportActionBar();
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setHomeAsUpIndicator(R.drawable.actionbar_back);
+            toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onBackPressed();
+                }
+            });
+        }
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
@@ -108,8 +123,6 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
     public void onStart() {
         super.onStart();
         Intent intent = getIntent();
-        actionBar = getSupportActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(true);
         CharSequence title = intent.getStringExtra(TITLE);
         actionBar.setTitle(title);
     }

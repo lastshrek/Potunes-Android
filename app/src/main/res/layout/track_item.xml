@@ -30,7 +30,7 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="?android:attr/textColorPrimary"
+            android:textColor="@color/black"
             android:textSize="15dp"/>
         <TextView
             android:id="@+id/track_artist"

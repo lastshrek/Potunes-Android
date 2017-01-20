@@ -2,7 +2,21 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:background="@color/colorAccent"
+        android:fitsSystemWindows="true"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="@style/Theme.AppCompat"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/tracklist_recycler_view"
@@ -10,6 +24,7 @@
         android:layout_height="match_parent"
         android:backgroundTint="@color/colorPrimary"
         android:layout_marginBottom="50dp"
+        android:layout_marginTop="56dp"
         />
 
     <FrameLayout

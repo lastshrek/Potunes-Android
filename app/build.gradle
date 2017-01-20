@@ -10,6 +10,8 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        renderscriptTargetApi 19
+        renderscriptSupportModeEnabled true
     }
     buildTypes {
         release {
@@ -45,5 +47,7 @@ dependencies {
     compile 'com.facebook.fresco:fresco:0.9.0'
     compile 'com.github.theDazzler:droidicon:0.1.4@aar'
     compile 'com.malinskiy:materialicons:1.0.2'
+    compile 'com.github.mmin18:realtimeblurview:1.1.0'
+    compile 'org.litepal.android:core:1.4.1'
     testCompile 'junit:junit:4.12'
 }

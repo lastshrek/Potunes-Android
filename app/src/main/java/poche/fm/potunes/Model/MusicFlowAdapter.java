@@ -23,17 +23,16 @@ import poche.fm.potunes.R;
 public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements View.OnClickListener {
     private List<OverFlowItem> mList;
     private Context mContext;
-    private MusicInfo musicInfo;
+    private Track musicInfo;
 
     private OnRecyclerViewItemClickListener mOnItemClickListener = null;
     private String TAG = "MusicFlowAdapter";
 
 
-    public MusicFlowAdapter(Context context, List<OverFlowItem> list, MusicInfo info) {
+    public MusicFlowAdapter(Context context, List<OverFlowItem> list, Track info) {
         mList = list;
         mContext = context;
         musicInfo = info;
-        Log.d(TAG, "MusicFlowAdapter: ====================" + mContext);
     }
 
     @Override

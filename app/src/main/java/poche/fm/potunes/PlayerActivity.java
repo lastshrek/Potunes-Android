@@ -9,11 +9,18 @@ import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -23,6 +30,8 @@ import com.bumptech.glide.Glide;
 import com.malinskiy.materialicons.IconDrawable;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconTextView;
+
+import org.litepal.LitePal;
 
 import java.util.ArrayList;
 import poche.fm.potunes.Model.Track;
@@ -47,7 +56,7 @@ public class PlayerActivity extends AppCompatActivity {
     public static final String SHUFFLE_ACTION = "fm.poche.action.SHUFFLE_ACTION";// 音乐随机播放动作
     public static final String SHOW_LRC = "fm.poche.action.SHOW_LRC"; // 通知显示歌词
 
-
+    private Toolbar toolbar;
     private ProgressBar mLoading;
     private SeekBar mSeekbar;
     private TextView mTitle;
@@ -64,6 +73,9 @@ public class PlayerActivity extends AppCompatActivity {
     private Drawable mNoShuffle;
     private Drawable mShuffle;
     private Drawable mSingle;
+    private ActionBar ab;
+    private ImageView mPlayingCover;
+
 
 
     private int currentTime; // 当前歌曲播放时间
@@ -86,29 +98,23 @@ public class PlayerActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case PROCESSING: //更新进度
-
                     mLoading.setProgress(msg.getData().getInt("size"));
-
-
                     float num = (float) mLoading.getProgress() / (float) mLoading.getMax();
-
                     int result = (int) (num * 100);
-
                     if (mLoading.getProgress() == mLoading.getMax()) {
                         Toast.makeText(getApplicationContext(), "缓冲完成", Toast.LENGTH_LONG).show();
                     }
                     break;
                 case FAILURE:
                     Toast.makeText(getApplicationContext(), "缓冲失败", Toast.LENGTH_LONG).show();
-
             }
         }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
+        LitePal.initialize(this);
         findViewById();
         // 设置监听器
         setViewOnclickListener();
@@ -118,11 +124,52 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void findViewById() {
 
+
         setContentView(R.layout.player_layout);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle("");
         //initials
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        if (toolbar != null) {
+            setSupportActionBar(toolbar);
+            ab = getSupportActionBar();
+            ab.setDisplayHomeAsUpEnabled(true);
+            ab.setHomeAsUpIndicator(R.drawable.actionbar_back);
+            toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onBackPressed();
+                }
+            });
+            int statusHeight = -1;
+            try {
+                Class clazz = Class.forName("com.android.internal.R$dimen");
+                Object object = clazz.newInstance();
+                int height = Integer.parseInt(clazz.getField("status_bar_height")
+                        .get(object).toString());
+                statusHeight = getBaseContext().getResources().getDimensionPixelSize(height);
+            } catch (Exception e) {
+
+            }
+            Log.d(TAG, "onCreate: =============" + statusHeight);
+//            toolbar.setPadding(0, statusHeight,0 ,0);
+            toolbar.setTitle("");
+
+        }
         mBackgroundImage = (ImageView) findViewById(R.id.background_image);
+        mPlayingCover = (ImageView) findViewById(R.id.playing_cover);
+
+//        DisplayMetrics dm = new DisplayMetrics();
+//        getWindowManager().getDefaultDisplay().getMetrics(dm);
+//        int SCREEN_WIDTH = dm.widthPixels;
+//        ViewGroup.LayoutParams ip = mPlayingCover.getLayoutParams();
+//        ip.width = SCREEN_WIDTH;
+//        ip.height = SCREEN_WIDTH;
+//
+//        mPlayingCover.setLayoutParams(ip);
+//
+//        mPlayingCover.setMaxWidth(SCREEN_WIDTH);
+//        mPlayingCover.setMaxHeight(SCREEN_WIDTH);
+
+
 
         mRepeat = (TintImageView) findViewById(R.id.play_repeat);
         mNoShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_repeat).colorRes(R.color.white).sizeDp(40);
@@ -193,6 +240,7 @@ public class PlayerActivity extends AppCompatActivity {
                 previous_music();
             }
         });
+
     }
 
 
@@ -371,6 +419,7 @@ public class PlayerActivity extends AppCompatActivity {
             currentTime = intent.getIntExtra("currentTime", -1);
 
             if (action.equals(MUSIC_CURRENT)) {
+
                 mStart.setText(MediaUtil.formatTime(currentTime));
                 mSeekbar.setProgress(currentTime);
 
@@ -380,6 +429,8 @@ public class PlayerActivity extends AppCompatActivity {
 
                 String thumb = intent.getStringExtra("url");
                 Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
+                Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
+
                 mTitle.setText(intent.getStringExtra("title"));
                 mArtist.setText(intent.getStringExtra("artist"));
             }  else if (action.equals(UPDATE_ACTION)) {
@@ -390,18 +441,19 @@ public class PlayerActivity extends AppCompatActivity {
                     // 设置专辑封面
                     String thumb = track.getCover();
                     Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
+                    Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
+
                     // 歌手名
                     mTitle.setText(track.getTitle());
                     mArtist.setText(track.getArtist());
                 }
-                if (position == 0) {
-                    isPlaying = false;
-                }
+
             } else if (action.equals(MUSIC_DURATION)) {
                 duration = intent.getIntExtra("duration", -1);
                 tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
                 mSeekbar.setMax(duration);
             }
+
         }
     }
     // 返回上个页面
