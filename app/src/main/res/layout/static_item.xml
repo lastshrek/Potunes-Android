@@ -2,7 +2,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="72dp"
-    android:background="@color/white"
     xmlns:tools="http://schemas.android.com/tools">
 
     <ImageView
@@ -33,16 +32,6 @@
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textColor="@color/black"
             android:textSize="15dp"/>
-        <TextView
-            android:id="@+id/track_artist"
-            tools:text="John Doe, his brothers, his sisters, his pets and his more than amazing band"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:maxLines="1"
-            android:ellipsize="marquee"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="?android:attr/textColorSecondary"
-            android:textSize="13dp"/>
 
     </LinearLayout>
 

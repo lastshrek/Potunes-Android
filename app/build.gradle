@@ -21,6 +21,9 @@ android {
     }
 
     repositories {
+        maven {
+            url 'http://www.idescout.com/maven/repo/'
+        }
         mavenCentral()
     }
 }
@@ -49,5 +52,8 @@ dependencies {
     compile 'com.malinskiy:materialicons:1.0.2'
     compile 'com.github.mmin18:realtimeblurview:1.1.0'
     compile 'org.litepal.android:core:1.4.1'
+    compile 'com.idescout.sql:sqlscout-server:2.0'
+    compile 'com.lzy.net:okgo:+'
+    compile 'com.songhang:smart-headerfooter-recyclerview:1.0.1'
     testCompile 'junit:junit:4.12'
 }

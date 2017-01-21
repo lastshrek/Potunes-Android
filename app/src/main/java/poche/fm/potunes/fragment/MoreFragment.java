@@ -1,7 +1,9 @@
 package poche.fm.potunes.fragment;
 
 import android.app.Activity;
+import android.app.DownloadManager;
 import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,9 +19,18 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.lzy.okgo.OkGo;
+import com.lzy.okgo.callback.FileCallback;
+
+import org.litepal.LitePal;
+
+import java.io.File;
 import java.util.ArrayList;
 
+import okhttp3.Call;
+import okhttp3.Response;
 import poche.fm.potunes.Model.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
 import poche.fm.potunes.Model.Track;
@@ -39,13 +50,15 @@ public class MoreFragment extends DialogFragment {
     private RecyclerView recyclerView;
     private LinearLayoutManager layoutManager;
     private String args;
-    private String title, artist, cover, url;
+    private String title, artist, cover, url, album;
     private int trackID;
     private Context mContext;
     private Handler mHandler;
     private long playlistId = -1;
     private MusicFlowAdapter musicFlowAdapter;
     private Track adapterMusicInfo;
+    private SQLiteDatabase db;
+
 
     private String TAG = "MoreFragment:";
 
@@ -58,7 +71,6 @@ public class MoreFragment extends DialogFragment {
     public static MoreFragment newInstance(Track track, int startFrom) {
         MoreFragment fragment = new MoreFragment();
         Bundle args = new Bundle();
-        Log.d("", "newInstance: " + track.getTitle());
         args.putParcelable("track", track);
         args.putInt("track_id", track.getID());
         fragment.setArguments(args);
@@ -70,6 +82,9 @@ public class MoreFragment extends DialogFragment {
         super.onCreate(savedInstanceState);
         setStyle(DialogFragment.STYLE_NO_FRAME, R.style.CustomDatePickerDialog);
         mContext = getContext();
+        LitePal.initialize(getContext());
+        db = LitePal.getDatabase();
+
     }
 
     @Override
@@ -147,12 +162,36 @@ public class MoreFragment extends DialogFragment {
             public void onItemClick(View view, String data) {
                 switch (Integer.parseInt(data)) {
                     case 0:
-                        Log.d(TAG, "onItemClick: 下载");
+                        Log.d(TAG, "onItemClick: 下载" + adapterMusicInfo.getID());
+                        adapterMusicInfo.save();
+
+                        String downloadTrackName = adapterMusicInfo.getArtist() + " - " + adapterMusicInfo.getTitle() + ".mp3";
+                        downloadTrackName = downloadTrackName.replace("/", " ");
+                        OkGo.get(adapterMusicInfo.getUrl())
+                                .execute(new FileCallback(downloadTrackName) {
+                                    @Override
+                                    public void onSuccess(File file, Call call, Response response) {
+                                        adapterMusicInfo.setIsDownloaded(1);
+                                        adapterMusicInfo.save();
+                                    }
+
+                                    @Override
+                                    public void downloadProgress(long currentSize, long totalSize, float progress, long networkSpeed) {
+                                        //这里回调下载进度(该回调在主线程,可以直接更新ui)
+                                        Log.d(TAG, "downloadProgress: 下载进度" + progress);
+                                    }
+                                });
+                        Toast.makeText(mContext,  adapterMusicInfo.getTitle() + "已添加至下载队列", Toast.LENGTH_SHORT).show();
+                        dismiss();
+
+
                         break;
                     case 1:
                         Log.d(TAG, "onItemClick: 分享");
+                        dismiss();
                         break;
                     case 2:
+                        dismiss();
                         Log.d(TAG, "onItemClick: 设为铃声");
                 } 
             }

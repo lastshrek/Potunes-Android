@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<litepal>
+	<dbname value="potunes"></dbname>
+	<dbname value="Potunes"></dbname>
+	<version value="5"></version>
+	
+	<list>
+		<mapping class="poche.fm.potunes.Model.Playlist"></mapping>
+		<mapping class="poche.fm.potunes.Model.Track"></mapping>
+	</list>
+</litepal>

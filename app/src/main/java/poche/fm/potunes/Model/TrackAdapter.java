@@ -109,8 +109,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
-
-                Log.d(TAG, "onClick: =================" + position);
                 MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0);
                 morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
 

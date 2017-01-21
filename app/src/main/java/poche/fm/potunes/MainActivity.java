@@ -1,5 +1,7 @@
 package poche.fm.potunes;
 
+import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
@@ -15,8 +17,12 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.google.android.gms.appindexing.Action;
@@ -25,6 +31,10 @@ import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.idescout.sql.SqlScoutServer;
+
+import org.litepal.LitePal;
+import org.litepal.crud.DataSupport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +47,7 @@ import poche.fm.potunes.Model.PlaylistAdapter;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener , QuciControlsFragment.OnFragmentInteractionListener {
+        implements NavigationView.OnNavigationItemSelectedListener, QuciControlsFragment.OnFragmentInteractionListener {
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -47,20 +57,24 @@ public class MainActivity extends AppCompatActivity
     private List<Playlist> playlists = new ArrayList<>();
     private PlaylistAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
+    private ImageView mMyMusic;
     private QuciControlsFragment quickControls;
     protected static final int TEST = 1;
+    private long time = 0;
+
+    private String TAG = "MainActivity";
+    private SQLiteDatabase db;
 
 
     private Handler sHandler = new Handler() {
-        public void handleMessage(android.os.Message msg)
-        {
-            switch (msg.what)
-            {
+        public void handleMessage(android.os.Message msg) {
+            switch (msg.what) {
                 case TEST:
                     //可以执行UI操作
-                    Log.i("----------------------","123" + msg.what);
                     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-                    Log.d("RecyclerView加载完成", "onCreate: ");
+                    for (Playlist playlist : playlists) {
+                        playlist.save();
+                    }
 
                     GridLayoutManager layoutManager = new GridLayoutManager(MainActivity.this, 1);
                     recyclerView.setLayoutManager(layoutManager);
@@ -77,18 +91,37 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SqlScoutServer.create(this, getPackageName());
+
         Fresco.initialize(MainActivity.this);
+
+        // initial database
+        LitePal.initialize(MainActivity.this);
+        
+        db = LitePal.getDatabase();
+
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        mMyMusic = (ImageView) findViewById(R.id.my_music);
+
+        mMyMusic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "onClick: 进入我的音乐");
+                Intent intent = new Intent();
+                intent.setClass(MainActivity.this, MyMusicActivity.class);
+                intent.putExtra("title", "我的音乐");
+                startActivity(intent);
+            }
+        });
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
-
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
@@ -96,6 +129,7 @@ public class MainActivity extends AppCompatActivity
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
         // init Playlists
         initPlaylists();
         // init Refresh
@@ -136,9 +170,28 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if ((System.currentTimeMillis() - time > 1000)) {
+                Toast.makeText(this, "再按一次返回桌面", Toast.LENGTH_SHORT).show();
+                time = System.currentTimeMillis();
+            } else {
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                startActivity(intent);
+            }
+            return true;
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
+
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
+        // 设置右侧menu
+//        getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
@@ -150,9 +203,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
+//        if (id == R.id.action_settings) {
+//            return true;
+//        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -208,6 +261,8 @@ public class MainActivity extends AppCompatActivity
         AppIndex.AppIndexApi.start(client, getIndexApiAction());
     }
 
+
+
     @Override
     public void onStop() {
         super.onStop();
@@ -219,21 +274,33 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void initPlaylists() {
-        playlists.clear();
-
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+                    playlists.clear();
+                    playlists = loadLocalPlaylists();
 
-                    OkHttpClient client = new OkHttpClient();
-                    Request request = new Request.Builder()
-                            .url("https://poche.fm/api/app/playlists/")
-                            .build();
+                    if (playlists.size() == 0) {
+                        Log.d(TAG, "run: 播放列表为空");
+                        OkHttpClient client = new OkHttpClient();
+                        Request request = new Request.Builder()
+                                .url("https://poche.fm/api/app/playlists/")
+                                .build();
+                        Response response = client.newCall(request).execute();
+                        String responseData = response.body().string();
+                        parseJSONWithGSON(responseData);
+                    }
 
-                    Response response = client.newCall(request).execute();
-                    String responseData = response.body().string();
-                    parseJSONWithGSON(responseData);
+                    Message msg = Message.obtain();
+                    msg.what = TEST;
+                    msg.obj = playlists;
+
+                    sHandler.sendMessage(msg);
+
+
+
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -241,22 +308,28 @@ public class MainActivity extends AppCompatActivity
         }).start();
     }
 
-    private void parseJSONWithGSON(String jsonData) {
-        Gson gson = new Gson();
+    private List<Playlist> loadLocalPlaylists() {
+        List<Playlist> mPlaylists = DataSupport.order("id asc").find(Playlist.class);
+        Log.d(TAG, "loadLocalPlaylists: " + mPlaylists.size());
+        return mPlaylists;
+    }
 
+
+    private void parseJSONWithGSON(String jsonData) {
+
+        Gson gson = new Gson();
         List<Playlist> datas = gson.fromJson(jsonData, new TypeToken<List<Playlist>>(){}.getType());
 
         for (Playlist playlist : datas) {
-            playlists.add(playlist);
+            Playlist mPlaylist = new Playlist(playlist.getTitle(), playlist.getPlaylist_id(), playlist.getCover());
+            playlists.add(mPlaylist);
+            Log.d(TAG, "parseJSONWithGSON: =============" + playlist.getPlaylist_id());
         }
+
 
         Log.d("加载播放列表完成", "onCreate: ");
 
-        Message msg = Message.obtain();
-        msg.what = TEST;
-        msg.obj = playlists;
 
-        sHandler.sendMessage(msg);
     }
 
     public void refreshPlaylists() {
@@ -271,9 +344,29 @@ public class MainActivity extends AppCompatActivity
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        initPlaylists();
-                        adapter.notifyDataSetChanged();
-                        swipeRefresh.setRefreshing(false);
+//                        OkHttpClient client = new OkHttpClient();
+//                        Request request = new Request.Builder()
+//                                .url("https://poche.fm/api/app/playlists/")
+//                                .build();
+//                        try {
+//                            Response response = client.newCall(request).execute();
+//                            String responseData = response.body().string();
+//                            Log.d(TAG, "run:=============" + responseData);
+
+//                            Gson gson = new Gson();
+//                            List<Playlist> datas = gson.fromJson(responseData, new TypeToken<List<Playlist>>(){}.getType());
+//
+//                            for (Playlist playlist : datas) {
+//                                playlists.add(playlist);
+//                            }
+
+//                        } catch (Exception e) {
+//                            e.printStackTrace();
+//                        }
+
+
+//                        adapter.notifyDataSetChanged();
+//                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }

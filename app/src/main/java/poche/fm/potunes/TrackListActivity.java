@@ -33,16 +33,13 @@ import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
 
-public class TrackListActivity extends AppCompatActivity implements QuciControlsFragment.OnFragmentInteractionListener, MoreFragment.OnFragmentInteractionListener{
+public class TrackListActivity extends BaseActivity implements MoreFragment.OnFragmentInteractionListener{
 
     public static final String PLAYLIST_ID = "playlist_id";
     public static final String TITLE = "playlist_title";
     private List<Track> tracks = new ArrayList<>();
     private TrackAdapter adapter;
     protected static final int TRACK = 1;
-    private ActionBar actionBar;
-    private QuciControlsFragment quickControls;
-    private Toolbar toolbar;
     private String TAG = "TrackListActivity";
 
 
@@ -55,8 +52,6 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
                 case TRACK:
 
                     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.tracklist_recycler_view);
-
-                    Log.d("RecyclerView加载完成", "onCreate: ");
 
                     GridLayoutManager layoutManager = new GridLayoutManager(TrackListActivity.this, 1);
 
@@ -75,70 +70,22 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
-        Log.d("tracklist", "onCreate: ");
-
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.tracklist_layout);
+        baseSetContentView(R.layout.tracklist_layout);
+
+        baseInit();
 
         Intent intent = getIntent();
 
         int playlist_id = intent.getIntExtra(PLAYLIST_ID, -1);
 
+        CharSequence title = intent.getStringExtra(TITLE);
+
+        getBaseActionBar().setTitle(title);
+
         initTracks(playlist_id);
 
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        Log.d(TAG, "onCreate: " + toolbar);
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-            actionBar = getSupportActionBar();
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.actionbar_back);
-            toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onBackPressed();
-                }
-            });
-        }
-
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-
-        if (quickControls == null) {
-            quickControls = QuciControlsFragment.newInstance();
-            ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
-        } else {
-            ft.show(quickControls).commitAllowingStateLoss();
-        }
-
-
-    }
-
-    @Override
-    public void onFragmentInteraction(Uri uri) {
-
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        Intent intent = getIntent();
-        CharSequence title = intent.getStringExtra(TITLE);
-        actionBar.setTitle(title);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()){
-            case android.R.id.home: //对用户按home icon的处理，本例只需关闭activity，就可返回上一activity，即主activity。
-                Log.d("", "onOptionsItemSelected: ");
-                overridePendingTransition(0,0);
-                onBackPressed();
-                return true;
-            default:
-                break;
-        }
-        return super.onOptionsItemSelected(item);
     }
 
     public void initTracks(final int playlist_id) {
@@ -159,6 +106,7 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
                     SharedPreferences preference = getSharedPreferences("user", Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = preference.edit();
                     editor.putString("Tracks", responseData);
+                    editor.putString("album", getBaseActionBar().getTitle().toString());
                     editor.commit();
                     parseJSONWithGSON(responseData);
                 } catch (Exception e) {
@@ -176,7 +124,8 @@ public class TrackListActivity extends AppCompatActivity implements QuciControls
                     Gson gson = new Gson();
                     ArrayList<Track> datas = gson.fromJson(jsonData, new TypeToken<List<Track>>(){}.getType());
                     for (Track track : datas) {
-                        tracks.add(track);
+                        Track mTrack = new Track(track.getTitle(),track.getID(),track.getCover(),track.getArtist(),track.getUrl(),getBaseActionBar().getTitle().toString(), 0);
+                        tracks.add(mTrack);
                     }
                     Message msg = Message.obtain();
                     msg.what = TRACK;

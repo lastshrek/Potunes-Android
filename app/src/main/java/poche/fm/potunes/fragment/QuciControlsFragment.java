@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -19,7 +20,12 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.facebook.drawee.view.SimpleDraweeView;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.util.ArrayList;
+import java.util.List;
+
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
@@ -46,7 +52,7 @@ public class QuciControlsFragment extends Fragment {
     private int position; // 播放歌曲在tracks的位置
     private int duration;
     private String url;
-    private ArrayList<Track> tracks;
+    private ArrayList<Track> tracks = new ArrayList<Track>();
     private boolean isPlaying; // 暂停
 
 
@@ -90,8 +96,6 @@ public class QuciControlsFragment extends Fragment {
                 Intent intent = new Intent();
 
                 intent.setAction("fm.poche.media.MUSIC_SERVICE");
-                Log.d(TAG, "onClick: ================" + isPlaying);
-
 
                 if (isPlaying == false) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
@@ -113,7 +117,6 @@ public class QuciControlsFragment extends Fragment {
 
 
         playQueue.setImageResource(R.drawable.playbar_btn_playlist);
-
         next.setImageResource(R.drawable.playbar_btn_next);
         next.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -121,7 +124,6 @@ public class QuciControlsFragment extends Fragment {
                 next_music();
             }
         });
-
         rootView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -132,14 +134,22 @@ public class QuciControlsFragment extends Fragment {
 
                 playerIntent.putExtra("isPlaying", isPlaying);
 
-                Log.d(TAG, "onClick: =============" + isPlaying);
-
                 mContext.startActivity(playerIntent);
             }
         });
 
+        SharedPreferences preferences = mContext.getSharedPreferences("user", Context.MODE_PRIVATE);
+        duration = preferences.getInt("duration", -1);
+        mProgress.setMax(100);
 
         registeReceiver();
+        //获取本地Tracks数据
+        String json = preferences.getString("Tracks", "Tracks");
+        Gson gson = new Gson();
+        ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
+        for (Track track : datas) {
+            tracks.add(track);
+        }
 
         return rootView;
     }
@@ -195,9 +205,9 @@ public class QuciControlsFragment extends Fragment {
                 mArtist.setText(intent.getStringExtra("artist"));
 
             } else if (action.equals(MUSIC_DURATION)) {
+                SharedPreferences preferences = mContext.getSharedPreferences("user", Context.MODE_PRIVATE);
                 duration = intent.getIntExtra("duration", -1);
                 tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
-                mProgress.setMax(100);
             }
         }
     }
@@ -229,6 +239,7 @@ public class QuciControlsFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        Log.d(TAG, "onStart: 进入=============" + mContext.getParent());
     }
 
     public interface OnFragmentInteractionListener {

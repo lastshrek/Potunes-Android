@@ -5,7 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Bundle;
@@ -30,8 +32,6 @@ import com.bumptech.glide.Glide;
 import com.malinskiy.materialicons.IconDrawable;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconTextView;
-
-import org.litepal.LitePal;
 
 import java.util.ArrayList;
 import poche.fm.potunes.Model.Track;
@@ -75,6 +75,7 @@ public class PlayerActivity extends AppCompatActivity {
     private Drawable mSingle;
     private ActionBar ab;
     private ImageView mPlayingCover;
+    private View dividerLine;
 
 
 
@@ -114,18 +115,34 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LitePal.initialize(this);
+        // initial subviews
         findViewById();
-        // 设置监听器
+        // Set on clicklistener
         setViewOnclickListener();
         registeReceiver();
 
     }
 
     private void findViewById() {
+        getWindow().requestFeature(Window.FEATURE_NO_TITLE);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+                    | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+        }
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
 
 
         setContentView(R.layout.player_layout);
+
         //initials
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -150,33 +167,17 @@ public class PlayerActivity extends AppCompatActivity {
 
             }
             Log.d(TAG, "onCreate: =============" + statusHeight);
-//            toolbar.setPadding(0, statusHeight,0 ,0);
             toolbar.setTitle("");
+            toolbar.setPadding(0, statusHeight, 0 , 0);
 
         }
         mBackgroundImage = (ImageView) findViewById(R.id.background_image);
         mPlayingCover = (ImageView) findViewById(R.id.playing_cover);
-
-//        DisplayMetrics dm = new DisplayMetrics();
-//        getWindowManager().getDefaultDisplay().getMetrics(dm);
-//        int SCREEN_WIDTH = dm.widthPixels;
-//        ViewGroup.LayoutParams ip = mPlayingCover.getLayoutParams();
-//        ip.width = SCREEN_WIDTH;
-//        ip.height = SCREEN_WIDTH;
-//
-//        mPlayingCover.setLayoutParams(ip);
-//
-//        mPlayingCover.setMaxWidth(SCREEN_WIDTH);
-//        mPlayingCover.setMaxHeight(SCREEN_WIDTH);
-
-
-
         mRepeat = (TintImageView) findViewById(R.id.play_repeat);
         mNoShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_repeat).colorRes(R.color.white).sizeDp(40);
         mShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_shuffle).colorRes(R.color.white).sizeDp(40);
         mSingle = new IconDrawable(this, Iconify.IconValue.zmdi_repeat_one).colorRes(R.color.white).sizeDp(40);
         mRepeat.setImageDrawable(mNoShuffle);
-
         mPlayPause = (TintImageView) findViewById(R.id.play_pause);
         mPauseDrawable = new IconDrawable(this, Iconify.IconValue.zmdi_pause_circle_outline).colorRes(R.color.white).sizeDp(40);
         mPlayDrawable = new IconDrawable(this, Iconify.IconValue.zmdi_play_circle_outline).colorRes(R.color.white).sizeDp(40);
@@ -192,12 +193,9 @@ public class PlayerActivity extends AppCompatActivity {
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         duration = preferences.getInt("duration", -1);
         shuffle = preferences.getInt("shuffle", 0);
-
-        Log.d(TAG, "findViewById: ============shufle" + shuffle);
         if (shuffle == -1) {
             shuffle = 0;
         }
-
         if (shuffle == 0) {
             mRepeat.setImageDrawable(mNoShuffle);
         } else if (shuffle == 1) {
@@ -223,11 +221,9 @@ public class PlayerActivity extends AppCompatActivity {
 
         if (isPlaying == false) {
             mPlayPause.setImageDrawable(mPlayDrawable);
-
         } else {
             mPlayPause.setImageDrawable(mPauseDrawable);
         }
-
         mSkipNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -240,10 +236,8 @@ public class PlayerActivity extends AppCompatActivity {
                 previous_music();
             }
         });
-
+        dividerLine = (View) findViewById(R.id.view_line);
     }
-
-
 
     private void setViewOnclickListener() {
         ViewOnclickListener clickListener = new ViewOnclickListener();
@@ -253,7 +247,6 @@ public class PlayerActivity extends AppCompatActivity {
     }
     
     private class ViewOnclickListener implements View.OnClickListener {
-
         @Override
         public void onClick(View v) {
             Intent intent = new Intent();
@@ -280,7 +273,6 @@ public class PlayerActivity extends AppCompatActivity {
                     getBaseContext().startService(intent);
                     break;
                 case R.id.play_repeat:
-                    Log.d(TAG, "onClick: 点击了随机按钮==========" + shuffle);
                     Intent shuffleIntent = new Intent(SHUFFLE_ACTION);
 
                     if(shuffle == 0) {
@@ -320,7 +312,6 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private class SeekBarChangeListener implements SeekBar.OnSeekBarChangeListener {
-
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress,
                                       boolean fromUser) {
@@ -330,7 +321,6 @@ public class PlayerActivity extends AppCompatActivity {
                          // 用户控制进度的改变
                     }
                     break;
-
             }
         }
 
@@ -346,7 +336,6 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     public void next_music() {
-
         Intent intent = new Intent();
         intent.setAction("fm.poche.media.MUSIC_SERVICE");
         intent.putExtra("TRACKS", tracks);

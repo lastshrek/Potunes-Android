@@ -13,5 +13,8 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="queue_is_empty">播放队列为空</string>
+    <string name="my_music">我的音乐</string>
+    <string name="downloading">下载管理</string>
+
 
 </resources>
