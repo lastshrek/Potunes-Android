@@ -1,11 +1,12 @@
 package poche.fm.potunes.fragment;
 
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.content.Context;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.DividerItemDecoration;
@@ -23,6 +24,11 @@ import android.widget.Toast;
 
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.FileCallback;
+import com.lzy.okgo.request.GetRequest;
+import com.lzy.okserver.download.DownloadInfo;
+import com.lzy.okserver.download.DownloadManager;
+import com.lzy.okserver.download.DownloadService;
+import com.lzy.okserver.listener.DownloadListener;
 
 import org.litepal.LitePal;
 
@@ -31,6 +37,7 @@ import java.util.ArrayList;
 
 import okhttp3.Call;
 import okhttp3.Response;
+import poche.fm.potunes.DownloadingActivity;
 import poche.fm.potunes.Model.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
 import poche.fm.potunes.Model.Track;
@@ -58,6 +65,7 @@ public class MoreFragment extends DialogFragment {
     private MusicFlowAdapter musicFlowAdapter;
     private Track adapterMusicInfo;
     private SQLiteDatabase db;
+    private DownloadManager downloadManager;
 
 
     private String TAG = "MoreFragment:";
@@ -84,6 +92,12 @@ public class MoreFragment extends DialogFragment {
         mContext = getContext();
         LitePal.initialize(getContext());
         db = LitePal.getDatabase();
+        //initial downloadManager
+
+        downloadManager = DownloadService.getDownloadManager();
+        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music/");
+        downloadManager.getThreadPool().setCorePoolSize(1);
+
 
     }
 
@@ -162,26 +176,54 @@ public class MoreFragment extends DialogFragment {
             public void onItemClick(View view, String data) {
                 switch (Integer.parseInt(data)) {
                     case 0:
-                        Log.d(TAG, "onItemClick: 下载" + adapterMusicInfo.getID());
                         adapterMusicInfo.save();
+                        String url = adapterMusicInfo.getUrl();
+                        if(downloadManager.getDownloadInfo(url) != null) {
+                            Toast.makeText(mContext, "任务已经在下载列表中", Toast.LENGTH_SHORT).show();
+                        } else {
+                            GetRequest request = OkGo.get(url);
+                            downloadManager.addTask(url, adapterMusicInfo, request, new DownloadListener() {
+                                @Override
+                                public void onProgress(DownloadInfo downloadInfo) {
 
-                        String downloadTrackName = adapterMusicInfo.getArtist() + " - " + adapterMusicInfo.getTitle() + ".mp3";
-                        downloadTrackName = downloadTrackName.replace("/", " ");
-                        OkGo.get(adapterMusicInfo.getUrl())
-                                .execute(new FileCallback(downloadTrackName) {
-                                    @Override
-                                    public void onSuccess(File file, Call call, Response response) {
-                                        adapterMusicInfo.setIsDownloaded(1);
-                                        adapterMusicInfo.save();
+                                }
+
+                                @Override
+                                public void onFinish(DownloadInfo downloadInfo) {
+                                    // 重命名文件
+                                    String downloadTitle = adapterMusicInfo.getArtist() + " - " + adapterMusicInfo.getTitle() + ".mp3";
+                                    downloadTitle = downloadTitle.replace("/", " ");
+                                    File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
+                                    File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
+                                    old.renameTo(rename);
+                                    // 数据库保存
+                                    adapterMusicInfo.setIsDownloaded(1);
+                                    adapterMusicInfo.save();
+
+                                    //移除任务保留本地文件
+                                    if (downloadManager.getDownloadInfo(adapterMusicInfo.getUrl()) != null) {
+                                        downloadManager.removeTask(adapterMusicInfo.getUrl(), false);
                                     }
 
-                                    @Override
-                                    public void downloadProgress(long currentSize, long totalSize, float progress, long networkSpeed) {
-                                        //这里回调下载进度(该回调在主线程,可以直接更新ui)
-                                        Log.d(TAG, "downloadProgress: 下载进度" + progress);
-                                    }
-                                });
-                        Toast.makeText(mContext,  adapterMusicInfo.getTitle() + "已添加至下载队列", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(mContext,  "" + downloadTitle, Toast.LENGTH_SHORT).show();
+
+                                }
+
+                                @Override
+                                public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
+                                    Toast.makeText(mContext,  "下载出现错误，请检查网络并重试", Toast.LENGTH_SHORT).show();
+
+                                }
+                            });
+                            Toast.makeText(mContext,  adapterMusicInfo.getTitle() + "已添加至下载队列", Toast.LENGTH_SHORT).show();
+
+//                            Intent intent = new Intent();
+//                            intent.setClass(mContext, DownloadingActivity.class);
+//                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                            mContext.startActivity(intent);
+
+                        }
+
                         dismiss();
 
 

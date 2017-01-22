@@ -16,10 +16,14 @@ import android.view.View;
 
 import com.malinskiy.materialicons.widget.IconTextView;
 
+import org.litepal.crud.DataSupport;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import poche.fm.potunes.Model.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
@@ -41,6 +45,10 @@ public class MyMusicActivity extends BaseActivity implements MoreFragment.OnFrag
         mDownloadHeader = (IconTextView) findViewById(R.id.download_album_header);
         setMusicInfo();
 
+        List<Track> list = DataSupport.findAll(Track.class);
+        for (Track track: list) {
+            Log.d(TAG, "onCreate: " + track.getIsDownloaded() + ":"  + track.getTitle());
+        }
 
     }
 

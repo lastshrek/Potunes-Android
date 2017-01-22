@@ -28,6 +28,7 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private Context mContext;
     private Track musicInfo;
 
+
     private OnRecyclerViewItemClickListener mOnItemClickListener = null;
     private String TAG = "MusicFlowAdapter";
 

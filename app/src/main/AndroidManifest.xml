@@ -9,6 +9,7 @@
 
     <application
         android:allowBackup="true"
+        android:name=".MyApplication"
         android:icon="@drawable/logo"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
@@ -58,7 +59,9 @@
         <activity
             android:name=".MyMusicActivity"
             android:parentActivityName=".MainActivity" />
-        <activity android:name=".DownloadingActivity" />
+        <activity android:name=".DownloadingActivity"
+            android:launchMode="singleTask"
+            />
         <activity android:name=".BaseActivity"></activity>
     </application>
 

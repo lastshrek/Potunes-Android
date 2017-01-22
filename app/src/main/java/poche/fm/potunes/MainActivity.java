@@ -91,7 +91,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        SqlScoutServer.create(this, getPackageName());
 
         Fresco.initialize(MainActivity.this);
 

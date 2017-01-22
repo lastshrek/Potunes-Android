@@ -145,11 +145,14 @@ public class QuciControlsFragment extends Fragment {
         registeReceiver();
         //获取本地Tracks数据
         String json = preferences.getString("Tracks", "Tracks");
-        Gson gson = new Gson();
-        ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
-        for (Track track : datas) {
-            tracks.add(track);
+        if (!json.equals("Tracks")) {
+            Gson gson = new Gson();
+            ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
+            for (Track track : datas) {
+                tracks.add(track);
+            }
         }
+
 
         return rootView;
     }
@@ -239,7 +242,6 @@ public class QuciControlsFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart: 进入=============" + mContext.getParent());
     }
 
     public interface OnFragmentInteractionListener {

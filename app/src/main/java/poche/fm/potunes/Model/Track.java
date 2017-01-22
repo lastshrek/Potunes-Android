@@ -8,11 +8,13 @@ import com.google.gson.annotations.SerializedName;
 import org.litepal.annotation.Column;
 import org.litepal.crud.DataSupport;
 
+import java.io.Serializable;
+
 /**
  * Created by purchas on 2017/1/8.
  */
 
-public class Track extends DataSupport implements Parcelable  {
+public class Track extends DataSupport implements Parcelable, Serializable {
     @SerializedName("id")
     private int track_id;
     private String name;
