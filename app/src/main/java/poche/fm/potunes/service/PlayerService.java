@@ -1,4 +1,4 @@
-package poche.fm.potunes.Model;
+package poche.fm.potunes.service;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
@@ -21,6 +21,7 @@ import com.google.gson.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.List;
 
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.TrackListActivity;
@@ -71,7 +72,6 @@ public class PlayerService extends Service {
                     intent.putExtra("currentTime", currentTime);
                     sendBroadcast(intent); // 给PlayerActivity发送广播
                     handler.sendEmptyMessageDelayed(1, 1000);
-
                 }
             }
         }
@@ -81,8 +81,6 @@ public class PlayerService extends Service {
     public void onCreate() {
         super.onCreate();
         mediaPlayer = new MediaPlayer();
-        Log.d(TAG, "onCreate: =======================");
-
         //设置音乐播放完成时的监听器
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -127,7 +125,6 @@ public class PlayerService extends Service {
         Intent sendIntent = new Intent(UPDATE_ACTION);
         sendIntent.putExtra("current", current);
         sendIntent.putExtra("TRACKS", tracks);
-
         sendBroadcast(sendIntent);
     }
 
@@ -157,12 +154,10 @@ public class PlayerService extends Service {
         for (Track track : datas) {
             tracks.add(track);
         }
-        Log.d(TAG, "onStartCommand: ==========" + msg);
 
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
             play(0);
         } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {
-            Log.d(TAG, "onStartCommand: =====点击暂停");
             //暂停
             pause();
         } else if (msg == AppConstant.PlayerMsg.STOP_MSG) {     //停止
@@ -172,7 +167,6 @@ public class PlayerService extends Service {
         } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
             previous();
         } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
-            Log.d(TAG, "onStartCommand:===============下一首" + tracks);
             //下一首
             next();
         } else if (msg == AppConstant.PlayerMsg.PROGRESS_CHANGE) {  //进度更新

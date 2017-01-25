@@ -14,7 +14,7 @@ import java.io.Serializable;
  * Created by purchas on 2017/1/8.
  */
 
-public class Track extends DataSupport implements Parcelable, Serializable {
+public class Track extends DataSupport implements Serializable {
     @SerializedName("id")
     private int track_id;
     private String name;
@@ -39,15 +39,6 @@ public class Track extends DataSupport implements Parcelable, Serializable {
         super();
     }
 
-    public Track(Parcel source) {
-        track_id = source.readInt();
-        name = source.readString();
-        cover = source.readString();
-        artist = source.readString();
-        url = source.readString();
-        album = source.readString();
-        isDownloaded = source.readInt();
-    }
 
     public String getTitle() {
         return name;
@@ -102,39 +93,39 @@ public class Track extends DataSupport implements Parcelable, Serializable {
     public void setIsDownloaded(int isDownloaded) {
         this.isDownloaded = isDownloaded;
     }
-    @Override
-    public int describeContents() {
-        return 0;
-    }
+//    @Override
+//    public int describeContents() {
+//        return 0;
+//    }
+//
+//    @Override
+//    public void writeToParcel(Parcel dest, int flags) {
+//        dest.writeInt(track_id);
+//        dest.writeString(name);
+//        dest.writeString(cover);
+//        dest.writeString(artist);
+//        dest.writeString(url);
+//        dest.writeString(album);
+//        dest.writeInt(isDownloaded);
+//    }
 
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(track_id);
-        dest.writeString(name);
-        dest.writeString(cover);
-        dest.writeString(artist);
-        dest.writeString(url);
-        dest.writeString(album);
-        dest.writeInt(isDownloaded);
-    }
-
-    public static final Creator<Track> CREATOR = new Creator<Track>() {
-
-        /**
-         * 供外部类反序列化本类数组使用
-         */
-        @Override
-        public Track[] newArray(int size) {
-            return new Track[size];
-        }
-
-        /**
-         * 从Parcel中读取数据
-         */
-        @Override
-        public Track createFromParcel(Parcel source) {
-            return new Track(source);
-        }
-    };
+//    public static final Parcelable.Creator<Track> CREATOR = new Creator<Track>() {
+//
+//        /**
+//         * 供外部类反序列化本类数组使用
+//         */
+//        @Override
+//        public Track[] newArray(int size) {
+//            return new Track[size];
+//        }
+//
+//        /**
+//         * 从Parcel中读取数据
+//         */
+//        @Override
+//        public Track createFromParcel(Parcel source) {
+//            return new Track(source);
+//        }
+//    };
 
 }

@@ -41,6 +41,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.Model.TrackAdapter;
+import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
@@ -87,46 +88,49 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
         downloadAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                for (final Track track: tracks) {
-                    track.save();
-                    String url = track.getUrl();
-                    if(downloadManager.getDownloadInfo(url) != null) {
-                        Toast.makeText(TrackListActivity.this, "任务已经在下载列表中", Toast.LENGTH_SHORT).show();
-                    } else {
-                        GetRequest request = OkGo.get(url);
-                        downloadManager.addTask(url, track, request, new DownloadListener() {
-                            @Override
-                            public void onProgress(DownloadInfo downloadInfo) {
+                Toast.makeText(getBaseContext(), "开始下载", Toast.LENGTH_SHORT).show();
 
-                            }
+                Intent intent = new Intent();
+                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
+                intent.setPackage(getPackageName());
+                startService(intent);
+//                for (final Track track: tracks) {
+//                    track.save();
+//                    String url = track.getUrl();
+//                    if(downloadManager.getDownloadInfo(url) != null) {
+//                        Toast.makeText(TrackListActivity.this, "任务已经在下载列表中", Toast.LENGTH_SHORT).show();
+//                    } else {
+//                        GetRequest request = OkGo.get(url);
+//                        downloadManager.addTask(url, track, request, new DownloadListener() {
+//                            @Override
+//                            public void onProgress(DownloadInfo downloadInfo) {
+//
+//                            }
+//
+//                            @Override
+//                            public void onFinish(DownloadInfo downloadInfo) {
 
-                            @Override
-                            public void onFinish(DownloadInfo downloadInfo) {
-                                // 重命名文件
-                                String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
-                                downloadTitle = downloadTitle.replace("/", " ");
-                                File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
-                                File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
-                                old.renameTo(rename);
-                                // 数据库保存
-                                track.setIsDownloaded(1);
-                                track.save();
-
-                                //移除任务保留本地文件
-                                if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
-                                    downloadManager.removeTask(track.getUrl(), false);
-                                }
-
-                                Toast.makeText(TrackListActivity.this,  "" + downloadTitle, Toast.LENGTH_SHORT).show();
-
-                            }
-
-                            @Override
-                            public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
-                                Toast.makeText(TrackListActivity.this,  "下载出现错误，请检查网络并重试", Toast.LENGTH_SHORT).show();
-
-                            }
-                        });
+//                                old.renameTo(rename);
+//                                // 数据库保存
+//                                track.setIsDownloaded(1);
+//                                track.save();
+//
+//                                //移除任务保留本地文件
+//                                if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
+//                                    downloadManager.removeTask(track.getUrl(), false);
+//                                }
+//
+//                                Toast.makeText(TrackListActivity.this,  "" + downloadTitle, Toast.LENGTH_SHORT).show();
+//
+//                            }
+//
+//                            @Override
+//                            public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
+//                                Toast.makeText(TrackListActivity.this,  "下载出现错误，请检查网络并重试", Toast.LENGTH_SHORT).show();
+//
+//                            }
+//                        });
 //                        Toast.makeText(TrackListActivity.this,  track.getTitle() + "已添加至下载队列", Toast.LENGTH_SHORT).show();
 
 //                            Intent intent = new Intent();
@@ -134,8 +138,8 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
 //                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //                            mContext.startActivity(intent);
 
-                    }
-                }
+//                    }
+//                }
 
 
             }

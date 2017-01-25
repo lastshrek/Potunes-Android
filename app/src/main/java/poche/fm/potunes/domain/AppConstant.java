@@ -15,4 +15,9 @@ public class AppConstant {
         public static final int PROGRESS_CHANGE = 7;//进度改变
         public static final int PLAYING_MSG = 8;    // 正在播放
     }
+
+    public class DownloadMsg {
+        public static final int SINGLE = 1;
+        public static final int ALBUM = 2;
+    }
 }

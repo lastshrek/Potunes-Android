@@ -35,13 +35,11 @@ import org.litepal.LitePal;
 import java.io.File;
 import java.util.ArrayList;
 
-import okhttp3.Call;
-import okhttp3.Response;
-import poche.fm.potunes.DownloadingActivity;
 import poche.fm.potunes.Model.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
+import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.handler.HandlerUtil;
 
 public class MoreFragment extends DialogFragment {
@@ -64,7 +62,6 @@ public class MoreFragment extends DialogFragment {
     private long playlistId = -1;
     private MusicFlowAdapter musicFlowAdapter;
     private Track adapterMusicInfo;
-    private SQLiteDatabase db;
     private DownloadManager downloadManager;
 
 
@@ -79,7 +76,7 @@ public class MoreFragment extends DialogFragment {
     public static MoreFragment newInstance(Track track, int startFrom) {
         MoreFragment fragment = new MoreFragment();
         Bundle args = new Bundle();
-        args.putParcelable("track", track);
+        args.putSerializable("track", track);
         args.putInt("track_id", track.getID());
         fragment.setArguments(args);
         return fragment;
@@ -91,13 +88,6 @@ public class MoreFragment extends DialogFragment {
         setStyle(DialogFragment.STYLE_NO_FRAME, R.style.CustomDatePickerDialog);
         mContext = getContext();
         LitePal.initialize(getContext());
-        db = LitePal.getDatabase();
-        //initial downloadManager
-
-        downloadManager = DownloadService.getDownloadManager();
-        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music/");
-        downloadManager.getThreadPool().setCorePoolSize(1);
-
 
     }
 
@@ -137,8 +127,8 @@ public class MoreFragment extends DialogFragment {
     }
 
     private void getTracks() {
-        adapterMusicInfo = getArguments().getParcelable("track");
-//        int trackid = getArguments().getInt("track_id");
+        adapterMusicInfo = (Track) getArguments().getSerializable("track");
+        int trackid = getArguments().getInt("track_id");
         if (adapterMusicInfo == null) {
             adapterMusicInfo = new Track();
         }
@@ -176,56 +166,14 @@ public class MoreFragment extends DialogFragment {
             public void onItemClick(View view, String data) {
                 switch (Integer.parseInt(data)) {
                     case 0:
-                        adapterMusicInfo.save();
-                        String url = adapterMusicInfo.getUrl();
-                        if(downloadManager.getDownloadInfo(url) != null) {
-                            Toast.makeText(mContext, "任务已经在下载列表中", Toast.LENGTH_SHORT).show();
-                        } else {
-                            GetRequest request = OkGo.get(url);
-                            downloadManager.addTask(url, adapterMusicInfo, request, new DownloadListener() {
-                                @Override
-                                public void onProgress(DownloadInfo downloadInfo) {
-
-                                }
-
-                                @Override
-                                public void onFinish(DownloadInfo downloadInfo) {
-                                    // 重命名文件
-                                    String downloadTitle = adapterMusicInfo.getArtist() + " - " + adapterMusicInfo.getTitle() + ".mp3";
-                                    downloadTitle = downloadTitle.replace("/", " ");
-                                    File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
-                                    File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
-                                    old.renameTo(rename);
-                                    // 数据库保存
-                                    adapterMusicInfo.setIsDownloaded(1);
-                                    adapterMusicInfo.save();
-
-                                    //移除任务保留本地文件
-                                    if (downloadManager.getDownloadInfo(adapterMusicInfo.getUrl()) != null) {
-                                        downloadManager.removeTask(adapterMusicInfo.getUrl(), false);
-                                    }
-
-                                    Toast.makeText(mContext,  "" + downloadTitle, Toast.LENGTH_SHORT).show();
-
-                                }
-
-                                @Override
-                                public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
-                                    Toast.makeText(mContext,  "下载出现错误，请检查网络并重试", Toast.LENGTH_SHORT).show();
-
-                                }
-                            });
-                            Toast.makeText(mContext,  adapterMusicInfo.getTitle() + "已添加至下载队列", Toast.LENGTH_SHORT).show();
-
-//                            Intent intent = new Intent();
-//                            intent.setClass(mContext, DownloadingActivity.class);
-//                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                            mContext.startActivity(intent);
-
-                        }
+                        // 数据库存储
+                        Intent startIntent = new Intent(mContext, poche.fm.potunes.service.DownloadService.class);
+                        startIntent.putExtra("MSG", AppConstant.DownloadMsg.SINGLE);
+                        startIntent.putExtra("track", adapterMusicInfo);
+                        mContext.startService(startIntent);
+                        Toast.makeText(mContext, "开始下载", Toast.LENGTH_SHORT).show();
 
                         dismiss();
-
 
                         break;
                     case 1:

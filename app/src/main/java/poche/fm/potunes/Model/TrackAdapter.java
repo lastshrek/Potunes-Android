@@ -1,12 +1,9 @@
 package poche.fm.potunes.Model;
 
 import android.app.Activity;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -25,6 +22,7 @@ import poche.fm.potunes.R;
 import poche.fm.potunes.TrackListActivity;
 import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.fragment.MoreFragment;
+import poche.fm.potunes.service.PlayerService;
 
 /**
  * Created by purchas on 2017/1/8.
@@ -109,6 +107,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
+                Log.d(TAG, "onClick: " + mTrackList.get(position).getTitle());
                 MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0);
                 morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
 

@@ -67,10 +67,8 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
 
         for (DownloadInfo info: downloadManager.getAllTask()) {
             allTask.add(info);
-
         }
 
-        Log.d(TAG, "onCreate:================= " + downloadManager.DOWNLOADING);
 
         downloadManager.getThreadPool().getExecutor().addOnAllTaskEndListener(this);
 
@@ -149,6 +147,8 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
                 convertView.setTag(holder);
             } else {
                 holder = (ViewHolder) convertView.getTag();
+                holder.progressBar.setMax(100);
+                holder.progressBar.setProgress(0);
             }
             holder.refresh(downloadInfo);
 
@@ -157,6 +157,8 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
             holder.position.setText("" + (position + 1));
             holder.title.setText(track.getTitle());
             holder.progressBar.setOnClickListener(holder);
+
+
             DownloadListener downloadListener = new MyDownloadListener();
             downloadListener.setUserTag(holder);
             downloadInfo.setListener(downloadListener);
@@ -226,7 +228,6 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
         public void onProgress(DownloadInfo downloadInfo) {
             if (getUserTag() == null) return;
             ViewHolder holder = (ViewHolder) getUserTag();
-            Log.d(TAG, "onProgress: 正在下载");
             holder.refresh();  //这里不能使用传递进来的 DownloadInfo，否者会出现条目错乱的问题
         }
 
