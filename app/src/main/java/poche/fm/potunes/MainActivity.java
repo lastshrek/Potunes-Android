@@ -72,10 +72,6 @@ public class MainActivity extends AppCompatActivity
                 case TEST:
                     //可以执行UI操作
                     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-                    for (Playlist playlist : playlists) {
-                        playlist.save();
-                    }
-
                     GridLayoutManager layoutManager = new GridLayoutManager(MainActivity.this, 1);
                     recyclerView.setLayoutManager(layoutManager);
                     adapter = new PlaylistAdapter((List<Playlist>) msg.obj);
@@ -316,6 +312,7 @@ public class MainActivity extends AppCompatActivity
         for (Playlist playlist : datas) {
             Playlist mPlaylist = new Playlist(playlist.getTitle(), playlist.getPlaylist_id(), playlist.getCover());
             playlists.add(mPlaylist);
+            mPlaylist.save();
             Log.d(TAG, "parseJSONWithGSON: =============" + playlist.getPlaylist_id());
         }
 
@@ -368,10 +365,6 @@ public class MainActivity extends AppCompatActivity
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
-
-
-
 
             }
         }).start();

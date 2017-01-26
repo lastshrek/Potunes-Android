@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -56,20 +57,21 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
     private String TAG = "TrackListActivity";
     private IconButton downloadAll;
     private DownloadManager downloadManager;
+    private SwipeRefreshLayout swipeRefresh;
+
 
 
 
     private Handler sHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
-
             switch (msg.what) {
-
                 case TRACK:
                     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.tracklist_recycler_view);
                     GridLayoutManager layoutManager = new GridLayoutManager(TrackListActivity.this, 1);
                     recyclerView.setLayoutManager(layoutManager);
                     adapter = new TrackAdapter((ArrayList<Track>) msg.obj);
                     recyclerView.setAdapter(adapter);
+                    swipeRefresh.setRefreshing(false);
                     break;
             }
         }
@@ -83,8 +85,11 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
         baseSetContentView(R.layout.tracklist_layout);
         baseInit();
 
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.track_swipe_refresh);
+        swipeRefresh.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
+        swipeRefresh.setEnabled(false);
+        swipeRefresh.setRefreshing(true);
         downloadAll = (IconButton) findViewById(R.id.download_all);
-
         downloadAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -95,53 +100,6 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
                 intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
                 intent.setPackage(getPackageName());
                 startService(intent);
-//                for (final Track track: tracks) {
-//                    track.save();
-//                    String url = track.getUrl();
-//                    if(downloadManager.getDownloadInfo(url) != null) {
-//                        Toast.makeText(TrackListActivity.this, "任务已经在下载列表中", Toast.LENGTH_SHORT).show();
-//                    } else {
-//                        GetRequest request = OkGo.get(url);
-//                        downloadManager.addTask(url, track, request, new DownloadListener() {
-//                            @Override
-//                            public void onProgress(DownloadInfo downloadInfo) {
-//
-//                            }
-//
-//                            @Override
-//                            public void onFinish(DownloadInfo downloadInfo) {
-
-//                                old.renameTo(rename);
-//                                // 数据库保存
-//                                track.setIsDownloaded(1);
-//                                track.save();
-//
-//                                //移除任务保留本地文件
-//                                if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
-//                                    downloadManager.removeTask(track.getUrl(), false);
-//                                }
-//
-//                                Toast.makeText(TrackListActivity.this,  "" + downloadTitle, Toast.LENGTH_SHORT).show();
-//
-//                            }
-//
-//                            @Override
-//                            public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
-//                                Toast.makeText(TrackListActivity.this,  "下载出现错误，请检查网络并重试", Toast.LENGTH_SHORT).show();
-//
-//                            }
-//                        });
-//                        Toast.makeText(TrackListActivity.this,  track.getTitle() + "已添加至下载队列", Toast.LENGTH_SHORT).show();
-
-//                            Intent intent = new Intent();
-//                            intent.setClass(mContext, DownloadingActivity.class);
-//                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                            mContext.startActivity(intent);
-
-//                    }
-//                }
-
-
             }
         });
 
@@ -168,7 +126,6 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
             @Override
             public void run() {
                 try {
-
                     OkHttpClient client = new OkHttpClient();
                     Request request = new Request.Builder()
                             .url("https://poche.fm/api/app/playlists/" + playlist_id)
@@ -205,6 +162,7 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
                     msg.what = TRACK;
                     msg.obj = tracks;
                     sHandler.sendMessage(msg);
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
