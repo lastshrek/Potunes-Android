@@ -110,9 +110,10 @@ public class TintManager {
 
         final Context context = mContextRef.get();
         if (context == null) return null;
-
         ColorStateList colorStateList = mCacheTintList != null ? mCacheTintList.get(resId) : null;
+        Log.d(TAG, "getColorStateList: " + colorStateList);
         if (colorStateList == null) {
+            Log.d(TAG, "getColorStateList: 进来了");
             colorStateList = ColorStateListUtils.createColorStateList(context, resId);
             if (colorStateList != null) {
                 if (mCacheTintList == null) {

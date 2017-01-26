@@ -2,10 +2,12 @@ package poche.fm.potunes.fragment;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -160,7 +162,10 @@ public class PlayQueueFragment extends AttachDialogFragment {
             //判断该条目音乐是否在播放
             if (current == position) {
                 ((ItemViewHolder) holder).playstate.setVisibility(View.VISIBLE);
-                ((ItemViewHolder) holder).playstate.setImageResource(R.drawable.song_play_icon);
+                Drawable icon = getResources().getDrawable(R.drawable.song_play_icon);
+                Drawable tintIcon = DrawableCompat.wrap(icon);
+                DrawableCompat.setTintList(tintIcon, getResources().getColorStateList(R.color.colorAccent));
+                ((ItemViewHolder) holder).playstate.setImageDrawable(tintIcon);
                 currentlyPlayingPosition = position;
             } else {
                 ((ItemViewHolder) holder).playstate.setVisibility(View.GONE);

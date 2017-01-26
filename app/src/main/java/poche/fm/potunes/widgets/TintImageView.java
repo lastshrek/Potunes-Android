@@ -20,6 +20,7 @@ import android.content.Context;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.widget.ImageView;
 
 import poche.fm.potunes.utils.TintManager;
@@ -108,6 +109,7 @@ public class TintImageView extends ImageView implements Tintable, AppCompatBackg
 
     @Override
     public void setBackgroundTintList(int resId) {
+
         if (mBackgroundHelper != null) {
             mBackgroundHelper.setBackgroundTintList(resId, null);
         }

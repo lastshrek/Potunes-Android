@@ -93,6 +93,7 @@ public class AppCompatImageHelper extends AppCompatBaseHelper {
     }
 
     public void setImageTintList(int resId, PorterDuff.Mode mode) {
+
         if (mImageTintResId != resId) {
             mImageTintResId = resId;
             if (mImageTintInfo != null) {
@@ -121,12 +122,15 @@ public class AppCompatImageHelper extends AppCompatBaseHelper {
     }
 
     private boolean setSupportImageTint(int resId) {
+
+
         if (resId != 0) {
             if (mImageTintInfo == null) {
                 mImageTintInfo = new TintInfo();
             }
             mImageTintInfo.mHasTintList = true;
             mImageTintInfo.mTintList = mTintManager.getColorStateList(resId);
+
         }
         return applySupportImageTint();
     }
