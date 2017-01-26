@@ -74,23 +74,14 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
             public void onClick(View v) {
 
                 int position = holder.getAdapterPosition();
-
                 Track track = mTrackList.get(position);
-
                 Intent intent = new Intent();
-
                 intent.putExtra("url", track.getUrl());
-
                 intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
-
                 intent.putExtra("TRACKS", mTrackList);
-
                 intent.putExtra("position", position);
-
                 intent.setClass(mContext, PlayerService.class);
-
                 Activity activity = (TrackListActivity) mContext;
-
                 activity.startService(intent);
 
                 // 存储当前歌曲播放位置
@@ -107,7 +98,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
-                Log.d(TAG, "onClick: " + mTrackList.get(position).getTitle());
                 MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0);
                 morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
 
@@ -122,7 +112,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         holder.artist.setText(track.getArtist());
         holder.name.setText(track.getTitle());
         String thumb = track.getCover() + "!/fw/100";
-        Glide.with(mContext).load(thumb).into(holder.cover);
+        Glide.with(mContext).load(thumb).placeholder(R.drawable.ic_launcher).into(holder.cover);
         holder.itemView.setClickable(true);
     }
 

@@ -44,6 +44,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.PlaylistAdapter;
+import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
 public class MainActivity extends AppCompatActivity
@@ -136,8 +137,8 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         if (quickControls == null) {
             quickControls = QuciControlsFragment.newInstance();
             ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
@@ -369,4 +370,5 @@ public class MainActivity extends AppCompatActivity
             }
         }).start();
     }
+
 }

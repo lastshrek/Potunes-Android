@@ -8,7 +8,9 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -89,6 +91,19 @@ public class QuciControlsFragment extends Fragment {
         mAlbumArt = (SimpleDraweeView) rootView.findViewById(R.id.playbar_img);
         next = (ImageView) rootView.findViewById(R.id.play_next);
         playQueue = (ImageView) rootView.findViewById(R.id.play_list);
+        playQueue.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        PlayQueueFragment playQueueFragment = new PlayQueueFragment();
+                        playQueueFragment.show(getFragmentManager(), "playqueueframent");
+                    }
+                }, 60);
+            }
+        });
         mPlayPause.setImageResource(R.drawable.playbar_btn_play);
         mPlayPause.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -106,7 +121,6 @@ public class QuciControlsFragment extends Fragment {
                     intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
                     isPlaying = false;
                 }
-                Log.d(TAG, "onClick: ================" + isPlaying);
 
                 intent.putExtra("url", tracks.get(position).getUrl());
                 intent.putExtra("position", position);
@@ -127,13 +141,9 @@ public class QuciControlsFragment extends Fragment {
         rootView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 Intent playerIntent = new Intent(mContext, PlayerActivity.class);
-
                 playerIntent.putExtra("TRACKS", tracks);
-
                 playerIntent.putExtra("isPlaying", isPlaying);
-
                 mContext.startActivity(playerIntent);
             }
         });
