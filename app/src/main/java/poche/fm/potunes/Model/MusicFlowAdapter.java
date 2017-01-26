@@ -9,8 +9,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
+import com.lzy.okserver.download.DownloadManager;
+import com.lzy.okserver.download.DownloadService;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconTextView;
 
@@ -27,7 +30,7 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     private List<OverFlowItem> mList;
     private Context mContext;
     private Track musicInfo;
-
+    private DownloadManager downloadManager;
 
     private OnRecyclerViewItemClickListener mOnItemClickListener = null;
     private String TAG = "MusicFlowAdapter";
@@ -81,6 +84,11 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
                             break;
                         case 1:
+                            downloadManager = DownloadService.getDownloadManager();
+                            if (downloadManager.getAllTask().size() == 0) {
+                                Toast.makeText(mContext, "当前并无下载任务", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
                             Intent intent = new Intent();
                             intent.setClass(mContext, DownloadingActivity.class);
                             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

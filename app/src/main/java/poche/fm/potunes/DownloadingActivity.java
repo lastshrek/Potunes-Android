@@ -43,6 +43,7 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
     private ListView listView;
     private MyAdapter adatper;
     private IconButton mOperationView;
+    private IconButton mDeleteView;
     private DownloadManager downloadManager;
     private List<DownloadInfo> allTask = new ArrayList<>();
 
@@ -56,7 +57,31 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
 
 
         mOperationView = (IconButton) findViewById(R.id.download_start);
+        mDeleteView = (IconButton) findViewById(R.id.download_delete_all);
+        mOperationView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String buttonText = mOperationView.getText().toString();
+                if (buttonText.indexOf("开始") >= 0) {
+                    mOperationView.setText("{zmdi-pause-circle-outline}  全部暂停");
+                    downloadManager.startAllTask();
+                } else {
+                    mOperationView.setText("{zmdi-download}  全部开始");
+                    downloadManager.stopAllTask();
+                }
+            }
+        });
+        mDeleteView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                downloadManager.removeAllTask();
+                adatper.notifyDataSetChanged();
+            }
+        });
         Iconify.addIcons(mOperationView);
+        Iconify.addIcons(mDeleteView);
+
         listView = (ListView) findViewById(R.id.downloading_list_view);
         downloadManager = DownloadService.getDownloadManager();
 
@@ -68,7 +93,6 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
         for (DownloadInfo info: downloadManager.getAllTask()) {
             allTask.add(info);
         }
-
 
         downloadManager.getThreadPool().getExecutor().addOnAllTaskEndListener(this);
 
@@ -189,6 +213,10 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
         private void refresh() {
             progressBar.setMax(100);
 
+            if (downloadInfo.getDownloadLength() > 0) {
+                mOperationView.setText("" + "全部暂停");
+            }
+
             if (downloadInfo.getTotalLength() > 0) {
                 progressBar.setProgress((int) (downloadInfo.getDownloadLength() * 100 / downloadInfo.getTotalLength()));
             }
@@ -241,11 +269,6 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
             File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
             File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
             old.renameTo(rename);
-            // 数据库保存
-            adapterMusicInfo.setIsDownloaded(1);
-            adapterMusicInfo.save();
-
-            Toast.makeText(DownloadingActivity.this,  "" + downloadTitle, Toast.LENGTH_SHORT).show();
 
             //移除任务保留本地文件
             if (downloadManager.getDownloadInfo(adapterMusicInfo.getUrl()) != null) {
@@ -254,8 +277,8 @@ public class DownloadingActivity extends BaseActivity implements View.OnClickLis
 
             if(allTask.size() == 1) {
                 allTask.clear();
-                adatper.notifyDataSetChanged();
             }
+            adatper.notifyDataSetChanged();
         }
 
         @Override

@@ -108,7 +108,6 @@ public class MainActivity extends AppCompatActivity
         mMyMusic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onClick: 进入我的音乐");
                 Intent intent = new Intent();
                 intent.setClass(MainActivity.this, MyMusicActivity.class);
                 intent.putExtra("title", "我的音乐");
@@ -133,7 +132,7 @@ public class MainActivity extends AppCompatActivity
         initPlaylists();
         // init Refresh
         swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
-        swipeRefresh.setColorSchemeColors(R.color.colorAccent);
+        swipeRefresh.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -281,7 +280,6 @@ public class MainActivity extends AppCompatActivity
                     playlists = loadLocalPlaylists();
 
                     if (playlists.size() == 0) {
-                        Log.d(TAG, "run: 播放列表为空");
                         OkHttpClient client = new OkHttpClient();
                         Request request = new Request.Builder()
                                 .url("https://poche.fm/api/app/playlists/")
@@ -297,9 +295,6 @@ public class MainActivity extends AppCompatActivity
 
                     sHandler.sendMessage(msg);
 
-
-
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -309,10 +304,9 @@ public class MainActivity extends AppCompatActivity
 
     private List<Playlist> loadLocalPlaylists() {
         List<Playlist> mPlaylists = DataSupport.order("id asc").find(Playlist.class);
-        Log.d(TAG, "loadLocalPlaylists: " + mPlaylists.size());
+        Log.d(TAG, "本地加载首页：" + mPlaylists.size());
         return mPlaylists;
     }
-
 
     private void parseJSONWithGSON(String jsonData) {
 
@@ -325,49 +319,60 @@ public class MainActivity extends AppCompatActivity
             Log.d(TAG, "parseJSONWithGSON: =============" + playlist.getPlaylist_id());
         }
 
-
-        Log.d("加载播放列表完成", "onCreate: ");
-
-
     }
 
     public void refreshPlaylists() {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder()
+                        .url("https://poche.fm/api/app/playlists/")
+                        .build();
                 try {
-                    Thread.sleep(2000);
+                    Response response = client.newCall(request).execute();
+                    String responseData = response.body().string();
+
+                    Gson gson = new Gson();
+                    List<Playlist> datas = gson.fromJson(responseData, new TypeToken<List<Playlist>>(){}.getType());
+                    int maxID = playlists.get(0).getPlaylist_id();
+                    List<Playlist> tempLists = new ArrayList<>();
+                    for (Playlist playlist : datas) {
+                        if (playlist.getPlaylist_id() > maxID) {
+                            tempLists.add(playlist);
+                            playlist.save();
+                        }
+                    }
+                    for (Playlist playlist: playlists) {
+                        tempLists.add(playlist);
+                    }
+
+                    playlists.clear();
+                    playlists = tempLists;
+
+                    Log.d(TAG, "run: 共" + playlists.get(0).getTitle());
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Message msg = Message.obtain();
+                            msg.what = TEST;
+                            msg.obj = playlists;
+
+                            sHandler.sendMessage(msg);
+                            adapter.notifyDataSetChanged();
+                            swipeRefresh.setRefreshing(false);
+                        }
+                    });
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-//                        OkHttpClient client = new OkHttpClient();
-//                        Request request = new Request.Builder()
-//                                .url("https://poche.fm/api/app/playlists/")
-//                                .build();
-//                        try {
-//                            Response response = client.newCall(request).execute();
-//                            String responseData = response.body().string();
-//                            Log.d(TAG, "run:=============" + responseData);
-
-//                            Gson gson = new Gson();
-//                            List<Playlist> datas = gson.fromJson(responseData, new TypeToken<List<Playlist>>(){}.getType());
-//
-//                            for (Playlist playlist : datas) {
-//                                playlists.add(playlist);
-//                            }
-
-//                        } catch (Exception e) {
-//                            e.printStackTrace();
-//                        }
 
 
-//                        adapter.notifyDataSetChanged();
-//                        swipeRefresh.setRefreshing(false);
-                    }
-                });
+
+
+
             }
         }).start();
     }
