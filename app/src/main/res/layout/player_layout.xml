@@ -56,9 +56,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginTop="10dp"
                 android:orientation="horizontal">
-
                 <View
                     android:id="@+id/view_line"
                     android:layout_width="match_parent"
@@ -70,21 +68,28 @@
                     android:id="@+id/playing_cover"
                     android:layout_width="263dp"
                     android:layout_height="263dp"
-                    android:layout_marginTop="100dp"
-                    android:layout_below="@+id/toolbar"
+                    android:layout_marginTop="30dp"
                     android:layout_centerHorizontal="true"
                     android:layout_gravity="center_horizontal"
                     android:scaleType="fitCenter"
                     android:background="@drawable/logo"
                     />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/lrcContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
+
+                <poche.fm.potunes.lrc.LrcView
+                    android:id="@+id/lrcview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
 
             </RelativeLayout>
 
         </FrameLayout>
-
-
-
-
     </RelativeLayout>
 
 
@@ -97,8 +102,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:background="@drawable/fullscreen_bg_gradient" >
-
-
 
         <TextView
             android:id="@+id/line1"

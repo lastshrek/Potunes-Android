@@ -97,9 +97,7 @@ public class MainActivity extends AppCompatActivity
 
         // initial database
         LitePal.initialize(MainActivity.this);
-        
         db = LitePal.getDatabase();
-
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

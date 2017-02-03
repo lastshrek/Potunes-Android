@@ -21,19 +21,28 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.malinskiy.materialicons.IconDrawable;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconTextView;
 
 import java.util.ArrayList;
+import java.util.List;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import poche.fm.potunes.Model.Lrc;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.fragment.PlayQueueFragment;
+import poche.fm.potunes.lrc.LrcView;
 import poche.fm.potunes.utils.MediaUtil;
 import poche.fm.potunes.widgets.TintImageView;
 
@@ -74,6 +83,8 @@ public class PlayerActivity extends AppCompatActivity {
     private Drawable mSingle;
     private ActionBar ab;
     private ImageView mPlayingCover;
+    private RelativeLayout mLrcContainer;
+    private LrcView mLrcView;
     private View dividerLine;
     private IconTextView mPlaylist;
 
@@ -119,8 +130,6 @@ public class PlayerActivity extends AppCompatActivity {
         findViewById();
         // Set on clicklistener
         setViewOnclickListener();
-        registeReceiver();
-
     }
 
     private void findViewById() {
@@ -164,14 +173,50 @@ public class PlayerActivity extends AppCompatActivity {
                         .get(object).toString());
                 statusHeight = getBaseContext().getResources().getDimensionPixelSize(height);
             } catch (Exception e) {
-
+                e.printStackTrace();
             }
             toolbar.setTitle("");
             toolbar.setPadding(0, statusHeight, 0 , 0);
 
         }
+
+        //获取本地Tracks数据
+        SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
+        String json = preferences.getString("Tracks", "Tracks");
+        position = preferences.getInt("position", 0);
+        Gson gson = new Gson();
+        ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
+        for (int i = 0; i < datas.size(); i++) {
+            if (i == position) {
+                Track track = datas.get(i);
+                loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
+            }
+        }
+
         mBackgroundImage = (ImageView) findViewById(R.id.background_image);
         mPlayingCover = (ImageView) findViewById(R.id.playing_cover);
+        mPlayingCover.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mPlayingCover.getVisibility() == View.VISIBLE) {
+                    mPlayingCover.setVisibility(View.INVISIBLE);
+                    mLrcContainer.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        mLrcContainer = (RelativeLayout) findViewById(R.id.lrcContainer);
+        mLrcContainer.setVisibility(View.INVISIBLE);
+        mLrcView = (LrcView) findViewById(R.id.lrcview);
+        mLrcView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mLrcView.getVisibility() == View.VISIBLE) {
+                    mLrcContainer.setVisibility(View.INVISIBLE);
+                    mPlayingCover.setVisibility(View.VISIBLE);
+                }
+            }
+        });
         mRepeat = (TintImageView) findViewById(R.id.play_repeat);
         mNoShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_repeat).colorRes(R.color.white).sizeDp(40);
         mShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_shuffle).colorRes(R.color.white).sizeDp(40);
@@ -189,7 +234,6 @@ public class PlayerActivity extends AppCompatActivity {
         mEnd = (TextView) findViewById(R.id.endText);
 
         mSeekbar = (SeekBar) findViewById(R.id.seekBar1);
-        SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         duration = preferences.getInt("duration", -1);
         shuffle = preferences.getInt("shuffle", 0);
         if (shuffle == -1) {
@@ -343,7 +387,6 @@ public class PlayerActivity extends AppCompatActivity {
         public void onStopTrackingTouch(SeekBar seekBar) {
             audioTrackChange(seekBar.getProgress());
         }
-
     }
 
     public void next_music() {
@@ -371,8 +414,33 @@ public class PlayerActivity extends AppCompatActivity {
         sendBroadcast(intent);
     }
 
+    public void loadLrc(final String url) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    OkHttpClient client = new OkHttpClient();
+                    Request request = new Request.Builder()
+                            .url(url)
+                            .build();
+                    Response response = client.newCall(request).execute();
+                    String responseData = response.body().string();
+
+                    Gson gson = new Gson();
+                    Lrc lrc = gson.fromJson(responseData, Lrc.class);
+                    mLrcView.loadLrc(lrc.getLrc(), lrc.getLrc_cn());
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
+    }
+
     private void registeReceiver() {
         //定义和注册广播接收器
+        playerReceiver = null;
         playerReceiver = new PlayerReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(UPDATE_ACTION);
@@ -409,15 +477,15 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     public class PlayerReceiver extends BroadcastReceiver {
-
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-
             currentTime = intent.getIntExtra("currentTime", -1);
+            if (mLrcView.hasLrc()) {
+                mLrcView.updateTime(currentTime);
+            }
 
             if (action.equals(MUSIC_CURRENT)) {
-
                 mStart.setText(MediaUtil.formatTime(currentTime));
                 mSeekbar.setProgress(currentTime);
 
@@ -431,6 +499,7 @@ public class PlayerActivity extends AppCompatActivity {
 
                 mTitle.setText(intent.getStringExtra("title"));
                 mArtist.setText(intent.getStringExtra("artist"));
+
             }  else if (action.equals(UPDATE_ACTION)) {
                 position = intent.getIntExtra("current", -1);
                 Track track = tracks.get(position);
@@ -470,8 +539,13 @@ public class PlayerActivity extends AppCompatActivity {
     // 销毁
     @Override
     protected  void onDestroy() {
+        try {
+            unregisterReceiver(playerReceiver);
+            playerReceiver = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         super.onDestroy();
-        unregisterReceiver(playerReceiver);
     }
     
     

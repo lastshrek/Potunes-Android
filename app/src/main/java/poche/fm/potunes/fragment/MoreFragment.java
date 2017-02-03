@@ -195,7 +195,6 @@ public class MoreFragment extends DialogFragment {
                         dismiss();
 
                         // shareToWechat
-
                         BottomSheetDialog dialog = new BottomSheetBuilder(mContext, R.style.AppTheme_BottomSheetDialog)
                                 .setMode(BottomSheetBuilder.MODE_GRID)
                                 .setMenu(R.menu.share_menu)
@@ -219,16 +218,12 @@ public class MoreFragment extends DialogFragment {
                                         msg.mediaObject = track;
                                         msg.title = adapterMusicInfo.getTitle();
                                         msg.description = adapterMusicInfo.getArtist();
-
-
                                         msg.thumbData = getArguments().getByteArray("thumb");
 
                                         //构造一个Req
                                         SendMessageToWX.Req req = new SendMessageToWX.Req();
                                         req.transaction = String.valueOf(System.currentTimeMillis());
                                         req.message = msg;
-
-                                        Log.d(TAG, "onBottomSheetItemClick: ====" + item.getTitle());
 
 
                                         if (item.getTitle().equals("微信好友")) {
