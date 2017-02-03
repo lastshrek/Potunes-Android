@@ -69,38 +69,28 @@ class LrcEntry implements Comparable<LrcEntry> {
         List<LrcEntry> entryList = new ArrayList<>();
         String[] array = lrcText.split("\\[");
 
-        String[] chArray = chLrcText.split("\\[");
-
-        Log.d("", "parseLrc: " + chLrcText);
-
-
-
         for (String line : array) {
             List<LrcEntry> list = parseLine(line);
             if (list != null && !list.isEmpty()) {
                 entryList.addAll(list);
-
             }
         }
+        if (chLrcText != null) {
+            String[] chArray = chLrcText.split("\\[");
 
-        for (String line: chArray) {
-            List<LrcEntry> list = parseLine(line);
-            Log.d("", "parseLrc: ================");
+            for (String line: chArray) {
+                List<LrcEntry> list = parseLine(line);
 
-            for (LrcEntry entry: entryList) {
-                if (list != null && !list.isEmpty()) {
-                    for (LrcEntry chEntry: list) {
-                        if (chEntry.getTime() == entry.getTime() && entry.text.length() > 0) {
-
-                            entry.text = entry.text.replaceAll("\\\\n","\n" + chEntry.text.replaceAll("\\\\n", ""));
+                for (LrcEntry entry: entryList) {
+                    if (list != null && !list.isEmpty()) {
+                        for (LrcEntry chEntry: list) {
+                            if (chEntry.getTime() == entry.getTime()) {
+                                entry.text = entry.text + "\n" + chEntry.text;
+                            }
                         }
-
                     }
-
                 }
             }
-
-
         }
 
         Collections.sort(entryList);
@@ -123,7 +113,7 @@ class LrcEntry implements Comparable<LrcEntry> {
             return null;
         }
         String text = array[1];
-
+        text = text.replaceAll("\\\\n", "");
 
         List<LrcEntry> entryList = new ArrayList<>();
 

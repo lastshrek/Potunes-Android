@@ -180,7 +180,6 @@ public class LrcView extends View {
         AsyncTask<String, Integer, List<LrcEntry>> loadLrcTask = new AsyncTask<String, Integer, List<LrcEntry>>() {
             @Override
             protected List<LrcEntry> doInBackground(String... params) {
-                Log.d("", "doInBackground: " + params[1]);
                 return LrcEntry.parseLrc(params[0], params[1]);
             }
 
