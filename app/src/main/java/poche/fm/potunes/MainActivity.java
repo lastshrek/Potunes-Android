@@ -32,6 +32,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.idescout.sql.SqlScoutServer;
+import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
 import org.litepal.LitePal;
 import org.litepal.crud.DataSupport;
@@ -65,6 +67,8 @@ public class MainActivity extends AppCompatActivity
 
     private String TAG = "MainActivity";
     private SQLiteDatabase db;
+    private static final String APP_ID = "wx0fc8d0673ec86694";
+    private IWXAPI api;
 
 
     private Handler sHandler = new Handler() {
@@ -145,6 +149,9 @@ public class MainActivity extends AppCompatActivity
         } else {
             ft.show(quickControls).commitAllowingStateLoss();
         }
+
+        // register to wechat
+        registerToWechat();
 
 
     }
@@ -301,12 +308,10 @@ public class MainActivity extends AppCompatActivity
 
     private List<Playlist> loadLocalPlaylists() {
         List<Playlist> mPlaylists = DataSupport.order("id asc").find(Playlist.class);
-        Log.d(TAG, "本地加载首页：" + mPlaylists.size());
         return mPlaylists;
     }
 
     private void parseJSONWithGSON(String jsonData) {
-
         Gson gson = new Gson();
         List<Playlist> datas = gson.fromJson(jsonData, new TypeToken<List<Playlist>>(){}.getType());
 
@@ -314,7 +319,6 @@ public class MainActivity extends AppCompatActivity
             Playlist mPlaylist = new Playlist(playlist.getTitle(), playlist.getPlaylist_id(), playlist.getCover());
             playlists.add(mPlaylist);
             mPlaylist.save();
-            Log.d(TAG, "parseJSONWithGSON: =============" + playlist.getPlaylist_id());
         }
 
     }
@@ -348,8 +352,6 @@ public class MainActivity extends AppCompatActivity
                     playlists.clear();
                     playlists = tempLists;
 
-                    Log.d(TAG, "run: 共" + playlists.get(0).getTitle());
-
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -369,6 +371,11 @@ public class MainActivity extends AppCompatActivity
 
             }
         }).start();
+    }
+
+    private void registerToWechat() {
+        api = WXAPIFactory.createWXAPI(this, APP_ID, true);
+        api.registerApp(APP_ID);
     }
 
 }

@@ -1,13 +1,16 @@
 package poche.fm.potunes.fragment;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
+import android.support.design.widget.BottomSheetDialog;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -15,24 +18,31 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.lzy.okgo.OkGo;
-import com.lzy.okgo.callback.FileCallback;
-import com.lzy.okgo.request.GetRequest;
-import com.lzy.okserver.download.DownloadInfo;
+import com.github.rubensousa.bottomsheetbuilder.BottomSheetBuilder;
+import com.github.rubensousa.bottomsheetbuilder.adapter.BottomSheetItemClickListener;
 import com.lzy.okserver.download.DownloadManager;
-import com.lzy.okserver.download.DownloadService;
-import com.lzy.okserver.listener.DownloadListener;
+import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
+import com.tencent.mm.opensdk.modelmsg.WXMediaMessage;
+import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
+import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
 import org.litepal.LitePal;
 
-import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 
 import poche.fm.potunes.Model.MusicFlowAdapter;
@@ -63,6 +73,7 @@ public class MoreFragment extends DialogFragment {
     private MusicFlowAdapter musicFlowAdapter;
     private Track adapterMusicInfo;
     private DownloadManager downloadManager;
+    private Bitmap thumb;
 
 
     private String TAG = "MoreFragment:";
@@ -73,11 +84,12 @@ public class MoreFragment extends DialogFragment {
     }
 
     // TODO: Rename and change types and number of parameters
-    public static MoreFragment newInstance(Track track, int startFrom) {
+    public static MoreFragment newInstance(Track track, int startFrom, byte[] byteArray) {
         MoreFragment fragment = new MoreFragment();
         Bundle args = new Bundle();
         args.putSerializable("track", track);
         args.putInt("track_id", track.getID());
+        args.putByteArray("thumb", byteArray);
         fragment.setArguments(args);
         return fragment;
     }
@@ -138,10 +150,15 @@ public class MoreFragment extends DialogFragment {
         cover = adapterMusicInfo.getCover();
         url = adapterMusicInfo.getUrl();
         topTitle.setText("选择您想进行的操作");
+
         heightPercent = 0.3;
         setMusicInfo();
         musicFlowAdapter = new MusicFlowAdapter(mContext, mTrackInfo, adapterMusicInfo);
         recyclerView.setAdapter(musicFlowAdapter);
+
+
+
+
     }
 
     //设置音乐overflow条目
@@ -172,13 +189,63 @@ public class MoreFragment extends DialogFragment {
                         startIntent.putExtra("track", adapterMusicInfo);
                         mContext.startService(startIntent);
                         Toast.makeText(mContext, "开始下载", Toast.LENGTH_SHORT).show();
-
                         dismiss();
-
                         break;
                     case 1:
-                        Log.d(TAG, "onItemClick: 分享");
                         dismiss();
+
+                        // shareToWechat
+
+                        BottomSheetDialog dialog = new BottomSheetBuilder(mContext, R.style.AppTheme_BottomSheetDialog)
+                                .setMode(BottomSheetBuilder.MODE_GRID)
+                                .setMenu(R.menu.share_menu)
+                                .setIconTintColor(R.color.colorAccent)
+                                .setItemClickListener(new BottomSheetItemClickListener() {
+                                    @Override
+                                    public void onBottomSheetItemClick(MenuItem item) {
+
+                                        IWXAPI api = WXAPIFactory.createWXAPI(mContext, "wx0fc8d0673ec86694", true);
+                                        api.registerApp("wx0fc8d0673ec86694");
+
+                                        if (api.isWXAppInstalled() == false) {
+                                            Toast.makeText(mContext, "您没有安装微信", Toast.LENGTH_SHORT).show();
+                                            return;
+                                        }
+
+                                        WXMusicObject track = new WXMusicObject();
+                                        track.musicUrl = adapterMusicInfo.getUrl();
+
+                                        WXMediaMessage msg = new WXMediaMessage();
+                                        msg.mediaObject = track;
+                                        msg.title = adapterMusicInfo.getTitle();
+                                        msg.description = adapterMusicInfo.getArtist();
+
+
+                                        msg.thumbData = getArguments().getByteArray("thumb");
+
+                                        //构造一个Req
+                                        SendMessageToWX.Req req = new SendMessageToWX.Req();
+                                        req.transaction = String.valueOf(System.currentTimeMillis());
+                                        req.message = msg;
+
+                                        Log.d(TAG, "onBottomSheetItemClick: ====" + item.getTitle());
+
+
+                                        if (item.getTitle().equals("微信好友")) {
+                                            req.scene = SendMessageToWX.Req.WXSceneSession;
+                                        } else if (item.getTitle().equals("微信朋友圈")) {
+                                            req.scene = SendMessageToWX.Req.WXSceneTimeline;
+                                        }
+
+
+                                        api.sendReq(req);
+
+
+                                    }
+                                })
+                                .createDialog();
+                        dialog.setCanceledOnTouchOutside(true);
+                        dialog.show();
                         break;
                     case 2:
                         dismiss();
@@ -187,6 +254,39 @@ public class MoreFragment extends DialogFragment {
             }
         });
     }
+
+
+    public static Bitmap getBitmap(String url) {
+        Bitmap bitmap = null;
+        InputStream in = null;
+        BufferedOutputStream out = null;
+        try {
+            in = new BufferedInputStream(new URL(url).openStream(), 1024);
+            final ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+            out = new BufferedOutputStream(dataStream, 1024);
+            copy(in, out);
+            out.flush();
+            byte[] data = dataStream.toByteArray();
+            bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+            data = null;
+            return bitmap;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static void copy(InputStream in, OutputStream out)
+            throws IOException {
+        byte[] b = new byte[1024];
+        int read;
+        while ((read = in.read(b)) != -1) {
+            out.write(b, 0, read);
+        }
+    }
+
+
+
 
     // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {

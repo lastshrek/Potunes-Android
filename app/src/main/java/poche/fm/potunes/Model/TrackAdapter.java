@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -15,7 +17,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 
 import poche.fm.potunes.R;
@@ -33,6 +40,8 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
     private ArrayList<Track> mTrackList;
     private Context mContext;
     private String TAG = "TrackItem";
+
+
 
 
 
@@ -61,6 +70,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (mContext == null) {
             mContext = parent.getContext();
+
         }
         View view = LayoutInflater.from(mContext).inflate(R.layout.track_item, parent, false);
         TypedValue typedValue = new TypedValue();
@@ -98,7 +108,9 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
-                MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0);
+                Bitmap image = ((BitmapDrawable)holder.cover.getDrawable()).getBitmap();
+                byte[] byteArray = bmpToByteArray(image, false);
+                MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0, byteArray);
                 morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
 
             }
@@ -106,13 +118,40 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         return holder;
     }
 
+    public static byte[] bmpToByteArray(final Bitmap bmp, final boolean needRecycle) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, output);
+        if (needRecycle) {
+            bmp.recycle();
+        }
+
+        byte[] result = output.toByteArray();
+        try {
+            output.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(final ViewHolder holder, int position) {
         Track track = mTrackList.get(position);
         holder.artist.setText(track.getArtist());
         holder.name.setText(track.getTitle());
         String thumb = track.getCover() + "!/fw/100";
-        Glide.with(mContext).load(thumb).placeholder(R.drawable.ic_launcher).into(holder.cover);
+        Glide
+                .with(mContext).
+                load(thumb).
+                asBitmap().
+                placeholder(R.drawable.ic_launcher).
+                into(new SimpleTarget<Bitmap>(100, 100) {
+                    @Override
+                    public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                        holder.cover.setImageBitmap(resource);
+                    }
+                });
         holder.itemView.setClickable(true);
     }
 

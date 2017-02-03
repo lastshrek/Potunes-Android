@@ -47,8 +47,7 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         if (mOnItemClickListener != null) {
             //注意这里使用getTag方法获取数据
             mOnItemClickListener.onItemClick(v, (String) v.getTag());
-            Log.d(TAG, "setOnItemClickListener: 惦记");
-
+            Log.d(TAG, "onClick: 点击+++" + v.getTag());
         }
     }
 

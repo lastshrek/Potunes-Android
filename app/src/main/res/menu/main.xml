@@ -4,6 +4,7 @@
 
     <item
         android:id="@+id/action_settings"
+        android:title="Import"
         android:layout_width="55dp"
         android:layout_height="match_parent"
         android:layout_toLeftOf="@+id/bar_music"

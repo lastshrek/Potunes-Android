@@ -233,7 +233,7 @@
                     />
 
                 <com.malinskiy.materialicons.widget.IconTextView
-                    android:id="@+id/play_list"
+                    android:id="@+id/nowPlaying_list"
                     android:text="{zmdi-playlist-audio}"
                     android:layout_weight="1"
                     android:shadowRadius="1"

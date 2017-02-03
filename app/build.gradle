@@ -58,5 +58,7 @@ dependencies {
     compile 'com.dinuscxj:circleprogressbar:1.1.1'
     compile 'com.songhang:smart-headerfooter-recyclerview:1.0.1'
     compile 'com.tencent.mm.opensdk:wechat-sdk-android-with-mta:1.0.2'
+    compile 'com.android.support:design:25.1.0'
+    compile 'com.github.rubensousa:bottomsheetbuilder:1.5.1'
     testCompile 'junit:junit:4.12'
 }

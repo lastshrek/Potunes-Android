@@ -1,6 +1,8 @@
 package poche.fm.potunes.fragment;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
@@ -28,7 +30,10 @@ import java.util.List;
 
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
+import poche.fm.potunes.TrackListActivity;
+import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.handler.HandlerUtil;
+import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.widgets.TintImageView;
 
 
@@ -127,7 +132,6 @@ public class PlayQueueFragment extends AttachDialogFragment {
 
         @Override
         protected void onPostExecute(Void result) {
-            Log.d(TAG, "onPostExecute:来了 ");
             if (playlist != null && playlist.size() > 0) {
                 adapter = new PlaylistAdapter(playlist);
                 recyclerView.setAdapter(adapter);
@@ -140,11 +144,9 @@ public class PlayQueueFragment extends AttachDialogFragment {
 
     class PlaylistAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private ArrayList<Track> playlist = new ArrayList<>();
-
         public PlaylistAdapter(ArrayList<Track> list) {
             playlist = list;
         }
-
         public void updateDataSet(ArrayList<Track> list) {
             this.playlist = list;
         }
@@ -157,8 +159,8 @@ public class PlayQueueFragment extends AttachDialogFragment {
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             musicInfo = playlist.get(position);
-            ((ItemViewHolder) holder).MusicName.setText(playlist.get(position).getTitle());
-            ((ItemViewHolder) holder).Artist.setText("-" + playlist.get(position).getArtist());
+            ((ItemViewHolder) holder).title.setText(playlist.get(position).getTitle());
+            ((ItemViewHolder) holder).artist.setText(" - " + playlist.get(position).getArtist());
             //判断该条目音乐是否在播放
             if (current == position) {
                 ((ItemViewHolder) holder).playstate.setVisibility(View.VISIBLE);
@@ -169,8 +171,8 @@ public class PlayQueueFragment extends AttachDialogFragment {
                 currentlyPlayingPosition = position;
             } else {
                 ((ItemViewHolder) holder).playstate.setVisibility(View.GONE);
+                ((ItemViewHolder) holder).title.setTextColor(getResources().getColor(R.color.black));
             }
-
         }
 
         @Override
@@ -180,14 +182,14 @@ public class PlayQueueFragment extends AttachDialogFragment {
 
 
         class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-            TextView MusicName, Artist;
+            TextView title, artist;
             ImageView playstate;
 
             public ItemViewHolder(View itemView) {
                 super(itemView);
                 this.playstate = (ImageView) itemView.findViewById(R.id.play_state);
-                this.MusicName = (TextView) itemView.findViewById(R.id.play_list_musicname);
-                this.Artist = (TextView) itemView.findViewById(R.id.play_list_artist);
+                this.title = (TextView) itemView.findViewById(R.id.play_list_musicname);
+                this.artist = (TextView) itemView.findViewById(R.id.play_list_artist);
                 itemView.setOnClickListener(this);
 
             }
@@ -198,12 +200,29 @@ public class PlayQueueFragment extends AttachDialogFragment {
                 mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        final int a = getAdapterPosition();
-                        if (a == -1) {
+                        final int position = getAdapterPosition();
+                        if (position == -1) {
                             return;
                         }
+                        Track track = playlist.get(position);
+                        Intent intent = new Intent();
+                        intent.putExtra("url", track.getUrl());
+                        intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
+                        intent.putExtra("TRACKS", playlist);
+                        intent.putExtra("position", position);
+                        intent.setClass(mContext, PlayerService.class);
+                        mContext.startService(intent);
+
+                        // 存储当前歌曲播放位置
+                        SharedPreferences preference = mContext.getSharedPreferences("user",Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = preference.edit();
+                        editor.putInt("position", position);
+                        editor.commit();
+
                         notifyItemChanged(currentlyPlayingPosition);
-                        notifyItemChanged(a);
+                        notifyItemChanged(position);
+
+                        dismiss();
                     }
                 }, 70);
 

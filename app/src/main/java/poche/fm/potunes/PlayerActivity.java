@@ -14,15 +14,12 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -36,8 +33,10 @@ import com.malinskiy.materialicons.widget.IconTextView;
 import java.util.ArrayList;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.domain.AppConstant;
+import poche.fm.potunes.fragment.PlayQueueFragment;
 import poche.fm.potunes.utils.MediaUtil;
 import poche.fm.potunes.widgets.TintImageView;
+
 
 public class PlayerActivity extends AppCompatActivity {
 
@@ -76,6 +75,7 @@ public class PlayerActivity extends AppCompatActivity {
     private ActionBar ab;
     private ImageView mPlayingCover;
     private View dividerLine;
+    private IconTextView mPlaylist;
 
 
 
@@ -166,7 +166,6 @@ public class PlayerActivity extends AppCompatActivity {
             } catch (Exception e) {
 
             }
-            Log.d(TAG, "onCreate: =============" + statusHeight);
             toolbar.setTitle("");
             toolbar.setPadding(0, statusHeight, 0 , 0);
 
@@ -217,7 +216,6 @@ public class PlayerActivity extends AppCompatActivity {
         Bundle bundle = intent.getExtras();
         tracks = (ArrayList<Track>) bundle.getSerializable("TRACKS");
         isPlaying = intent.getBooleanExtra("isPlaying", false);
-        Log.d(TAG, "findViewById: ==========" + isPlaying);
 
         if (isPlaying == false) {
             mPlayPause.setImageDrawable(mPlayDrawable);
@@ -237,6 +235,8 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
         dividerLine = (View) findViewById(R.id.view_line);
+        mPlaylist = (IconTextView) findViewById(R.id.nowPlaying_list);
+        Iconify.addIcons(mPlaylist);
     }
 
     private void setViewOnclickListener() {
@@ -244,6 +244,7 @@ public class PlayerActivity extends AppCompatActivity {
         mPlayPause.setOnClickListener(clickListener);
         mRepeat.setOnClickListener(clickListener);
         mSeekbar.setOnSeekBarChangeListener(new SeekBarChangeListener());
+        mPlaylist.setOnClickListener(new ViewOnclickListener());
     }
     
     private class ViewOnclickListener implements View.OnClickListener {
@@ -302,6 +303,16 @@ public class PlayerActivity extends AppCompatActivity {
                     break;
                 case R.id.seekBar1:
 
+                    break;
+                case R.id.nowPlaying_list:
+                    Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            PlayQueueFragment playQueueFragment = new PlayQueueFragment();
+                            playQueueFragment.show(getSupportFragmentManager(), "playqueuefragment");
+                         }
+                    }, 60);
                     break;
 
                 default:
@@ -394,8 +405,6 @@ public class PlayerActivity extends AppCompatActivity {
      */
     @Override
     protected void onStop() {
-        unregisterReceiver(playerReceiver);
-
         super.onStop();
     }
 
@@ -462,6 +471,7 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected  void onDestroy() {
         super.onDestroy();
+        unregisterReceiver(playerReceiver);
     }
     
     
