@@ -44,6 +44,26 @@
             android:theme="@style/Theme.AppCompat"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             >
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/toolbar_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text="当前并无播放歌曲"
+                    android:textStyle="bold"
+                    android:textSize="14dp"/>
+                <TextView
+                    android:id="@+id/toolbar_artist"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text=""
+                    android:textSize="11dp"/>
+
+            </LinearLayout>
+
         </android.support.v7.widget.Toolbar>
 
         <FrameLayout
@@ -52,18 +72,18 @@
             android:layout_height="390dp"
             android:layout_below="@+id/toolbar"
             android:layout_marginTop="-6dp">
+            <View
+                android:id="@+id/view_line"
+                android:layout_width="match_parent"
+                android:layout_height="1.0dip"
+                android:layout_alignParentTop="true"
+                android:background="@drawable/play_topbar_line" />
 
             <RelativeLayout
+                android:id="@+id/cover_container"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal">
-                <View
-                    android:id="@+id/view_line"
-                    android:layout_width="match_parent"
-                    android:layout_height="1.0dip"
-                    android:layout_alignParentTop="true"
-                    android:background="@drawable/play_topbar_line" />
-
                 <ImageView
                     android:id="@+id/playing_cover"
                     android:layout_width="263dp"
@@ -99,53 +119,7 @@
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:background="@drawable/fullscreen_bg_gradient" >
-
-        <TextView
-            android:id="@+id/line1"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/line2"
-            android:ellipsize="end"
-            android:gravity="center_horizontal"
-            android:maxLines="1"
-            android:shadowColor="@android:color/black"
-            android:shadowRadius="20"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textColor="@color/fullscreen_line_color"
-            tools:text="歌曲名"/>
-
-        <TextView
-            android:id="@+id/line2"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/line3"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-light"
-            android:gravity="center_horizontal"
-            android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:shadowColor="@android:color/black"
-            android:shadowRadius="20"
-            android:textColor="@color/fullscreen_secondary_line_color"
-            tools:text="歌手名"/>
-
-        <TextView
-            android:id="@+id/line3"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/controllers"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-light"
-            android:gravity="center_horizontal"
-            android:maxLines="1"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:shadowColor="@android:color/black"
-            android:shadowRadius="20"
-            android:textColor="@color/fullscreen_secondary_line_color"
-            tools:text="专辑名"/>
+        android:layout_marginBottom="50dp">
 
         <LinearLayout
             android:id="@+id/controllers"

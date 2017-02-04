@@ -51,24 +51,17 @@ public class PlayerActivity extends AppCompatActivity {
 
     // 传值用
     public static final String TAG = "PlayerActivity"; // 更新动作
-
-    public static final String TRACKLIST = "tracklist";
-    public static final String TRACKID = "trackid";
-    public static final String ALBUM = "ALBUM";
     public static final String UPDATE_ACTION = "fm.poche.action.UPDATE_ACTION"; // 更新动作
     public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION"; // 控制动作
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT"; // 音乐当前时间改变动作
     public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";// 音乐播放长度改变动作
-    public static final String MUSIC_PLAYING = "fm.poche.action.MUSIC_PLAYING"; // 音乐正在播放动作
-    public static final String REPEAT_ACTION = "fm.poche.action.REPEAT_ACTION"; // 音乐重复播放动作
     public static final String SHUFFLE_ACTION = "fm.poche.action.SHUFFLE_ACTION";// 音乐随机播放动作
-    public static final String SHOW_LRC = "fm.poche.action.SHOW_LRC"; // 通知显示歌词
 
     private Toolbar toolbar;
+    private TextView mToolbarTitle;
+    private TextView mToolbarArtist;
     private ProgressBar mLoading;
     private SeekBar mSeekbar;
-    private TextView mTitle;
-    private TextView mArtist;
     private TintImageView mPlayPause;
     private TextView mStart;
     private TextView mEnd;
@@ -82,6 +75,7 @@ public class PlayerActivity extends AppCompatActivity {
     private Drawable mShuffle;
     private Drawable mSingle;
     private ActionBar ab;
+    private RelativeLayout mCoverContainer;
     private ImageView mPlayingCover;
     private RelativeLayout mLrcContainer;
     private LrcView mLrcView;
@@ -177,9 +171,9 @@ public class PlayerActivity extends AppCompatActivity {
             }
             toolbar.setTitle("");
             toolbar.setPadding(0, statusHeight, 0 , 0);
-
         }
-
+        mToolbarTitle = (TextView) findViewById(R.id.toolbar_title);
+        mToolbarArtist = (TextView) findViewById(R.id.toolbar_artist);
         //获取本地Tracks数据
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         String json = preferences.getString("Tracks", "Tracks");
@@ -194,12 +188,13 @@ public class PlayerActivity extends AppCompatActivity {
         }
 
         mBackgroundImage = (ImageView) findViewById(R.id.background_image);
+        mCoverContainer = (RelativeLayout) findViewById(R.id.cover_container);
         mPlayingCover = (ImageView) findViewById(R.id.playing_cover);
         mPlayingCover.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mPlayingCover.getVisibility() == View.VISIBLE) {
-                    mPlayingCover.setVisibility(View.INVISIBLE);
+                if (mCoverContainer.getVisibility() == View.VISIBLE) {
+                    mCoverContainer.setVisibility(View.INVISIBLE);
                     mLrcContainer.setVisibility(View.VISIBLE);
                 }
             }
@@ -213,7 +208,7 @@ public class PlayerActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (mLrcView.getVisibility() == View.VISIBLE) {
                     mLrcContainer.setVisibility(View.INVISIBLE);
-                    mPlayingCover.setVisibility(View.VISIBLE);
+                    mCoverContainer.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -248,9 +243,6 @@ public class PlayerActivity extends AppCompatActivity {
         }
         mSeekbar.setMax(duration);
 
-        mTitle = (TextView) findViewById(R.id.line1);
-        mArtist = (TextView) findViewById(R.id.line2);
-        TextView mLine3 = (TextView) findViewById(R.id.line3);
 
         mLoading = (ProgressBar) findViewById(R.id.progressBar1);
         View mControllers = findViewById(R.id.controllers);
@@ -497,8 +489,8 @@ public class PlayerActivity extends AppCompatActivity {
                 Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
                 Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
 
-                mTitle.setText(intent.getStringExtra("title"));
-                mArtist.setText(intent.getStringExtra("artist"));
+                mToolbarTitle.setText(intent.getStringExtra("title"));
+                mToolbarArtist.setText(intent.getStringExtra("artist"));
 
             }  else if (action.equals(UPDATE_ACTION)) {
                 position = intent.getIntExtra("current", -1);
@@ -509,10 +501,11 @@ public class PlayerActivity extends AppCompatActivity {
                     String thumb = track.getCover();
                     Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
                     Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
-
                     // 歌手名
-                    mTitle.setText(track.getTitle());
-                    mArtist.setText(track.getArtist());
+                    mToolbarTitle.setText(track.getTitle());
+                    mToolbarArtist.setText(track.getArtist());
+                    // 加载歌词
+                    loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
                 }
 
             } else if (action.equals(MUSIC_DURATION)) {
