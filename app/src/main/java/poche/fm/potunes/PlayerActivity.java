@@ -295,14 +295,12 @@ public class PlayerActivity extends AppCompatActivity {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPauseDrawable);
                         intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
-                        intent.setPackage(getPackageName());
-                        getBaseContext().startService(intent);
-                        isPlaying = false;
+                        isPlaying = true;
                     } else {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPlayDrawable);
                         intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
-                        isPlaying = true;
+                        isPlaying = false;
                     }
                     intent.putExtra("url", tracks.get(position).getUrl());
                     intent.putExtra("position", position);

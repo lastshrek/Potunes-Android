@@ -110,7 +110,7 @@ public class QuciControlsFragment extends Fragment {
 
                 intent.setAction("fm.poche.media.MUSIC_SERVICE");
 
-                if (isPlaying == false) {
+                if (!isPlaying) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
                     intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
                     isPlaying = true;
