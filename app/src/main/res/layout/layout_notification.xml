@@ -53,7 +53,7 @@
 
             <ImageButton
                 android:padding="7dp"
-                android:id="@+id/iv_prev"
+                android:id="@+id/notification_prev"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_vertical"
@@ -65,7 +65,7 @@
 
             <ImageButton
                 android:padding="7dp"
-                android:id="@+id/iv_pause"
+                android:id="@+id/notification_pause"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_vertical"
@@ -76,7 +76,7 @@
                 android:layout_weight="1"/>
 
             <ImageButton
-                android:id="@+id/iv_next"
+                android:id="@+id/notification_next"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_vertical"

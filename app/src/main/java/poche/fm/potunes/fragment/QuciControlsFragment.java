@@ -119,7 +119,6 @@ public class QuciControlsFragment extends Fragment {
                     intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
                     isPlaying = false;
                 }
-
                 intent.putExtra("url", tracks.get(position).getUrl());
                 intent.putExtra("position", position);
                 intent.setPackage(getActivity().getPackageName());
@@ -149,7 +148,6 @@ public class QuciControlsFragment extends Fragment {
         SharedPreferences preferences = mContext.getSharedPreferences("user", Context.MODE_PRIVATE);
         duration = preferences.getInt("duration", -1);
         mProgress.setMax(100);
-
         registeReceiver();
         //获取本地Tracks数据
         String json = preferences.getString("Tracks", "Tracks");
@@ -196,10 +194,8 @@ public class QuciControlsFragment extends Fragment {
                 currentTime = intent.getIntExtra("currentTime", -1);
 
                 boolean isMediaPlaying = intent.getBooleanExtra("isPlaying", false);
-
                 isPlaying = isMediaPlaying;
-
-                if (isPlaying == false) {
+                if (!isPlaying) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_play);
                 } else {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_pause);

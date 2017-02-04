@@ -186,6 +186,7 @@ public class PlayerActivity extends AppCompatActivity {
                 loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
             }
         }
+        tracks = datas;
 
         mBackgroundImage = (ImageView) findViewById(R.id.background_image);
         mCoverContainer = (RelativeLayout) findViewById(R.id.cover_container);
@@ -249,11 +250,9 @@ public class PlayerActivity extends AppCompatActivity {
         mControllers.setVisibility(View.VISIBLE);
 
         Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
-        tracks = (ArrayList<Track>) bundle.getSerializable("TRACKS");
         isPlaying = intent.getBooleanExtra("isPlaying", false);
 
-        if (isPlaying == false) {
+        if (!isPlaying) {
             mPlayPause.setImageDrawable(mPlayDrawable);
         } else {
             mPlayPause.setImageDrawable(mPauseDrawable);
@@ -402,7 +401,6 @@ public class PlayerActivity extends AppCompatActivity {
         intent.putExtra("control", control);
         sendBroadcast(intent);
     }
-
     public void loadLrc(final String url) {
         new Thread(new Runnable() {
             @Override
@@ -426,7 +424,6 @@ public class PlayerActivity extends AppCompatActivity {
             }
         }).start();
     }
-
     private void registeReceiver() {
         //定义和注册广播接收器
         playerReceiver = null;
@@ -481,13 +478,18 @@ public class PlayerActivity extends AppCompatActivity {
                 if (duration > 0) {
                     mEnd.setText(MediaUtil.formatTime(duration - currentTime));
                 }
-
                 String thumb = intent.getStringExtra("url");
                 Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
                 Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
-
                 mToolbarTitle.setText(intent.getStringExtra("title"));
                 mToolbarArtist.setText(intent.getStringExtra("artist"));
+
+                boolean isMediaPlaying = intent.getBooleanExtra("isPlaying", false);
+                if (!isMediaPlaying) {
+                    mPlayPause.setImageDrawable(mPlayDrawable);
+                } else {
+                    mPlayPause.setImageDrawable(mPauseDrawable);
+                }
 
             }  else if (action.equals(UPDATE_ACTION)) {
                 position = intent.getIntExtra("current", -1);
@@ -537,6 +539,4 @@ public class PlayerActivity extends AppCompatActivity {
         }
         super.onDestroy();
     }
-    
-    
 }

@@ -3,6 +3,7 @@ package poche.fm.potunes.service;
 import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -52,7 +53,9 @@ public class PlayerService extends Service {
     private MyReceiver myReceiver; //自定义广播接收器
     private int currentTime;
     private int duration;
-    private byte[] bitmapArray;
+    private Bitmap bitmap;
+    private NotificationManager mManager;
+    private RemoteViews contentViews;
 
     // 服务要发送的一些Action
     public static final String UPDATE_ACTION = "fm.poche.action.UPDATE_ACTION";  //更新动作
@@ -127,40 +130,32 @@ public class PlayerService extends Service {
         int index = (int) (Math.random() * end);
         return index;
     }
-
     protected void sendIntent(int current) {
         Intent sendIntent = new Intent(UPDATE_ACTION);
         sendIntent.putExtra("current", current);
         sendIntent.putExtra("TRACKS", tracks);
         sendBroadcast(sendIntent);
     }
-
     @Override
     public IBinder onBind(Intent arg0) {
         return null;
     }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         int shuffle = preferences.getInt("shuffle", 0);
         status = shuffle;
         current = preferences.getInt("position", 0);
-
-
         path = intent.getStringExtra("url"); //歌曲路径
         msg = intent.getIntExtra("MSG", 0);
-        bitmapArray = intent.getByteArrayExtra("bitmap_cover");
+        Log.d(TAG, "onStartCommand: " + msg);
+
+        mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         //获取本地Tracks数据
         String json = preferences.getString("Tracks", "Tracks");
         Gson gson = new Gson();
         tracks.clear();
-        ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
-        for (Track track : datas) {
-            tracks.add(track);
-        }
+        tracks = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
 
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
             play(0);
@@ -168,7 +163,11 @@ public class PlayerService extends Service {
             //暂停
             pause();
         } else if (msg == AppConstant.PlayerMsg.STOP_MSG) {     //停止
-            stop();
+            if (isPause) {
+                resume();
+            } else {
+                pause();
+            }
         } else if (msg == AppConstant.PlayerMsg.CONTINUE_MSG) { //继续播放
             resume();
         } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
@@ -182,20 +181,13 @@ public class PlayerService extends Service {
         } else if (msg == AppConstant.PlayerMsg.PLAYING_MSG) {
             handler.sendEmptyMessage(1);
         }
-
-
-
+        getNotification();
         return super.onStartCommand(intent,flags, startId);
     }
 
-
-
     /**
      * 播放音乐
-     *
-     * @param position
      */
-
     private void play(int currentTime) {
         try {
             mediaPlayer.reset();
@@ -215,14 +207,12 @@ public class PlayerService extends Service {
             isPause = true;
         }
     }
-
     private void resume() {
         if (isPause) {
             mediaPlayer.start();
             isPause = false;
         }
     }
-
     private void previous() {
         if (status == 0) {
             if (current == 0) {
@@ -236,7 +226,6 @@ public class PlayerService extends Service {
         sendIntent(current);
         play(0);
     }
-
     private void next() {
        if (status == 0) {
             if (current == tracks.size() - 1) {
@@ -251,16 +240,6 @@ public class PlayerService extends Service {
         path = tracks.get(current).getUrl();
         play(0);
     }
-    private void stop() {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            try {
-                mediaPlayer.prepare();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
     @Override
     public void onDestroy() {
         if (mediaPlayer != null) {
@@ -269,18 +248,11 @@ public class PlayerService extends Service {
             mediaPlayer = null;
         }
     }
-    /**
-     *
-     * 实现一个OnPrepareLister接口,当音乐准备好的时候开始播放
-     *
-     */
     private final class PreparedListener implements MediaPlayer.OnPreparedListener {
         private int currentTime;
-
-        public PreparedListener(int currentTime) {
+        private PreparedListener(int currentTime) {
             this.currentTime = currentTime;
         }
-
         @Override
         public void onPrepared(MediaPlayer mp) {
             mediaPlayer.start(); // 开始播放
@@ -301,47 +273,72 @@ public class PlayerService extends Service {
             editor.putInt("duration", duration);
             editor.putInt("position", current);
             editor.apply();
-
-            //通知栏
-            Track track = tracks.get(current);
-            NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            final RemoteViews contentViews = new RemoteViews(getPackageName(), R.layout.layout_notification);
-            contentViews.setTextViewText(R.id.notification_title, track.getTitle());
-            contentViews.setTextViewText(R.id.notification_artist, track.getArtist());
-            contentViews.setImageViewResource(R.id.notification_cover, R.drawable.placeholder_disk_210);
-            contentViews.setImageViewResource(R.id.iv_pause, isPause ? R.drawable.note_btn_play : R.drawable.note_btn_pause);
-
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapArray, 0, bitmapArray.length);
-            contentViews.setImageViewBitmap(R.id.notification_cover, bitmap);
-
-//            Glide.with(getBaseContext()).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(200, 200) {
-//                @Override
-//                public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-//                    Log.d(TAG, "onResourceReady: =======================" + resource);
-//                    contentViews.setImageViewBitmap(R.id.notification_cover, resource);
-////                    contentViews.setBitmap(R.id.notification_cover, "thumb", resource.copy(Bitmap.Config.ARGB_8888, true));
-//                }
-//            });
-
-
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
-                    .setCustomContentView(contentViews)
-                    .setCustomBigContentView(contentViews)
-                    .setTicker("正在播放")
-                    .setWhen(System.currentTimeMillis())
-                    .setOngoing(true)
-                    .setSmallIcon(R.drawable.ic_notification);
-            Notification notification = mBuilder.build();
-            mNotificationManager.notify(1, notification);
-
+            isPause = false;
+            getNotification();
         }
+    }
+
+    private void getNotification() {
+        //通知栏
+        Track track = tracks.get(current);
+        contentViews = new RemoteViews(getPackageName(), R.layout.layout_notification);
+        contentViews.setTextViewText(R.id.notification_title, track.getTitle());
+        contentViews.setTextViewText(R.id.notification_artist, track.getArtist());
+        contentViews.setImageViewResource(R.id.notification_cover, R.drawable.placeholder_disk_210);
+        //上一首
+        Intent prev = new Intent();
+        prev.setAction("fm.poche.media.MUSIC_SERVICE");
+        prev.putExtra("MSG", AppConstant.PlayerMsg.PRIVIOUS_MSG);
+        PendingIntent intent_prev = PendingIntent.getService(getBaseContext(), 1, prev, PendingIntent.FLAG_UPDATE_CURRENT);
+        contentViews.setOnClickPendingIntent(R.id.notification_prev, intent_prev);
+        // 下一首
+        Intent next = new Intent();
+        next.setAction("fm.poche.media.MUSIC_SERVICE");
+        next.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
+        PendingIntent intent_next = PendingIntent.getService(getBaseContext(), 2, next, PendingIntent.FLAG_UPDATE_CURRENT);
+        contentViews.setOnClickPendingIntent(R.id.notification_next, intent_next);
+        // 暂停
+        Intent playOrPause = new Intent();
+        playOrPause.setAction("fm.poche.media.MUSIC_SERVICE");
+        if (isPause) {
+            playOrPause.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
+        } else {
+            playOrPause.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
+        }
+        contentViews.setImageViewResource(R.id.notification_pause, isPause ? R.drawable.note_btn_play : R.drawable.note_btn_pause);
+        PendingIntent intent_play = PendingIntent.getService(getBaseContext(), 3, playOrPause, PendingIntent.FLAG_UPDATE_CURRENT);
+        contentViews.setOnClickPendingIntent(R.id.notification_pause, intent_play);
+
+        // 设置封面
+        Glide.with(getBaseContext()).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(200, 200) {
+            @Override
+            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
+                remoteIntent.putExtra("isPlaying", !isPause);
+                Log.d(TAG, "findViewById: " + !isPause);
+
+                PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                contentViews.setImageViewBitmap(R.id.notification_cover, resource);
+                bitmap = resource;
+
+                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
+                        .setCustomContentView(contentViews)
+                        .setCustomBigContentView(contentViews)
+                        .setTicker("正在播放")
+                        .setWhen(System.currentTimeMillis())
+                        .setOngoing(true)
+                        .setContentIntent(pi)
+                        .setSmallIcon(R.drawable.ic_notification);
+                Notification notification = mBuilder.build();
+                mManager.notify(1, notification);
+            }
+        });
     }
 
     public class MyReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             int control = intent.getIntExtra("control", -1);
-            Log.d(TAG, "onReceive: " + control);
             switch (control) {
                 case 1:
                     status = 0; // 列表循环

@@ -36,14 +36,9 @@ import poche.fm.potunes.service.PlayerService;
  */
 
 public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> {
-
     private ArrayList<Track> mTrackList;
     private Context mContext;
     private String TAG = "TrackItem";
-
-
-
-
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView cover;
@@ -70,14 +65,12 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (mContext == null) {
             mContext = parent.getContext();
-
         }
         View view = LayoutInflater.from(mContext).inflate(R.layout.track_item, parent, false);
         TypedValue typedValue = new TypedValue();
         mContext.getTheme().resolveAttribute(R.attr.selectableItemBackground, typedValue, true);
         view.setBackgroundResource(typedValue.resourceId);
         final ViewHolder holder = new ViewHolder(view);
-
 
         view.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -89,9 +82,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
                 intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
                 intent.putExtra("TRACKS", mTrackList);
                 intent.putExtra("position", position);
-                Bitmap image = ((BitmapDrawable)holder.cover.getDrawable()).getBitmap();
-                byte[] byteArray = bmpToByteArray(image, false);
-                intent.putExtra("bitmap_cover", byteArray);
                 intent.setClass(mContext, PlayerService.class);
                 Activity activity = (TrackListActivity) mContext;
                 activity.startService(intent);
@@ -142,13 +132,13 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         Track track = mTrackList.get(position);
         holder.artist.setText(track.getArtist());
         holder.name.setText(track.getTitle());
-        String thumb = track.getCover() + "!/fw/200";
+        String thumb = track.getCover() + "!/fw/100";
         Glide
                 .with(mContext)
                 .load(thumb)
                 .asBitmap()
                 .placeholder(R.drawable.ic_launcher)
-                .into(new SimpleTarget<Bitmap>(200, 200) {
+                .into(new SimpleTarget<Bitmap>(100, 100) {
                     @Override
                     public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                         holder.cover.setImageBitmap(resource);
