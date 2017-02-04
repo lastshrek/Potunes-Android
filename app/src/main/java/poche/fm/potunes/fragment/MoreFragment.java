@@ -206,7 +206,7 @@ public class MoreFragment extends DialogFragment {
                                         IWXAPI api = WXAPIFactory.createWXAPI(mContext, "wx0fc8d0673ec86694", true);
                                         api.registerApp("wx0fc8d0673ec86694");
 
-                                        if (api.isWXAppInstalled() == false) {
+                                        if (!api.isWXAppInstalled()) {
                                             Toast.makeText(mContext, "您没有安装微信", Toast.LENGTH_SHORT).show();
                                             return;
                                         }
@@ -231,11 +231,7 @@ public class MoreFragment extends DialogFragment {
                                         } else if (item.getTitle().equals("微信朋友圈")) {
                                             req.scene = SendMessageToWX.Req.WXSceneTimeline;
                                         }
-
-
                                         api.sendReq(req);
-
-
                                     }
                                 })
                                 .createDialog();

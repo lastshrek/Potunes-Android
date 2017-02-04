@@ -290,7 +290,6 @@ public class PlayerActivity extends AppCompatActivity {
             intent.setAction("fm.poche.media.MUSIC_SERVICE");
             switch (v.getId()) {
                 case R.id.play_pause:
-                    Log.d(TAG, "onClick: ============" + isPlaying);
                     if (!isPlaying) {
                         mPlayPause.setVisibility(View.VISIBLE);
                         mPlayPause.setImageDrawable(mPauseDrawable);
@@ -332,7 +331,7 @@ public class PlayerActivity extends AppCompatActivity {
                     SharedPreferences preference = getSharedPreferences("user",Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = preference.edit();
                     editor.putInt("shuffle", shuffle);
-                    editor.commit();
+                    editor.apply();
 
                     break;
                 case R.id.seekBar1:

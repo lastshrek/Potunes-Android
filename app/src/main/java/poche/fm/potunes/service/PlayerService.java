@@ -1,20 +1,28 @@
 package poche.fm.potunes.service;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.ImageView;
+import android.widget.RemoteViews;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -24,7 +32,6 @@ import java.util.List;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
-import poche.fm.potunes.TrackListActivity;
 import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.fragment.QuciControlsFragment;
 
@@ -33,7 +40,6 @@ import poche.fm.potunes.fragment.QuciControlsFragment;
  */
 
 @SuppressLint("NewApi")
-
 public class PlayerService extends Service {
 
     private MediaPlayer mediaPlayer; //媒体播放器对象
@@ -46,6 +52,7 @@ public class PlayerService extends Service {
     private MyReceiver myReceiver; //自定义广播接收器
     private int currentTime;
     private int duration;
+    private byte[] bitmapArray;
 
     // 服务要发送的一些Action
     public static final String UPDATE_ACTION = "fm.poche.action.UPDATE_ACTION";  //更新动作
@@ -145,7 +152,7 @@ public class PlayerService extends Service {
 
         path = intent.getStringExtra("url"); //歌曲路径
         msg = intent.getIntExtra("MSG", 0);
-
+        bitmapArray = intent.getByteArrayExtra("bitmap_cover");
         //获取本地Tracks数据
         String json = preferences.getString("Tracks", "Tracks");
         Gson gson = new Gson();
@@ -207,8 +214,6 @@ public class PlayerService extends Service {
             mediaPlayer.pause();
             isPause = true;
         }
-        Log.d(TAG, "pause: 点击了暂停" + mediaPlayer.isPlaying());
-
     }
 
     private void resume() {
@@ -246,8 +251,6 @@ public class PlayerService extends Service {
         path = tracks.get(current).getUrl();
         play(0);
     }
-
-
     private void stop() {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
@@ -258,8 +261,6 @@ public class PlayerService extends Service {
             }
         }
     }
-
-
     @Override
     public void onDestroy() {
         if (mediaPlayer != null) {
@@ -299,7 +300,39 @@ public class PlayerService extends Service {
             SharedPreferences.Editor editor=preferences.edit();
             editor.putInt("duration", duration);
             editor.putInt("position", current);
-            editor.commit();
+            editor.apply();
+
+            //通知栏
+            Track track = tracks.get(current);
+            NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            final RemoteViews contentViews = new RemoteViews(getPackageName(), R.layout.layout_notification);
+            contentViews.setTextViewText(R.id.notification_title, track.getTitle());
+            contentViews.setTextViewText(R.id.notification_artist, track.getArtist());
+            contentViews.setImageViewResource(R.id.notification_cover, R.drawable.placeholder_disk_210);
+            contentViews.setImageViewResource(R.id.iv_pause, isPause ? R.drawable.note_btn_play : R.drawable.note_btn_pause);
+
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapArray, 0, bitmapArray.length);
+            contentViews.setImageViewBitmap(R.id.notification_cover, bitmap);
+
+//            Glide.with(getBaseContext()).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(200, 200) {
+//                @Override
+//                public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+//                    Log.d(TAG, "onResourceReady: =======================" + resource);
+//                    contentViews.setImageViewBitmap(R.id.notification_cover, resource);
+////                    contentViews.setBitmap(R.id.notification_cover, "thumb", resource.copy(Bitmap.Config.ARGB_8888, true));
+//                }
+//            });
+
+
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
+                    .setCustomContentView(contentViews)
+                    .setCustomBigContentView(contentViews)
+                    .setTicker("正在播放")
+                    .setWhen(System.currentTimeMillis())
+                    .setOngoing(true)
+                    .setSmallIcon(R.drawable.ic_notification);
+            Notification notification = mBuilder.build();
+            mNotificationManager.notify(1, notification);
 
         }
     }
