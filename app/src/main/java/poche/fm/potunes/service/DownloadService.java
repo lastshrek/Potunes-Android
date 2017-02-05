@@ -65,7 +65,6 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
             @Override
             public void onFinish(DownloadInfo downloadInfo) {
                 Track track = (Track) downloadInfo.getData();
-                Log.d(TAG, "onFinish: =====" + downloadInfo.getTargetPath());
                 Toast.makeText(getBaseContext(), track.getTitle() +  "下载完成", Toast.LENGTH_SHORT).show();
                 if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
                     downloadManager.removeTask(track.getUrl(), false);
@@ -95,24 +94,25 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         msg = intent.getIntExtra("MSG", 0);
+        SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
+        String album = preferences.getString("album", "album");
         switch (msg) {
             case 1:
                 Track track = (Track) intent.getSerializableExtra("track");
+                track.setAlbum(album);
                 checkFiles(track);
                 break;
             case 2:
                 //获取本地Tracks数据
-                SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
                 String json = preferences.getString("Tracks", "Tracks");
-
                 Gson gson = new Gson();
                 tracks.clear();
+                //获取专辑名称
                 ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
                 for (Track mTrack : datas) {
+                    mTrack.setAlbum(album);
                     checkFiles(mTrack);
                 }
-                Log.d(TAG, "onStartCommand: " + tracks.size());
-
         }
 
         return super.onStartCommand(intent,flags, startId);

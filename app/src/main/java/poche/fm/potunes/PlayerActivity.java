@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -29,9 +30,6 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.malinskiy.materialicons.IconDrawable;
-import com.malinskiy.materialicons.Iconify;
-import com.malinskiy.materialicons.widget.IconTextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,10 +63,10 @@ public class PlayerActivity extends AppCompatActivity {
     private TintImageView mPlayPause;
     private TextView mStart;
     private TextView mEnd;
-    private IconDrawable mPauseDrawable;
+    private Drawable mPauseDrawable;
     private Drawable mPlayDrawable;
-    private IconTextView mSkipPrev;
-    private IconTextView mSkipNext;
+    private ImageView mSkipPrev;
+    private ImageView mSkipNext;
     private ImageView mBackgroundImage;
     private TintImageView mRepeat;
     private Drawable mNoShuffle;
@@ -80,7 +78,7 @@ public class PlayerActivity extends AppCompatActivity {
     private RelativeLayout mLrcContainer;
     private LrcView mLrcView;
     private View dividerLine;
-    private IconTextView mPlaylist;
+    private ImageView mPlaylist;
 
 
 
@@ -142,10 +140,7 @@ public class PlayerActivity extends AppCompatActivity {
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-
-
         setContentView(R.layout.player_layout);
-
         //initials
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -214,18 +209,17 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
         mRepeat = (TintImageView) findViewById(R.id.play_repeat);
-        mNoShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_repeat).colorRes(R.color.white).sizeDp(40);
-        mShuffle = new IconDrawable(this, Iconify.IconValue.zmdi_shuffle).colorRes(R.color.white).sizeDp(40);
-        mSingle = new IconDrawable(this, Iconify.IconValue.zmdi_repeat_one).colorRes(R.color.white).sizeDp(40);
+        mNoShuffle = ContextCompat.getDrawable(this, R.drawable.playing_noshuffle);
+        mShuffle = ContextCompat.getDrawable(this, R.drawable.playing_shuffle);
+        mSingle = ContextCompat.getDrawable(this, R.drawable.playing_single);
         mRepeat.setImageDrawable(mNoShuffle);
         mPlayPause = (TintImageView) findViewById(R.id.play_pause);
-        mPauseDrawable = new IconDrawable(this, Iconify.IconValue.zmdi_pause_circle_outline).colorRes(R.color.white).sizeDp(40);
-        mPlayDrawable = new IconDrawable(this, Iconify.IconValue.zmdi_play_circle_outline).colorRes(R.color.white).sizeDp(40);
-        mSkipNext = (IconTextView) findViewById(R.id.play_next);
-        mSkipPrev = (IconTextView) findViewById(R.id.play_prev);
-        Iconify.addIcons(mSkipPrev);
-        Iconify.addIcons(mSkipNext);
-
+        mPlayDrawable = ContextCompat.getDrawable(this, R.drawable.playing_pause);
+        mPauseDrawable = ContextCompat.getDrawable(this, R.drawable.playing_play);
+        mSkipNext = (ImageView) findViewById(R.id.play_next);
+        mSkipPrev = (ImageView) findViewById(R.id.play_prev);
+        mSkipPrev.setImageDrawable(getResources().getDrawable(R.drawable.playing_prev));
+        mSkipNext.setImageDrawable(getResources().getDrawable(R.drawable.playing_next));
         mStart = (TextView) findViewById(R.id.startText);
         mEnd = (TextView) findViewById(R.id.endText);
 
@@ -270,8 +264,8 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
         dividerLine = (View) findViewById(R.id.view_line);
-        mPlaylist = (IconTextView) findViewById(R.id.nowPlaying_list);
-        Iconify.addIcons(mPlaylist);
+        mPlaylist = (ImageView) findViewById(R.id.nowPlaying_list);
+        mPlaylist.setImageDrawable(getResources().getDrawable(R.drawable.playing_list));
     }
 
     private void setViewOnclickListener() {

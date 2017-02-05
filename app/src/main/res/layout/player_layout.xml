@@ -179,11 +179,9 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"/>
 
-                <com.malinskiy.materialicons.widget.IconTextView
+                <ImageView
                     android:id="@+id/play_prev"
-                    android:text="{zmdi-skip-previous}"
                     android:layout_weight="1"
-                    android:textSize="40dp"
                     android:textColor="#fff"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -197,9 +195,8 @@
                     android:layout_weight="1"
                     android:contentDescription="@string/play_pause"
                     />
-                <com.malinskiy.materialicons.widget.IconTextView
+                <ImageView
                     android:id="@+id/play_next"
-                    android:text="{zmdi-skip-next}"
                     android:layout_weight="1"
                     android:shadowRadius="1"
                     android:textSize="40dp"
@@ -209,12 +206,10 @@
                     android:textAlignment="center"
                     />
 
-                <com.malinskiy.materialicons.widget.IconTextView
+                <ImageView
                     android:id="@+id/nowPlaying_list"
-                    android:text="{zmdi-playlist-audio}"
                     android:layout_weight="1"
                     android:shadowRadius="1"
-                    android:textSize="40dp"
                     android:textColor="#fff"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

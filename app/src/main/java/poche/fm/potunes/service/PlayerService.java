@@ -315,8 +315,6 @@ public class PlayerService extends Service {
             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                 Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
                 remoteIntent.putExtra("isPlaying", !isPause);
-                Log.d(TAG, "findViewById: " + !isPause);
-
                 PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                 contentViews.setImageViewBitmap(R.id.notification_cover, resource);
                 bitmap = resource;

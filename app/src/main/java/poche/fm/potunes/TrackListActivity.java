@@ -58,6 +58,7 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
     private IconButton downloadAll;
     private DownloadManager downloadManager;
     private SwipeRefreshLayout swipeRefresh;
+    private String album_title;
 
 
 
@@ -94,7 +95,6 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
             @Override
             public void onClick(View v) {
                 Toast.makeText(getBaseContext(), "开始下载", Toast.LENGTH_SHORT).show();
-
                 Intent intent = new Intent();
                 intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
                 intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
@@ -109,12 +109,11 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
 
         LitePal.initialize(this);
 
-
         Intent intent = getIntent();
         int playlist_id = intent.getIntExtra(PLAYLIST_ID, -1);
 
-        CharSequence title = intent.getStringExtra(TITLE);
-        getBaseActionBar().setTitle(title);
+        album_title = intent.getStringExtra(TITLE);
+        getBaseActionBar().setTitle(album_title);
         initTracks(playlist_id);
 
     }
@@ -138,7 +137,7 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
                     SharedPreferences.Editor editor = preference.edit();
                     editor.putString("Tracks", responseData);
                     editor.putString("album", getBaseActionBar().getTitle().toString());
-                    editor.commit();
+                    editor.apply();
                     parseJSONWithGSON(responseData);
                 } catch (Exception e) {
                     e.printStackTrace();

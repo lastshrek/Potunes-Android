@@ -122,9 +122,9 @@ public class LrcView extends View {
             drawText(canvas, mLrcEntryList.get(i).getStaticLayout(), upY);
 
             // 动画未结束，超出屏幕多绘制一行
-            if (upY < 0) {
-                break;
-            }
+//            if (upY < 0) {
+//                break;
+//            }
         }
 
         // 画当前行下面的
@@ -140,9 +140,9 @@ public class LrcView extends View {
             drawText(canvas, mLrcEntryList.get(i).getStaticLayout(), downY);
 
             // 动画未结束，超出屏幕多绘制一行
-            if (downY + mLrcEntryList.get(i).getTextHeight() > getHeight()) {
-                break;
-            }
+//            if (downY + mLrcEntryList.get(i).getTextHeight() > getHeight()) {
+//                break;
+//            }
 
             downY += mLrcEntryList.get(i).getTextHeight() + mDividerHeight;
         }
@@ -306,10 +306,15 @@ public class LrcView extends View {
      * 属性动画只能在主线程使用
      */
     private void newlineAnimation(int index) {
-        stopAnimation();
-
+        if (mAnimator == null) {
+            mAnimator = ValueAnimator.ofFloat(0, 0.0f);
+        } else {
+            mAnimator.cancel();
+            mAnimator.setFloatValues(0, 0.0f);
+        }
+        long duration = mAnimationDuration * mLrcEntryList.get(index).getStaticLayout().getLineCount();
         mAnimator = ValueAnimator.ofFloat(mLrcEntryList.get(index).getTextHeight() + mDividerHeight, 0.0f);
-        mAnimator.setDuration(mAnimationDuration * mLrcEntryList.get(index).getStaticLayout().getLineCount());
+        mAnimator.setDuration(duration);
         mAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {

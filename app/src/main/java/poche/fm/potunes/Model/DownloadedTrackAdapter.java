@@ -8,7 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,12 +18,11 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
-import com.tencent.mm.opensdk.openapi.IWXAPI;
-import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 
+import poche.fm.potunes.DownloadedTracksActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.TrackListActivity;
 import poche.fm.potunes.domain.AppConstant;
@@ -32,10 +30,10 @@ import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.service.PlayerService;
 
 /**
- * Created by purchas on 2017/1/8.
+ * Created by purchas on 2017/2/5.
  */
 
-public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> {
+public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrackAdapter.ViewHolder> {
     private ArrayList<Track> mTrackList;
     private Context mContext;
     private String TAG = "TrackItem";
@@ -57,7 +55,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         }
     }
 
-    public TrackAdapter(ArrayList<Track> trackList) {
+    public DownloadedTrackAdapter(ArrayList<Track> trackList) {
         mTrackList = trackList;
     }
 
@@ -75,7 +73,13 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // 存储当前歌曲播放位置
                 int position = holder.getAdapterPosition();
+                SharedPreferences preference = mContext.getSharedPreferences("user",Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = preference.edit();
+                editor.putInt("position", position);
+                editor.apply();
+
                 Track track = mTrackList.get(position);
                 Intent intent = new Intent();
                 intent.putExtra("url", track.getUrl());
@@ -83,14 +87,8 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
                 intent.putExtra("TRACKS", mTrackList);
                 intent.putExtra("position", position);
                 intent.setClass(mContext, PlayerService.class);
-                Activity activity = (TrackListActivity) mContext;
+                Activity activity = (DownloadedTracksActivity) mContext;
                 activity.startService(intent);
-
-                // 存储当前歌曲播放位置
-                SharedPreferences preference = mContext.getSharedPreferences("user",Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = preference.edit();
-                editor.putInt("position", position);
-                editor.apply();
             }
         });
 
@@ -100,9 +98,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
                 int position = holder.getAdapterPosition();
                 Bitmap image = ((BitmapDrawable)holder.cover.getDrawable()).getBitmap();
                 byte[] byteArray = bmpToByteArray(image, false);
-                MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0, byteArray);
-                morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
-
             }
         });
         return holder;

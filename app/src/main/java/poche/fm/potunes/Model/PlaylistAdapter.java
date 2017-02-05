@@ -59,21 +59,13 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
-
                 Playlist playlist = mPlaylist.get(position);
-
                 Intent intent = new Intent(mContext, TrackListActivity.class);
-
                 intent.putExtra(TrackListActivity.PLAYLIST_ID, playlist.getPlaylist_id());
-
                 intent.putExtra(TrackListActivity.TITLE, playlist.getTitle());
-
                 Activity activity = (Activity)mContext;
-
                 mContext.startActivity(intent);
-
                 activity.overridePendingTransition(0, 0);
-
             }
         });
 

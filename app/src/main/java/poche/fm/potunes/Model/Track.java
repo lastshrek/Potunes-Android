@@ -58,9 +58,10 @@ public class Track extends DataSupport implements Serializable {
 
     public String getUrl() { return url; }
 
-    public String album() {
+    public String getAlbum() {
         return album;
     }
+
 
     public int getIsDownloaded() {
         return isDownloaded;
@@ -89,6 +90,7 @@ public class Track extends DataSupport implements Serializable {
     public void setAlbum(String album) {
         this.album = album;
     }
+
 
     public void setIsDownloaded(int isDownloaded) {
         this.isDownloaded = isDownloaded;

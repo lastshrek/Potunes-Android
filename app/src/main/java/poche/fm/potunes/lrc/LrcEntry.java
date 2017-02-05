@@ -123,7 +123,9 @@ class LrcEntry implements Comparable<LrcEntry> {
             long sec = Long.parseLong(timeMatcher.group(2));
             long mil = Long.parseLong(timeMatcher.group(3));
             long time = min * DateUtils.MINUTE_IN_MILLIS + sec * DateUtils.SECOND_IN_MILLIS + mil * 10;
-            entryList.add(new LrcEntry(time, text));
+            if (text.length() != 0) {
+                entryList.add(new LrcEntry(time, text));
+            }
         }
         return entryList;
     }

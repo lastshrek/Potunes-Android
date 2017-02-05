@@ -5,14 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="poche.fm.potunes.MyMusicActivity">
-
-
-
-
-
-
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/tracklist_recycler_view"
@@ -26,14 +19,19 @@
         android:layout_height="wrap_content">
         <com.malinskiy.materialicons.widget.IconTextView
             android:id="@+id/download_album_header"
-            android:layout_below="@id/tracklist_recycler_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="已下载专辑"
             android:layout_marginStart="13dp"
             />
-
     </LinearLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/download_album_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="50dp"
+        />
 
 
 

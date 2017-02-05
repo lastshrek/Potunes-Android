@@ -193,7 +193,6 @@ public class MoreFragment extends DialogFragment {
                         break;
                     case 1:
                         dismiss();
-
                         // shareToWechat
                         BottomSheetDialog dialog = new BottomSheetBuilder(mContext, R.style.AppTheme_BottomSheetDialog)
                                 .setMode(BottomSheetBuilder.MODE_GRID)
