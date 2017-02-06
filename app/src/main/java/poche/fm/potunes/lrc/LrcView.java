@@ -112,37 +112,37 @@ public class LrcView extends View {
         for (int i = mCurrentLine - 1; i >= 0; i--) {
             upY -= mDividerHeight + mLrcEntryList.get(i).getTextHeight();
 
-//            if (mAnimator == null || !mAnimator.isRunning()) {
-//                // 动画已经结束，超出屏幕停止绘制
-//                if (upY < 0) {
-//                    break;
-//                }
-//            }
+            if (mAnimator == null || !mAnimator.isRunning()) {
+                // 动画已经结束，超出屏幕停止绘制
+                if (upY < 0) {
+                    break;
+                }
+            }
 
             drawText(canvas, mLrcEntryList.get(i).getStaticLayout(), upY);
 
             // 动画未结束，超出屏幕多绘制一行
-//            if (upY < 0) {
-//                break;
-//            }
+            if (upY < 0) {
+                break;
+            }
         }
 
         // 画当前行下面的
         float downY = currY + mLrcEntryList.get(mCurrentLine).getTextHeight() + mDividerHeight;
         for (int i = mCurrentLine + 1; i < mLrcEntryList.size(); i++) {
             if (mAnimator == null || !mAnimator.isRunning()) {
-//                // 动画已经结束，超出屏幕停止绘制
-//                if (downY + mLrcEntryList.get(i).getTextHeight() > getHeight()) {
-//                    break;
-//                }
+                // 动画已经结束，超出屏幕停止绘制
+                if (downY + mLrcEntryList.get(i).getTextHeight() > getHeight()) {
+                    break;
+                }
             }
 
             drawText(canvas, mLrcEntryList.get(i).getStaticLayout(), downY);
 
             // 动画未结束，超出屏幕多绘制一行
-//            if (downY + mLrcEntryList.get(i).getTextHeight() > getHeight()) {
-//                break;
-//            }
+            if (downY + mLrcEntryList.get(i).getTextHeight() > getHeight()) {
+                break;
+            }
 
             downY += mLrcEntryList.get(i).getTextHeight() + mDividerHeight;
         }

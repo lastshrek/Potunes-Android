@@ -12,6 +12,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
@@ -41,7 +42,7 @@ import poche.fm.potunes.fragment.QuciControlsFragment;
  */
 
 @SuppressLint("NewApi")
-public class PlayerService extends Service {
+public class PlayerService extends Service implements AudioManager.OnAudioFocusChangeListener {
 
     private MediaPlayer mediaPlayer; //媒体播放器对象
     private String path; // 音乐文件路径
@@ -56,6 +57,7 @@ public class PlayerService extends Service {
     private Bitmap bitmap;
     private NotificationManager mManager;
     private RemoteViews contentViews;
+    private AudioManager mAudioManager;
 
     // 服务要发送的一些Action
     public static final String UPDATE_ACTION = "fm.poche.action.UPDATE_ACTION";  //更新动作
@@ -113,6 +115,10 @@ public class PlayerService extends Service {
             }
             }
         });
+
+        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
 
         myReceiver = new MyReceiver();
         IntentFilter filter = new IntentFilter();
@@ -205,6 +211,7 @@ public class PlayerService extends Service {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             isPause = true;
+            mAudioManager.abandonAudioFocus(this);
         }
     }
     private void resume() {
@@ -352,6 +359,18 @@ public class PlayerService extends Service {
             }
         }
     }
-
+    //捕获、丢弃音乐焦点
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+        switch (focusChange) {
+            case AudioManager.AUDIOFOCUS_LOSS:
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                if (!isPause) {
+                    pause();
+                }
+                break;
+        }
+    }
 }
 
