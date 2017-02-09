@@ -1,9 +1,7 @@
 package poche.fm.potunes.Model;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -16,9 +14,7 @@ import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 
-import poche.fm.potunes.DownloadedTracksActivity;
 import poche.fm.potunes.R;
-import poche.fm.potunes.TrackListActivity;
 
 /**
  * Created by purchas on 2017/2/5.
@@ -61,10 +57,10 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
-                Track track = mAlbumList.get(position);
-                Intent intent = new Intent(mContext, DownloadedTracksActivity.class);
-                intent.putExtra("album_title", track.getAlbum());
-                mContext.startActivity(intent);
+//                Track track = mAlbumList.get(position);
+//                Intent intent = new Intent(mContext, DownloadedTracksActivity.class);
+//                intent.putExtra("album_title", track.getAlbum());
+//                mContext.startActivity(intent);
             }
         });
 

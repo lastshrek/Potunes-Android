@@ -2,11 +2,9 @@ package poche.fm.potunes.service;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
@@ -28,7 +26,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import poche.fm.potunes.DownloadingActivity;
 import poche.fm.potunes.Model.Track;
 
 public class DownloadService extends Service implements ExecutorWithListener.OnAllTaskEndListener{

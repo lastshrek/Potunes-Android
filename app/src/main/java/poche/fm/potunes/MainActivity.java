@@ -1,239 +1,197 @@
 package poche.fm.potunes;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Message;
-import android.os.Handler;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.text.TextUtils;
 import android.util.Log;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
+
 
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.idescout.sql.SqlScoutServer;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
-import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
-import org.litepal.crud.DataSupport;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
-import poche.fm.potunes.Model.PlaylistAdapter;
 import poche.fm.potunes.fragment.MoreFragment;
-import poche.fm.potunes.fragment.QuciControlsFragment;
+import poche.fm.potunes.fragment.PlaylistAdapter;
+import poche.fm.potunes.fragment.MediaBrowserFragment;
+import poche.fm.potunes.fragment.PlaylistFragment;
+import poche.fm.potunes.fragment.TrackListFragment;
+import poche.fm.potunes.service.MusicService;
+import poche.fm.potunes.service.PlayerService;
+import poche.fm.potunes.utils.LogHelper;
 
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, QuciControlsFragment.OnFragmentInteractionListener {
+public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener, TrackListFragment.OnListFragmentInteractionListener, MoreFragment.OnFragmentInteractionListener {
+
+
+    public static final String EXTRA_CURRENT_MEDIA_DESCRIPTION =
+            "fm.poche.potunes.CURRENT_MEDIA_DESCRIPTION";
+    private static final String SAVED_MEDIA_ID="fm.poche.potunes.MEDIA_ID";
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     private GoogleApiClient client;
-    private List<Playlist> playlists = new ArrayList<>();
     private PlaylistAdapter adapter;
-    private SwipeRefreshLayout swipeRefresh;
     private ImageView mMyMusic;
-    private QuciControlsFragment quickControls;
-    protected static final int TEST = 1;
     private long time = 0;
 
     private String TAG = "MainActivity";
     private SQLiteDatabase db;
     private static final String APP_ID = "wx0fc8d0673ec86694";
     private IWXAPI api;
+    private static final String FRAGMENT_TAG = "potunes_list_container";
+    private Playlist playlist;
 
-
-    private Handler sHandler = new Handler() {
-        public void handleMessage(android.os.Message msg) {
-            switch (msg.what) {
-                case TEST:
-                    //可以执行UI操作
-                    RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-                    GridLayoutManager layoutManager = new GridLayoutManager(MainActivity.this, 1);
-                    recyclerView.setLayoutManager(layoutManager);
-                    adapter = new PlaylistAdapter((List<Playlist>) msg.obj);
-                    recyclerView.setAdapter(adapter);
-                    adapter.notifyDataSetChanged();
-                    break;
-            }
-        }
-    };
-
+    private PlayerService playerService;
+    public PlayerService getPlayerService() {
+        return playerService;
+    }
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Fresco.initialize(MainActivity.this);
+        setContentView(R.layout.activity_main);
+        initializeToolbar();
+//        mMyMusic = (ImageView) findViewById(R.id.my_music);
+//        mMyMusic.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent intent = new Intent();
+////                intent.setClass(MainActivity.this, MyMusicActivity.class);
+//                intent.putExtra("title", "我的音乐");
+//                startActivity(intent);
+//            }
+//        });
+        bindService(new Intent(this, PlayerService.class), new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                Log.d(TAG, "onServiceConnected: 绑定服务成功");
+                PlayerService.PlayerServiceBinder playerServiceBinder = (PlayerService.PlayerServiceBinder) service;
+                playerService = playerServiceBinder.getPlayService();
+            }
 
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                Log.d(TAG, "onServiceDisconnected: 绑定服务失败");
+            }
+        }, Context.BIND_AUTO_CREATE);
+
+        initializeFromParams(savedInstanceState, getIntent());
+        Fresco.initialize(MainActivity.this);
         // initial database
         LitePal.initialize(MainActivity.this);
         db = LitePal.getDatabase();
-        setContentView(R.layout.activity_main);
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        mMyMusic = (ImageView) findViewById(R.id.my_music);
-
-        mMyMusic.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setClass(MainActivity.this, MyMusicActivity.class);
-                intent.putExtra("title", "我的音乐");
-                startActivity(intent);
-            }
-        });
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-
-        // init Playlists
-        initPlaylists();
-        // init Refresh
-        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
-        swipeRefresh.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
-        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                refreshPlaylists();
-            }
-        });
-
-
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if (quickControls == null) {
-            quickControls = QuciControlsFragment.newInstance();
-            ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
-        } else {
-            ft.show(quickControls).commitAllowingStateLoss();
-        }
-
-        // register to wechat
-        registerToWechat();
-
-
+        EventBus.getDefault().register(this);
     }
 
     @Override
-    public void onFragmentInteraction(Uri uri) {
-
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMessageEvent(MessageEvent event) {
+        if (event.playlist != null) {
+            playlist = event.playlist;
         }
     }
 
+
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if ((System.currentTimeMillis() - time > 1000)) {
-                Toast.makeText(this, "再按一次返回桌面", Toast.LENGTH_SHORT).show();
-                time = System.currentTimeMillis();
-            } else {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.addCategory(Intent.CATEGORY_HOME);
-                startActivity(intent);
-            }
-            return true;
-        } else {
-            return super.onKeyDown(keyCode, event);
+    protected void onSaveInstanceState(Bundle outState) {
+        String mediaId = getMediaId();
+        if (mediaId != null) {
+            outState.putString(SAVED_MEDIA_ID, mediaId);
         }
-
+        super.onSaveInstanceState(outState);
     }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        // 设置右侧menu
-//        getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-
         return super.onOptionsItemSelected(item);
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
+    public void navigateToBrowser(String mediaId) {
+        PlaylistFragment fragment = getPlaylistFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+        if (fragment == null) {
+            fragment = new PlaylistFragment();
+            fragment.setMediaId(mediaId);
+            transaction.replace(R.id.container, fragment, FRAGMENT_TAG);
+            transaction.commit();
+            return;
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
+        if (!TextUtils.equals(mediaId, fragment.getMediaId())) {
+            if (mediaId.equals("online_tracks")) {
+                // If this is not the top level media (root), we add it to the fragment back stack,
+                // so that actionbar toggle and Back will work appropriately:
+                TrackListFragment tracklistFragment = TrackListFragment.newInstance();
+                tracklistFragment.playlist = playlist;
+                tracklistFragment.setMediaId(mediaId);
+                transaction.replace(R.id.container, tracklistFragment, mediaId);
+                transaction.addToBackStack(null);
+                transaction.commit();
+                setTitle(playlist.getTitle());
+            }
+        }
     }
+    private void initializeFromParams(Bundle savedInstanceState, Intent intent) {
+        String mediaId = null;
+        if (savedInstanceState != null) {
+            // If there is a saved media ID, use it
+            mediaId = savedInstanceState.getString(SAVED_MEDIA_ID);
+        }
+        Log.d(TAG, "initializeFromParams: " + mediaId);
+        navigateToBrowser(mediaId);
+    }
+    public String getMediaId() {
+        PlaylistFragment fragment = getPlaylistFragment();
+        if (fragment == null) {
+            return null;
+        }
+        return fragment.getMediaId();
+    }
+    private PlaylistFragment getPlaylistFragment() {
+        return (PlaylistFragment) getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG);
+    }
+
+
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -250,19 +208,14 @@ public class MainActivity extends AppCompatActivity
                 .setActionStatus(Action.STATUS_TYPE_COMPLETED)
                 .build();
     }
-
     @Override
     public void onStart() {
         super.onStart();
-
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client.connect();
         AppIndex.AppIndexApi.start(client, getIndexApiAction());
     }
-
-
-
     @Override
     public void onStop() {
         super.onStop();
@@ -271,109 +224,6 @@ public class MainActivity extends AppCompatActivity
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
-    }
-
-    public void initPlaylists() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    playlists.clear();
-                    playlists = loadLocalPlaylists();
-
-                    if (playlists.size() == 0) {
-                        OkHttpClient client = new OkHttpClient();
-                        Request request = new Request.Builder()
-                                .url("https://poche.fm/api/app/playlists/")
-                                .build();
-                        Response response = client.newCall(request).execute();
-                        String responseData = response.body().string();
-                        parseJSONWithGSON(responseData);
-                    }
-
-                    Message msg = Message.obtain();
-                    msg.what = TEST;
-                    msg.obj = playlists;
-
-                    sHandler.sendMessage(msg);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
-    private List<Playlist> loadLocalPlaylists() {
-        List<Playlist> mPlaylists = DataSupport.order("id asc").find(Playlist.class);
-        return mPlaylists;
-    }
-
-    private void parseJSONWithGSON(String jsonData) {
-        Gson gson = new Gson();
-        List<Playlist> datas = gson.fromJson(jsonData, new TypeToken<List<Playlist>>(){}.getType());
-
-        for (Playlist playlist : datas) {
-            Playlist mPlaylist = new Playlist(playlist.getTitle(), playlist.getPlaylist_id(), playlist.getCover());
-            playlists.add(mPlaylist);
-            mPlaylist.save();
-        }
-
-    }
-
-    public void refreshPlaylists() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                OkHttpClient client = new OkHttpClient();
-                Request request = new Request.Builder()
-                        .url("https://poche.fm/api/app/playlists/")
-                        .build();
-                try {
-                    Response response = client.newCall(request).execute();
-                    String responseData = response.body().string();
-
-                    Gson gson = new Gson();
-                    List<Playlist> datas = gson.fromJson(responseData, new TypeToken<List<Playlist>>(){}.getType());
-                    int maxID = playlists.get(0).getPlaylist_id();
-                    List<Playlist> tempLists = new ArrayList<>();
-                    for (Playlist playlist : datas) {
-                        if (playlist.getPlaylist_id() > maxID) {
-                            tempLists.add(playlist);
-                            playlist.save();
-                        }
-                    }
-                    for (Playlist playlist: playlists) {
-                        tempLists.add(playlist);
-                    }
-
-                    playlists.clear();
-                    playlists = tempLists;
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Message msg = Message.obtain();
-                            msg.what = TEST;
-                            msg.obj = playlists;
-
-                            sHandler.sendMessage(msg);
-                            adapter.notifyDataSetChanged();
-                            swipeRefresh.setRefreshing(false);
-                        }
-                    });
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }).start();
-    }
-
-    private void registerToWechat() {
-        api = WXAPIFactory.createWXAPI(this, APP_ID, true);
-        api.registerApp(APP_ID);
     }
 
 }

@@ -1,96 +1,79 @@
 package poche.fm.potunes;
-
-import android.content.Context;
+import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
+import android.os.RemoteException;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.media.MediaBrowserCompat;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.Window;
-import android.widget.LinearLayout;
+import poche.fm.potunes.fragment.QuickControlsFragment;
+import poche.fm.potunes.service.MusicService;
+import poche.fm.potunes.utils.LogHelper;
+import poche.fm.potunes.utils.ResourceHelper;
 
-import poche.fm.potunes.fragment.QuciControlsFragment;
+public abstract class BaseActivity extends ActionBarCastActivity implements QuickControlsFragment.OnFragmentInteractionListener {
 
-public class BaseActivity extends AppCompatActivity implements QuciControlsFragment.OnFragmentInteractionListener {
-
-    private Toolbar toolbar;
-    private ActionBar actionBar;
-    private QuciControlsFragment quickControls;
-    private String TAG = "BaseActivity";
-    private LinearLayout llcontent;
+    private static final String TAG = LogHelper.makeLogTag(BaseActivity.class);
+    private QuickControlsFragment mControlsFragment;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.base_activity);
+        if (Build.VERSION.SDK_INT >= 21) {
+            // Since our app icon has the same color as colorPrimary, our entry in the Recent Apps
+            // list gets weird. We need to change either the icon or the color
+            // of the TaskDescription.
+            ActivityManager.TaskDescription taskDesc = new ActivityManager.TaskDescription(
+                    getTitle().toString(),
+                    BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher),
+                    ResourceHelper.getThemeColor(this, R.attr.colorPrimary,
+                            android.R.color.darker_gray));
+            setTaskDescription(taskDesc);
+        }
+
+
 
     }
 
-    public void baseInit() {
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-            actionBar = getSupportActionBar();
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.actionbar_back);
-            toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onBackPressed();
-                }
-            });
-        }
+    @Override
+    protected void onStart() {
+        super.onStart();
 
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if (quickControls == null) {
-            quickControls = QuciControlsFragment.newInstance();
-            ft.add(R.id.bottom_container, quickControls).commitAllowingStateLoss();
+        if (mControlsFragment == null) {
+            mControlsFragment = QuickControlsFragment.newInstance();
+            ft.add(R.id.bottom_container, mControlsFragment).commitAllowingStateLoss();
         } else {
-            ft.show(quickControls).commitAllowingStateLoss();
+            ft.show(mControlsFragment).commitAllowingStateLoss();
         }
+
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        LogHelper.d(TAG, "Activity onStop");
+    }
+
+
+
+
+    protected void onMediaControllerConnected() {
+        // empty implementation, can be overridden by clients.
+    }
     @Override
     public void onFragmentInteraction(Uri uri) {
 
     }
 
-    public void baseSetContentView(int layoutResID) {
-        llcontent = (LinearLayout) findViewById(R.id.llcontent);
-        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View v = inflater.inflate(layoutResID, null);
-        llcontent.addView(v);
-    }
 
-    public Toolbar getToolbar() {
-        return this.toolbar;
-    }
 
-    public QuciControlsFragment getQuickControls() {
-        return this.quickControls;
-    }
 
-    public ActionBar getBaseActionBar() {
-        return actionBar;
-    }
 
-    // press back button
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()){
-            case android.R.id.home: //对用户按home icon的处理，本例只需关闭activity，就可返回上一activity，即主activity。
-                Log.d("", "onOptionsItemSelected: ");
-                overridePendingTransition(0,0);
-                onBackPressed();
-                return true;
-            default:
-                break;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+
 }

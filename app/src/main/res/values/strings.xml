@@ -1,8 +1,21 @@
 <resources>
     <string name="app_name">Potunes</string>
 
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="touch_to_cast">Touch to connect to a Google Cast device</string>
+    <string name="open_content_drawer">Open the main menu</string>
+    <string name="close_content_drawer">Close the main menu</string>
+    <string name="drawer_allmusic_title">All Music</string>
+    <string name="drawer_playlists_title">Playlists</string>
+    <string name="cast_application_id">CC1AD845</string>
+    <string name="error_no_metadata">Unable to retrieve metadata.</string>
+    <string name="error_loading_media">Error Loading Media</string>
+    <string name="error_no_connection">Cannot connect to server. Please, check your Internet connectivity.</string>
+    <string name="play_item">Play item</string>
+    <string name="browse_genres">Genres</string>
+    <string name="browse_genre_subtitle">Songs by genre</string>
+
+
+
 
     <string name="action_settings">Settings</string>
     <string name="background_image_str">Background image for album art</string>
@@ -15,6 +28,9 @@
     <string name="queue_is_empty">播放队列为空</string>
     <string name="my_music">我的音乐</string>
     <string name="downloading">下载管理</string>
+    <string name="search_queue_title">Search Result</string>
+
+    <string name="casting_to_device">Casting to %1$s</string>
 
 
 </resources>

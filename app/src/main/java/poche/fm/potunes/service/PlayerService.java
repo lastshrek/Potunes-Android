@@ -14,6 +14,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -30,26 +31,30 @@ import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import poche.fm.potunes.Model.PlayState;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
-import poche.fm.potunes.fragment.QuciControlsFragment;
+import poche.fm.potunes.fragment.QuickControlsFragment;
 
 /**
  * Created by purchas on 2017/1/14.
  */
 
 @SuppressLint("NewApi")
-public class PlayerService extends Service implements AudioManager.OnAudioFocusChangeListener {
+public class PlayerService extends Service implements MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener {
 
     private MediaPlayer mediaPlayer; //媒体播放器对象
     private String path; // 音乐文件路径
     private int msg;
     private boolean isPause; //暂停
     private int current = 0; //记录当前在播放的音乐
-    private ArrayList<Track> tracks = new ArrayList<>();
+    public static ArrayList<Track> tracks;
     private int status = 0; //播放状态，默认顺序播放
     private MyReceiver myReceiver; //自定义广播接收器
     private int currentTime;
@@ -66,65 +71,70 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
     public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";//新音乐长度更新动作
     public static final String TAG = "PlayerService";
 
-    /**
-     * handler用来接收消息，来发送广播更新播放时间
-     */
-    private Handler handler = new Handler() {
-        public void handleMessage(Message msg) {
-            if (msg.what == 1) {
-                if(mediaPlayer != null) {
-                    currentTime = mediaPlayer.getCurrentPosition(); // 获取当前音乐播放的位置
-                    Intent intent = new Intent();
-                    intent.setAction(MUSIC_CURRENT);
-                    Track track = tracks.get(current);
-                    intent.putExtra("url", track.getCover());
-                    intent.putExtra("artist", track.getArtist());
-                    intent.putExtra("title", track.getTitle());
-                    intent.putExtra("isPlaying", mediaPlayer.isPlaying());
-                    intent.putExtra("currentTime", currentTime);
-                    sendBroadcast(intent); // 给PlayerActivity发送广播
-                    handler.sendEmptyMessageDelayed(1, 1000);
+
+    public static final int MODE_ORDER = 0x0;
+    public static final int MODE_RANDOM = 0x1;
+
+    public static PlayState mPlayState = new PlayState();
+
+
+    //创建单个线程池
+    private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
+
+    private Runnable updateStatusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            while(true){
+                mPlayState.setProgress(getCurrentProgress());
+                Intent intent = new Intent();
+                intent.setAction(MUSIC_CURRENT);
+                sendBroadcast(intent);
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }
     };
 
+    public int getCurrentProgress(){
+        if(mediaPlayer != null && mediaPlayer.isPlaying()){
+            return mediaPlayer.getCurrentPosition();
+        } else {
+            return 0;
+        }
+    }
+
+    public class PlayerServiceBinder extends Binder {
+        public PlayerService getPlayService(){
+            return PlayerService.this;
+        }
+    }
+
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+
+        //播放完成时进行下一曲
+        next();
+
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         mediaPlayer = new MediaPlayer();
-        //设置音乐播放完成时的监听器
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-            if (status == 1) {
-                mediaPlayer.start();
-            } else if (status == 0) {
-                current++;
-                if (current > tracks.size() -1) {
-                    current = 0;
-                }
-                sendIntent(current);
-                path = tracks.get(current).getUrl();
-                play(0);
-            }  else if (status == 2) {
-                current = getRandomIndex(tracks.size() - 1);
-                sendIntent(current);
-                path = tracks.get(current).getUrl();
-                play(0);
-            }
-            }
-        });
+        mediaPlayer.setOnCompletionListener(this);
 
         mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-
-
-        myReceiver = new MyReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(PlayerActivity.CTL_ACTION);
-        filter.addAction(QuciControlsFragment.CTL_ACTION);
-        registerReceiver(myReceiver, filter);
+//
+//
+//        myReceiver = new MyReceiver();
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction(PlayerActivity.CTL_ACTION);
+//        filter.addAction(QuickControlsFragment.CTL_ACTION);
+//        registerReceiver(myReceiver, filter);
     }
 
     /**
@@ -144,146 +154,91 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
     }
     @Override
     public IBinder onBind(Intent arg0) {
-        return null;
+        mExecutorService.execute(updateStatusRunnable);
+        return new PlayerServiceBinder();
     }
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
-        int shuffle = preferences.getInt("shuffle", 0);
-        status = shuffle;
-        current = preferences.getInt("position", 0);
-        path = intent.getStringExtra("url"); //歌曲路径
-        msg = intent.getIntExtra("MSG", 0);
-        Log.d(TAG, "onStartCommand: " + msg);
 
-        mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        //获取本地Tracks数据
-        String json = preferences.getString("Tracks", "Tracks");
-        Gson gson = new Gson();
-        tracks.clear();
-        tracks = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
-
-        if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
-            play(0);
-        } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {
-            //暂停
-            pause();
-        } else if (msg == AppConstant.PlayerMsg.STOP_MSG) {     //停止
-            if (isPause) {
-                resume();
-            } else {
-                pause();
-            }
-        } else if (msg == AppConstant.PlayerMsg.CONTINUE_MSG) { //继续播放
-            resume();
-        } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
-            previous();
-        } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
-            //下一首
-            next();
-        } else if (msg == AppConstant.PlayerMsg.PROGRESS_CHANGE) {  //进度更新
-            currentTime = intent.getIntExtra("progress", -1);
-            play(currentTime);
-        } else if (msg == AppConstant.PlayerMsg.PLAYING_MSG) {
-            handler.sendEmptyMessage(1);
-        }
-        getNotification();
-        return super.onStartCommand(intent,flags, startId);
-    }
 
     /**
      * 播放音乐
      */
-    private void play(int currentTime) {
+    public void play(final int position) {
+        Track track = tracks.get(position);
         try {
             mediaPlayer.reset();
-            mediaPlayer.setDataSource(path);
-            mediaPlayer.prepare();
-            mediaPlayer.setOnPreparedListener(new PreparedListener(currentTime));
-            handler.sendEmptyMessage(1);
+            mediaPlayer.setDataSource(track.getUrl());
+            mediaPlayer.prepareAsync();
+
+            mPlayState.setCurrentPosition(position);
+            mPlayState.setPlaying(true);
+
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    mPlayState.setDuration(mediaPlayer.getDuration());
+                    mediaPlayer.start();
+                }
+            });
+
         } catch (Exception e) {
+            Log.d(TAG, "play: 音乐地址解析错误");
             e.printStackTrace();
         }
 
     }
 
-    private void pause() {
+    public void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mPlayState.setPlaying(false);
             mediaPlayer.pause();
             isPause = true;
             mAudioManager.abandonAudioFocus(this);
         }
     }
-    private void resume() {
-        if (isPause) {
+    public void resume() {
+        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+            mPlayState.setPlaying(true);
             mediaPlayer.start();
-            isPause = false;
         }
     }
-    private void previous() {
-        if (status == 0) {
-            if (current == 0) {
-                current = tracks.size() - 1;
-            } else {
-                current = current - 1;
-            }
+    public void previous() {
+        int currentPosition = mPlayState.getCurrentPosition();
+        if (currentPosition == 0) {
+            currentPosition = tracks.size() - 1;
+        } else {
+            currentPosition--;
         }
-        sendIntent(current);
-        path = tracks.get(current).getUrl();
-        sendIntent(current);
-        play(0);
+        mPlayState.setCurrentPosition(currentPosition);
+        play(currentPosition);
     }
-    private void next() {
-       if (status == 0) {
-            if (current == tracks.size() - 1) {
-                current = 0;
-            } else {
-                current = current + 1;
+    public void next() {
+        int currentPosition = mPlayState.getCurrentPosition();
+        int mode = mPlayState.getMode();
+        if(tracks != null) {
+            switch (mode) {
+                case MODE_ORDER:
+                    if (currentPosition == tracks.size() - 1) {
+                        currentPosition = 0;
+                    } else {
+                        currentPosition++;
+                    }
+                    break;
+                case MODE_RANDOM:
+                    Random random = new Random(System.currentTimeMillis());
+                    currentPosition = random.nextInt(tracks.size());
+                    break;
             }
-        } else if (status == 2) {
-            current = (int) (Math.random() * (tracks.size() - 1));
+
+            mPlayState.setCurrentPosition(currentPosition);
+            play(currentPosition);
         }
-        sendIntent(current);
-        path = tracks.get(current).getUrl();
-        play(0);
     }
     @Override
     public void onDestroy() {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
+        super.onDestroy();
+        mExecutorService.shutdown();
     }
-    private final class PreparedListener implements MediaPlayer.OnPreparedListener {
-        private int currentTime;
-        private PreparedListener(int currentTime) {
-            this.currentTime = currentTime;
-        }
-        @Override
-        public void onPrepared(MediaPlayer mp) {
-            mediaPlayer.start(); // 开始播放
-            if (currentTime > 0) { // 如果音乐不是从头播放
-                mediaPlayer.seekTo(currentTime);
-            }
-            //通过Intent来传递歌曲的总长度
-            Intent intent = new Intent();
-            intent.setAction(MUSIC_DURATION);
-            duration = mediaPlayer.getDuration();
-            intent.putExtra("duration", duration);
-            intent.putExtra("TRACKS", tracks);
-            sendBroadcast(intent);
-            // 存储长度
-            duration = mediaPlayer.getDuration();
-            SharedPreferences preferences=getSharedPreferences("user",Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor=preferences.edit();
-            editor.putInt("duration", duration);
-            editor.putInt("position", current);
-            editor.apply();
-            isPause = false;
-            getNotification();
-        }
-    }
+
 
     private void getNotification() {
         //通知栏
@@ -333,7 +288,7 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
                         .setWhen(System.currentTimeMillis())
                         .setOngoing(true)
                         .setContentIntent(pi)
-                        .setSmallIcon(R.drawable.ic_notification);
+                        .setSmallIcon(R.drawable.ic_cast_dark);
                 Notification notification = mBuilder.build();
                 mManager.notify(1, notification);
             }

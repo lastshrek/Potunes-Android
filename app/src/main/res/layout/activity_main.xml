@@ -7,11 +7,32 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     tools:openDrawer="start">
-
-    <include
-        layout="@layout/app_bar_main"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <include layout="@layout/include_toolbar" android:id="@+id/toolbar_container"/>
+
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/toolbar_container"
+            android:layout_above="@+id/controls_container"/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:id="@+id/controls_container">
+
+            <FrameLayout
+                android:id="@+id/bottom_container"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                />
+        </RelativeLayout>
+    </RelativeLayout>
 
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"
@@ -19,10 +40,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
-        app:headerLayout="@layout/nav_header_main"
-        app:menu="@menu/activity_main_drawer" />
-
-
-
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/drawer" />
 
 </android.support.v4.widget.DrawerLayout>

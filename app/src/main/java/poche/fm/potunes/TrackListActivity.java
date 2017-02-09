@@ -3,37 +3,18 @@ package poche.fm.potunes;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.lzy.okgo.OkGo;
-import com.lzy.okgo.request.GetRequest;
-import com.lzy.okserver.download.DownloadInfo;
 import com.lzy.okserver.download.DownloadManager;
-import com.lzy.okserver.download.DownloadService;
-import com.lzy.okserver.listener.DownloadListener;
 import com.malinskiy.materialicons.widget.IconButton;
 
 import org.litepal.LitePal;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,13 +22,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.Model.Track;
-import poche.fm.potunes.Model.TrackAdapter;
-import poche.fm.potunes.domain.AppConstant;
-import poche.fm.potunes.fragment.MoreFragment;
-import poche.fm.potunes.fragment.QuciControlsFragment;
+import poche.fm.potunes.fragment.TrackAdapter;
 
 
-public class TrackListActivity extends BaseActivity implements MoreFragment.OnFragmentInteractionListener{
+public class TrackListActivity extends BaseActivity {
 
     public static final String PLAYLIST_ID = "playlist_id";
     public static final String TITLE = "playlist_title";
@@ -67,12 +45,11 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
         public void handleMessage(android.os.Message msg) {
             switch (msg.what) {
                 case TRACK:
-                    RecyclerView recyclerView = (RecyclerView) findViewById(R.id.tracklist_recycler_view);
-                    GridLayoutManager layoutManager = new GridLayoutManager(TrackListActivity.this, 1);
-                    recyclerView.setLayoutManager(layoutManager);
-                    adapter = new TrackAdapter((ArrayList<Track>) msg.obj);
-                    recyclerView.setAdapter(adapter);
-                    swipeRefresh.setRefreshing(false);
+//                    RecyclerView recyclerView = (RecyclerView) findViewById(R.id.tracklist_recycler_view);
+//                    GridLayoutManager layoutManager = new GridLayoutManager(TrackListActivity.this, 1);
+//                    recyclerView.setLayoutManager(layoutManager);
+//                    adapter = new TrackAdapter((ArrayList<Track>) msg.obj);
+//                    recyclerView.setAdapter(adapter);
                     break;
             }
         }
@@ -80,32 +57,13 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        baseSetContentView(R.layout.tracklist_layout);
-        baseInit();
+//        baseSetContentView(R.layout.tracklist_layout);
+//        baseInit();
 
-        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.track_swipe_refresh);
-        swipeRefresh.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
-        swipeRefresh.setEnabled(false);
-        swipeRefresh.setRefreshing(true);
-        downloadAll = (IconButton) findViewById(R.id.download_all);
-        downloadAll.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(getBaseContext(), "开始下载", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent();
-                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
-                intent.setPackage(getPackageName());
-                startService(intent);
-            }
-        });
 
-        downloadManager = DownloadService.getDownloadManager();
-        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music/");
-        downloadManager.getThreadPool().setCorePoolSize(1);
 
         LitePal.initialize(this);
 
@@ -113,7 +71,7 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
         int playlist_id = intent.getIntExtra(PLAYLIST_ID, -1);
 
         album_title = intent.getStringExtra(TITLE);
-        getBaseActionBar().setTitle(album_title);
+//        getBaseActionBar().setTitle(album_title);
         initTracks(playlist_id);
 
     }
@@ -136,7 +94,7 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
                     SharedPreferences preference = getSharedPreferences("user", Context.MODE_PRIVATE);
                     SharedPreferences.Editor editor = preference.edit();
                     editor.putString("Tracks", responseData);
-                    editor.putString("album", getBaseActionBar().getTitle().toString());
+//                    editor.putString("album", getBaseActionBar().getTitle().toString());
                     editor.apply();
                     parseJSONWithGSON(responseData);
                 } catch (Exception e) {
@@ -154,8 +112,8 @@ public class TrackListActivity extends BaseActivity implements MoreFragment.OnFr
                     Gson gson = new Gson();
                     ArrayList<Track> datas = gson.fromJson(jsonData, new TypeToken<List<Track>>(){}.getType());
                     for (Track track : datas) {
-                        Track mTrack = new Track(track.getTitle(),track.getID(),track.getCover(),track.getArtist(),track.getUrl(),getBaseActionBar().getTitle().toString(), 0);
-                        tracks.add(mTrack);
+//                        Track mTrack = new Track(track.getTitle(),track.getID(),track.getCover(),track.getArtist(),track.getUrl(),getBaseActionBar().getTitle().toString(), 0);
+//                        tracks.add(mTrack);
                     }
                     Message msg = Message.obtain();
                     msg.what = TRACK;

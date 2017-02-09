@@ -28,6 +28,7 @@ import com.google.gson.reflect.TypeToken;
 import java.util.ArrayList;
 import java.util.List;
 
+import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.TrackListActivity;
@@ -51,6 +52,7 @@ public class PlayQueueFragment extends AttachDialogFragment {
     private int current;
     private Handler mHandler;
     private String TAG = "PlayQueueFragment";
+    private PlayerService mPlayerService;
 
 
     @Override
@@ -88,6 +90,11 @@ public class PlayQueueFragment extends AttachDialogFragment {
         layoutManager = new LinearLayoutManager(mContext);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setHasFixedSize(true);
+
+        current = PlayerService.mPlayState.getCurrentPosition();
+        MainActivity main = (MainActivity) getActivity();
+        mPlayerService = main.getPlayerService();
+
         new loadSongs().execute();
         return view;
     }
@@ -110,22 +117,7 @@ public class PlayQueueFragment extends AttachDialogFragment {
         @Override
         protected Void doInBackground(Void... params) {
             if (mContext != null) {
-                try {
-                    //获取本地Tracks数据
-                    SharedPreferences preferences = mContext.getSharedPreferences("user", Context.MODE_PRIVATE);
-                    String json = preferences.getString("Tracks", "Tracks");
-                    current = preferences.getInt("position", 0);
-                    Gson gson = new Gson();
-                    playlist.clear();
-                    ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
-                    for (Track track : datas) {
-                       playlist.add(track);
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                playlist = PlayerService.tracks;
             }
             return null;
         }
@@ -204,24 +196,8 @@ public class PlayQueueFragment extends AttachDialogFragment {
                         if (position == -1) {
                             return;
                         }
-                        Track track = playlist.get(position);
-                        Intent intent = new Intent();
-                        intent.putExtra("url", track.getUrl());
-                        intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
-                        intent.putExtra("TRACKS", playlist);
-                        intent.putExtra("position", position);
-                        intent.setClass(mContext, PlayerService.class);
-                        mContext.startService(intent);
 
-                        // 存储当前歌曲播放位置
-                        SharedPreferences preference = mContext.getSharedPreferences("user",Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = preference.edit();
-                        editor.putInt("position", position);
-                        editor.commit();
-
-                        notifyItemChanged(currentlyPlayingPosition);
-                        notifyItemChanged(position);
-
+                        mPlayerService.play(position);
                         dismiss();
                     }
                 }, 70);

@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -19,8 +18,6 @@ import com.malinskiy.materialicons.widget.IconTextView;
 
 import java.util.List;
 
-import poche.fm.potunes.BaseActivity;
-import poche.fm.potunes.DownloadingActivity;
 import poche.fm.potunes.R;
 
 /**
@@ -88,10 +85,10 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                                 Toast.makeText(mContext, "当前并无下载任务", Toast.LENGTH_SHORT).show();
                                 return;
                             }
-                            Intent intent = new Intent();
-                            intent.setClass(mContext, DownloadingActivity.class);
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            mContext.startActivity(intent);
+//                            Intent intent = new Intent();
+//                            intent.setClass(mContext, DownloadingActivity.class);
+//                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                            mContext.startActivity(intent);
                             break;
 
                     }

@@ -45,10 +45,6 @@
 
     </style>
 
-    <style name="cccc" parent="Widget.AppCompat.ProgressBar.Horizontal">
-        <item name="android:progressDrawable">@drawable/progress_horizontal</item>
-
-    </style>
 
     <style name="NoAnimation">
 

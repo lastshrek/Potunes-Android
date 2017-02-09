@@ -3,6 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/media_route_menu_item"
+        android:title="Play on..."
+        app:actionProviderClass="android.support.v7.app.MediaRouteActionProvider"
+        app:showAsAction="always"/>
+    <item
         android:id="@+id/action_settings"
         android:title="Import"
         android:layout_width="55dp"

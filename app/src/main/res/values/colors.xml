@@ -17,6 +17,10 @@
     <color name="statusBarTranslucent">#00ffffff</color>
     <color name="menu_item_white">#FFFFFF</color>
     <color name="light_gray">#dde3e1</color>
+    <color name="error_message_background">#ffff1600</color>
+
+    <color name="media_item_icon_playing">@color/colorAccent</color>
+    <color name="media_item_icon_not_playing">#ccc</color>
 
 
 

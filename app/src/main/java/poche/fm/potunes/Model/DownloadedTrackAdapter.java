@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -22,11 +21,8 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 
-import poche.fm.potunes.DownloadedTracksActivity;
 import poche.fm.potunes.R;
-import poche.fm.potunes.TrackListActivity;
 import poche.fm.potunes.domain.AppConstant;
-import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.service.PlayerService;
 
 /**
@@ -87,8 +83,8 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
                 intent.putExtra("TRACKS", mTrackList);
                 intent.putExtra("position", position);
                 intent.setClass(mContext, PlayerService.class);
-                Activity activity = (DownloadedTracksActivity) mContext;
-                activity.startService(intent);
+//                Activity activity = (DownloadedTracksActivity) mContext;
+//                activity.startService(intent);
             }
         });
 
