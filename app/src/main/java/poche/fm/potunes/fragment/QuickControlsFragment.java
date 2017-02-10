@@ -149,7 +149,6 @@ public class QuickControlsFragment extends Fragment {
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onClick: dianji" + mPlayerService);
                 if (mPlayerService != null) {
                     mPlayerService.next();
                 }
@@ -158,14 +157,9 @@ public class QuickControlsFragment extends Fragment {
         rootView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                Intent playerIntent = new Intent(mContext, PlayerActivity.class);
-//                playerIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//                MediaControllerCompat controller = ((FragmentActivity) getActivity()).getSupportMediaController();
-//                MediaMetadataCompat metadata = controller.getMetadata();
-//                if (metadata != null) {
-//                    playerIntent.putExtra(MainActivity.EXTRA_CURRENT_MEDIA_DESCRIPTION, metadata.getDescription());
-//                }
-//                startActivity(playerIntent);
+                Intent playerIntent = new Intent(mContext, PlayerActivity.class);
+                playerIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(playerIntent);
             }
         });
         

@@ -6,9 +6,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.os.RemoteException;
 import android.support.v4.app.Fragment;
-import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -34,17 +32,12 @@ import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.MessageEvent;
-import poche.fm.potunes.Model.MusicProvider;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
-import poche.fm.potunes.playback.LocalPlayback;
-import poche.fm.potunes.playback.PlaybackManager;
-import poche.fm.potunes.playback.QueueManager;
-import poche.fm.potunes.service.PlayerService;
-import poche.fm.potunes.utils.MediaNotificationManager;
 
 /**
  * A fragment representing a list of Items.
@@ -68,13 +61,6 @@ public class TrackListFragment extends Fragment {
     private DownloadManager downloadManager;
     private SwipeRefreshLayout swipeRefresh;
 
-
-
-
-
-
-
-
     private Handler sHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             switch (msg.what) {
@@ -95,17 +81,12 @@ public class TrackListFragment extends Fragment {
     }
 
     public static TrackListFragment newInstance() {
-        TrackListFragment fragment = new TrackListFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
+        return new TrackListFragment();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
     }
 
 
@@ -114,14 +95,6 @@ public class TrackListFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_track_list, container, false);
-
-        // Set the adapter
-        if (view instanceof RecyclerView) {
-            Context context = view.getContext();
-            RecyclerView recyclerView = (RecyclerView) view;
-
-        }
-
         // Set the adapter
         mRecyclerView = (RecyclerView) view.findViewById(R.id.tracklist_recycler_view);
         GridLayoutManager layoutManager = new GridLayoutManager(getActivity(), 1);
@@ -177,7 +150,9 @@ public class TrackListFragment extends Fragment {
                 try {
                     Gson gson = new Gson();
                     ArrayList<Track> datas = gson.fromJson(jsonData, new TypeToken<List<Track>>(){}.getType());
+                    MainActivity main = (MainActivity) getActivity();
                     for (Track track : datas) {
+                        track.setAlbum(main.mToolbarTitle.getText().toString());
                         tracks.add(track);
                     }
                     Message msg = Message.obtain();
@@ -205,7 +180,6 @@ public class TrackListFragment extends Fragment {
         args.putString(ARG_MEDIA_ID, mediaId);
         setArguments(args);
     }
-
 
     @Override
     public void onAttach(Context context) {
@@ -240,15 +214,6 @@ public class TrackListFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
     }
-
-//    @Override
-//    public MediaBrowserCompat getMediaBrowser() {
-//        return mMediaBrowser;
-//    }
-
-
-
-
 
     /**
      * This interface must be implemented by activities that contain this

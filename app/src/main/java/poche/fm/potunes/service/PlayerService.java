@@ -8,29 +8,20 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.ImageView;
 import android.widget.RemoteViews;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,13 +41,11 @@ import poche.fm.potunes.fragment.QuickControlsFragment;
 public class PlayerService extends Service implements MediaPlayer.OnCompletionListener, AudioManager.OnAudioFocusChangeListener {
 
     private MediaPlayer mediaPlayer; //媒体播放器对象
-    private String path; // 音乐文件路径
     private int msg;
     private boolean isPause; //暂停
     private int current = 0; //记录当前在播放的音乐
     public static ArrayList<Track> tracks;
     private int status = 0; //播放状态，默认顺序播放
-    private MyReceiver myReceiver; //自定义广播接收器
     private int currentTime;
     private int duration;
     private Bitmap bitmap;
@@ -65,15 +54,13 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private AudioManager mAudioManager;
 
     // 服务要发送的一些Action
-    public static final String UPDATE_ACTION = "fm.poche.action.UPDATE_ACTION";  //更新动作
-    public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION";        //控制动作
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT";  //当前音乐播放时间更新动作
-    public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";//新音乐长度更新动作
     public static final String TAG = "PlayerService";
 
 
-    public static final int MODE_ORDER = 0x0;
-    public static final int MODE_RANDOM = 0x1;
+    public static final int MODE_ORDER = 0;
+    public static final int MODE_RANDOM = 1;
+    public static final int MODE_REPEAT = 2;
 
     public static PlayState mPlayState = new PlayState();
 
@@ -99,7 +86,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     };
 
     public int getCurrentProgress(){
-        if(mediaPlayer != null && mediaPlayer.isPlaying()){
+        if(mediaPlayer != null){
             return mediaPlayer.getCurrentPosition();
         } else {
             return 0;
@@ -114,10 +101,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
     @Override
     public void onCompletion(MediaPlayer mp) {
-
         //播放完成时进行下一曲
         next();
-
     }
 
     @Override
@@ -128,36 +113,13 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
         mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
-//
-//
-//        myReceiver = new MyReceiver();
-//        IntentFilter filter = new IntentFilter();
-//        filter.addAction(PlayerActivity.CTL_ACTION);
-//        filter.addAction(QuickControlsFragment.CTL_ACTION);
-//        registerReceiver(myReceiver, filter);
     }
 
-    /**
-     * 获取随机位置
-     * @param end
-     * @return
-     */
-    protected int getRandomIndex(int end) {
-        int index = (int) (Math.random() * end);
-        return index;
-    }
-    protected void sendIntent(int current) {
-        Intent sendIntent = new Intent(UPDATE_ACTION);
-        sendIntent.putExtra("current", current);
-        sendIntent.putExtra("TRACKS", tracks);
-        sendBroadcast(sendIntent);
-    }
     @Override
     public IBinder onBind(Intent arg0) {
         mExecutorService.execute(updateStatusRunnable);
         return new PlayerServiceBinder();
     }
-
 
     /**
      * 播放音乐
@@ -186,7 +148,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         }
 
     }
-
     public void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mPlayState.setPlaying(false);
@@ -227,18 +188,23 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                     Random random = new Random(System.currentTimeMillis());
                     currentPosition = random.nextInt(tracks.size());
                     break;
+                case MODE_REPEAT:
+                    break;
             }
 
             mPlayState.setCurrentPosition(currentPosition);
             play(currentPosition);
         }
     }
+    public void seekTo(int position) {
+        if (mediaPlayer != null) mediaPlayer.seekTo(position);
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
         mExecutorService.shutdown();
     }
-
 
     private void getNotification() {
         //通知栏
@@ -295,25 +261,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         });
     }
 
-    public class MyReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int control = intent.getIntExtra("control", -1);
-            switch (control) {
-                case 1:
-                    status = 0; // 列表循环
-                    break;
-                case 2:
-                    status = 1; // 单曲循环
-                    break;
-                case 3:
-                    status = 2; // 随机播放
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
     //捕获、丢弃音乐焦点
     @Override
     public void onAudioFocusChange(int focusChange) {

@@ -3,6 +3,7 @@ package poche.fm.potunes.Model;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -78,6 +79,7 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
     public void onBindViewHolder(final DownloadAlbumAdapter.ViewHolder holder, int position) {
         Track track = mAlbumList.get(position);
         holder.name.setText(track.getAlbum());
+        Log.d(TAG, "onBindViewHolder: " + track.getAlbum());
         String thumb = track.getCover() + "!/fw/150";
         Glide.with(mContext).load(thumb).into(holder.cover);
         holder.itemView.setClickable(true);

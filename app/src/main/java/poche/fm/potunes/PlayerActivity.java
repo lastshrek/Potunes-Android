@@ -1,14 +1,16 @@
 package poche.fm.potunes;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -29,18 +31,16 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
-import java.util.ArrayList;
-import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.Model.Lrc;
+import poche.fm.potunes.Model.PlayState;
 import poche.fm.potunes.Model.Track;
-import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.fragment.PlayQueueFragment;
 import poche.fm.potunes.lrc.LrcView;
+import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.MediaUtil;
 import poche.fm.potunes.widgets.TintImageView;
 
@@ -49,11 +49,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     // 传值用
     public static final String TAG = "PlayerActivity"; // 更新动作
-    public static final String UPDATE_ACTION = "fm.poche.action.UPDATE_ACTION"; // 更新动作
-    public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION"; // 控制动作
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT"; // 音乐当前时间改变动作
-    public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";// 音乐播放长度改变动作
-    public static final String SHUFFLE_ACTION = "fm.poche.action.SHUFFLE_ACTION";// 音乐随机播放动作
 
     private Toolbar toolbar;
     private TextView mToolbarTitle;
@@ -82,12 +78,10 @@ public class PlayerActivity extends AppCompatActivity {
 
 
 
-    private int currentTime; // 当前歌曲播放时间
-    private int position; // 播放歌曲在tracks的位置
-    private String url; // 歌曲路径
-    private ArrayList<Track> tracks;
-    private boolean isPlaying; // 暂停
-    private int duration;
+    private PlayerService mPlayerService;
+    private long currentTime; // 当前歌曲播放时间
+    private long duration;
+    private int track_id = 0;
 
     // 0:noshuffle, 1:single, 2:shuffle
     private int shuffle;
@@ -122,6 +116,22 @@ public class PlayerActivity extends AppCompatActivity {
         findViewById();
         // Set on clicklistener
         setViewOnclickListener();
+
+        //绑定服务
+        bindService(new Intent(this, PlayerService.class), new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                Log.d(TAG, "onServiceConnected: ");
+                PlayerService.PlayerServiceBinder pb = (PlayerService.PlayerServiceBinder)service;
+                mPlayerService = pb.getPlayService();
+
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                Log.d(TAG, "onServiceDisconnected: ");
+            }
+        }, Context.BIND_AUTO_CREATE);
     }
 
     private void findViewById() {
@@ -147,7 +157,6 @@ public class PlayerActivity extends AppCompatActivity {
             setSupportActionBar(toolbar);
             ab = getSupportActionBar();
             ab.setDisplayHomeAsUpEnabled(true);
-            ab.setHomeAsUpIndicator(R.drawable.actionbar_back);
             toolbar.setNavigationOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -169,19 +178,6 @@ public class PlayerActivity extends AppCompatActivity {
         }
         mToolbarTitle = (TextView) findViewById(R.id.toolbar_title);
         mToolbarArtist = (TextView) findViewById(R.id.toolbar_artist);
-        //获取本地Tracks数据
-        SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
-        String json = preferences.getString("Tracks", "Tracks");
-        position = preferences.getInt("position", 0);
-        Gson gson = new Gson();
-        ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
-        for (int i = 0; i < datas.size(); i++) {
-            if (i == position) {
-                Track track = datas.get(i);
-                loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
-            }
-        }
-        tracks = datas;
 
         mBackgroundImage = (ImageView) findViewById(R.id.background_image);
         mCoverContainer = (RelativeLayout) findViewById(R.id.cover_container);
@@ -224,43 +220,28 @@ public class PlayerActivity extends AppCompatActivity {
         mEnd = (TextView) findViewById(R.id.endText);
 
         mSeekbar = (SeekBar) findViewById(R.id.seekBar1);
-        duration = preferences.getInt("duration", -1);
-        shuffle = preferences.getInt("shuffle", 0);
-        if (shuffle == -1) {
-            shuffle = 0;
-        }
-        if (shuffle == 0) {
-            mRepeat.setImageDrawable(mNoShuffle);
-        } else if (shuffle == 1) {
-            mRepeat.setImageDrawable(mSingle);
-        } else {
-            mRepeat.setImageDrawable(mShuffle);
-        }
-        mSeekbar.setMax(duration);
+
 
 
         mLoading = (ProgressBar) findViewById(R.id.progressBar1);
         View mControllers = findViewById(R.id.controllers);
         mControllers.setVisibility(View.VISIBLE);
 
-        Intent intent = getIntent();
-        isPlaying = intent.getBooleanExtra("isPlaying", false);
-
-        if (!isPlaying) {
-            mPlayPause.setImageDrawable(mPlayDrawable);
-        } else {
-            mPlayPause.setImageDrawable(mPauseDrawable);
-        }
+        mPlayPause.setImageDrawable(mPlayDrawable);
         mSkipNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                next_music();
+                if (mPlayerService != null) {
+                    mPlayerService.next();
+                }
             }
         });
         mSkipPrev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                previous_music();
+                if (mPlayerService != null) {
+                    mPlayerService.previous();
+                }
             }
         });
         dividerLine = (View) findViewById(R.id.view_line);
@@ -279,56 +260,38 @@ public class PlayerActivity extends AppCompatActivity {
     private class ViewOnclickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            Intent intent = new Intent();
-            intent.setAction("fm.poche.media.MUSIC_SERVICE");
             switch (v.getId()) {
                 case R.id.play_pause:
-                    if (!isPlaying) {
-                        mPlayPause.setVisibility(View.VISIBLE);
+                    if (PlayerService.mPlayState.isPlaying()) {
+                        mPlayerService.pause();
+                        PlayerService.mPlayState.setPlaying(false);
                         mPlayPause.setImageDrawable(mPauseDrawable);
-                        intent.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
-                        isPlaying = true;
                     } else {
-                        mPlayPause.setVisibility(View.VISIBLE);
+                        mPlayerService.resume();
+                        PlayerService.mPlayState.setPlaying(true);
                         mPlayPause.setImageDrawable(mPlayDrawable);
-                        intent.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
-                        isPlaying = false;
                     }
-                    intent.putExtra("url", tracks.get(position).getUrl());
-                    intent.putExtra("position", position);
-                    intent.setPackage(getPackageName());
-                    getBaseContext().startService(intent);
                     break;
                 case R.id.play_repeat:
-                    Intent shuffleIntent = new Intent(SHUFFLE_ACTION);
-
                     if(shuffle == 0) {
-                        mRepeat.setImageDrawable(mSingle);
-                        Toast.makeText(PlayerActivity.this, "单曲循环",
+                        PlayerService.mPlayState.setMode(1);
+                        mRepeat.setImageDrawable(mShuffle);
+                        Toast.makeText(PlayerActivity.this, "随机播放",
                                 Toast.LENGTH_SHORT).show();
                         shuffle = 1;
                     } else if (shuffle == 1) {
-                        mRepeat.setImageDrawable(mShuffle);
-                        Toast.makeText(PlayerActivity.this, "随机播放",
+                        PlayerService.mPlayState.setMode(2);
+                        mRepeat.setImageDrawable(mSingle);
+                        Toast.makeText(PlayerActivity.this, "单曲循环",
                                 Toast.LENGTH_SHORT).show();
                         shuffle = 2;
                     } else if (shuffle == 2) {
                         mRepeat.setImageDrawable(mNoShuffle);
+                        PlayerService.mPlayState.setMode(0);
                         Toast.makeText(PlayerActivity.this, "列表循环",
                                 Toast.LENGTH_SHORT).show();
                         shuffle = 0;
                     }
-                    shuffleMusic(shuffle);
-                    sendBroadcast(shuffleIntent);
-                    // 存储播放状态
-                    SharedPreferences preference = getSharedPreferences("user",Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = preference.edit();
-                    editor.putInt("shuffle", shuffle);
-                    editor.apply();
-
-                    break;
-                case R.id.seekBar1:
-
                     break;
                 case R.id.nowPlaying_list:
                     Handler handler = new Handler();
@@ -340,25 +303,17 @@ public class PlayerActivity extends AppCompatActivity {
                          }
                     }, 60);
                     break;
-
                 default:
                     break;
             }
         }
         
     }
-
     private class SeekBarChangeListener implements SeekBar.OnSeekBarChangeListener {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress,
                                       boolean fromUser) {
-            switch(seekBar.getId()) {
-                case R.id.seekBar1:
-                    if (fromUser) {
-                         // 用户控制进度的改变
-                    }
-                    break;
-            }
+
         }
 
         @Override
@@ -367,33 +322,8 @@ public class PlayerActivity extends AppCompatActivity {
 
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
-            audioTrackChange(seekBar.getProgress());
+            mPlayerService.seekTo(seekBar.getProgress());
         }
-    }
-
-    public void next_music() {
-        Intent intent = new Intent();
-        intent.setAction("fm.poche.media.MUSIC_SERVICE");
-        intent.putExtra("TRACKS", tracks);
-        intent.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
-        intent.setPackage(getPackageName());
-        startService(intent);
-    }
-
-    public void previous_music() {
-        Intent intent = new Intent();
-        intent.setAction("fm.poche.media.MUSIC_SERVICE");
-        intent.putExtra("TRACKS", tracks);
-        intent.putExtra("MSG", AppConstant.PlayerMsg.PRIVIOUS_MSG);
-        intent.setPackage(getPackageName());
-        startService(intent);
-    }
-
-
-    public void shuffleMusic(int control) {
-        Intent intent = new Intent(CTL_ACTION);
-        intent.putExtra("control", control);
-        sendBroadcast(intent);
     }
     public void loadLrc(final String url) {
         new Thread(new Runnable() {
@@ -406,107 +336,71 @@ public class PlayerActivity extends AppCompatActivity {
                             .build();
                     Response response = client.newCall(request).execute();
                     String responseData = response.body().string();
-
                     Gson gson = new Gson();
                     Lrc lrc = gson.fromJson(responseData, Lrc.class);
                     mLrcView.loadLrc(lrc.getLrc(), lrc.getLrc_cn());
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         }).start();
-    }
-    private void registeReceiver() {
-        //定义和注册广播接收器
-        playerReceiver = null;
-        playerReceiver = new PlayerReceiver();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(UPDATE_ACTION);
-        filter.addAction(MUSIC_CURRENT);
-        filter.addAction(MUSIC_DURATION);
-        registerReceiver(playerReceiver, filter);
-    }
-
-    /**
-     * 播放进度改变
-     * @param progress
-     */
-    public void audioTrackChange(int progress) {
-        Intent intent = new Intent();
-        intent.setAction("fm.poche.media.MUSIC_SERVICE");
-        intent.putExtra("MSG", AppConstant.PlayerMsg.PROGRESS_CHANGE);
-        intent.putExtra("progress", progress);
-        intent.setPackage(getPackageName());
-        startService(intent);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        registeReceiver();
-    }
-
-    /**
-     * 反注册广播
-     */
-    @Override
-    protected void onStop() {
-        super.onStop();
     }
 
     public class PlayerReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            currentTime = intent.getIntExtra("currentTime", -1);
-            if (mLrcView.hasLrc()) {
-                mLrcView.updateTime(currentTime);
-            }
-
             if (action.equals(MUSIC_CURRENT)) {
+                Track track = PlayState.getCurrentMusic(PlayerService.tracks, PlayerService.mPlayState.getCurrentPosition());
+                if (track == null) {
+                    return;
+                }
+                //当前标题
+                String title = mToolbarTitle.getText().toString().trim();
+                String artist = mToolbarArtist.getText().toString().trim();
+                if(!title.equals(track.getTitle().trim()) || !artist.equals(track.getArtist().trim())) {
+                    mLrcView.onDrag(0);
+                    //刷新文本信息
+                    mToolbarTitle.setText(track.getTitle());
+                    mToolbarArtist.setText(track.getArtist());
+                    // 封面
+                    String thumb = track.getCover();
+                    Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
+                    Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
+                }
+                if (track_id != track.getID()) {
+                    loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
+                    mLrcView.onDrag(0);
+                    track_id = track.getID();
+                }
+                currentTime = PlayerService.mPlayState.getProgress();
+                if (mLrcView.hasLrc()) {
+                    mLrcView.changeCurrent(currentTime);
+                }
                 mStart.setText(MediaUtil.formatTime(currentTime));
-                mSeekbar.setProgress(currentTime);
-
+                mSeekbar.setProgress((int)currentTime);
+                mSeekbar.setMax((int)PlayerService.mPlayState.getDuration());
+                duration = PlayerService.mPlayState.getDuration();
                 if (duration > 0) {
                     mEnd.setText(MediaUtil.formatTime(duration - currentTime));
                 }
-                String thumb = intent.getStringExtra("url");
-                Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
-                Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
-                mToolbarTitle.setText(intent.getStringExtra("title"));
-                mToolbarArtist.setText(intent.getStringExtra("artist"));
 
-                boolean isMediaPlaying = intent.getBooleanExtra("isPlaying", false);
+                boolean isMediaPlaying = PlayerService.mPlayState.isPlaying();
                 if (!isMediaPlaying) {
                     mPlayPause.setImageDrawable(mPlayDrawable);
                 } else {
                     mPlayPause.setImageDrawable(mPauseDrawable);
                 }
 
-            }  else if (action.equals(UPDATE_ACTION)) {
-                position = intent.getIntExtra("current", -1);
-                Track track = tracks.get(position);
-                url = track.getUrl();
-                if (position >= 0) {
-                    // 设置专辑封面
-                    String thumb = track.getCover();
-                    Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
-                    Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
-                    // 歌手名
-                    mToolbarTitle.setText(track.getTitle());
-                    mToolbarArtist.setText(track.getArtist());
-                    // 加载歌词
-                    loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
+                shuffle = PlayerService.mPlayState.getMode();
+                if (shuffle == 0) {
+                    mRepeat.setImageDrawable(mNoShuffle);
+                } else if (shuffle == 1) {
+                    mRepeat.setImageDrawable(mShuffle);
+                } else {
+                    mRepeat.setImageDrawable(mSingle);
                 }
-
-            } else if (action.equals(MUSIC_DURATION)) {
-                duration = intent.getIntExtra("duration", -1);
-                tracks = (ArrayList<Track>) intent.getSerializableExtra("TRACKS");
-                mSeekbar.setMax(duration);
             }
-
         }
     }
     // 返回上个页面
@@ -533,4 +427,22 @@ public class PlayerActivity extends AppCompatActivity {
         }
         super.onDestroy();
     }
+    private void registeReceiver() {
+        //定义和注册广播接收器
+        playerReceiver = null;
+        playerReceiver = new PlayerReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(MUSIC_CURRENT);
+        registerReceiver(playerReceiver, filter);
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registeReceiver();
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
 }

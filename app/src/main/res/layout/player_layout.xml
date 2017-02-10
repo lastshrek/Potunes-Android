@@ -23,7 +23,7 @@
     <com.github.mmin18.widget.RealtimeBlurView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:realtimeBlurRadius="20dp"
+        app:realtimeBlurRadius="40dp"
         app:realtimeOverlayColor="#8000"/>
 
 
@@ -47,7 +47,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_marginStart="0dp">
                 <TextView
                     android:id="@+id/toolbar_title"
                     android:layout_width="match_parent"
@@ -105,16 +106,12 @@
                 <poche.fm.potunes.lrc.LrcView
                     android:id="@+id/lrcview"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+                    android:layout_height="match_parent"/>
 
             </RelativeLayout>
 
         </FrameLayout>
     </RelativeLayout>
-
-
-
-
 
     <RelativeLayout
         android:layout_width="fill_parent"

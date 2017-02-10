@@ -32,6 +32,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 
 import com.google.android.gms.cast.framework.CastButtonFactory;
 import com.google.android.gms.cast.framework.CastContext;
@@ -53,6 +54,8 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     private Toolbar mToolbar;
     private ActionBarDrawerToggle mDrawerToggle;
     private DrawerLayout mDrawerLayout;
+    public TextView mToolbarTitle;
+
 
     private boolean mToolbarInitialized;
 
@@ -203,8 +206,6 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
             mDrawerLayout.closeDrawers();
             return;
         }
-        Log.d(TAG, "onBackPressed: ");
-
         // Otherwise, it may return to the previous fragment stack
         FragmentManager fragmentManager = getSupportFragmentManager();
         if (fragmentManager.getBackStackEntryCount() > 0) {
@@ -218,7 +219,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     @Override
     public void setTitle(CharSequence title) {
         super.setTitle(title);
-        mToolbar.setTitle(title);
+        mToolbarTitle.setText(title);
     }
 
     @Override
@@ -254,7 +255,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         } else {
             setSupportActionBar(mToolbar);
         }
-
+        mToolbarTitle = (TextView) findViewById(R.id.app_title);
         mToolbarInitialized = true;
     }
 
@@ -289,7 +290,9 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         }
 
         if (isRoot) {
-            getSupportActionBar().setTitle(R.string.app_name);
+            if (mToolbarTitle != null) {
+                mToolbarTitle.setText(R.string.app_name);
+            }
         }
         if (isRoot) {
             mDrawerToggle.syncState();

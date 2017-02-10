@@ -1,13 +1,16 @@
 package poche.fm.potunes.fragment;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -92,9 +95,21 @@ public class PlayQueueFragment extends AttachDialogFragment {
         recyclerView.setHasFixedSize(true);
 
         current = PlayerService.mPlayState.getCurrentPosition();
-        MainActivity main = (MainActivity) getActivity();
-        mPlayerService = main.getPlayerService();
 
+        getActivity().bindService(new Intent(getContext(), PlayerService.class), new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                Log.d(TAG, "onServiceConnected: ");
+                PlayerService.PlayerServiceBinder pb = (PlayerService.PlayerServiceBinder)service;
+                mPlayerService = pb.getPlayService();
+
+            }
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                Log.d(TAG, "onServiceDisconnected: ");
+            }
+            
+        },Context.BIND_AUTO_CREATE);
         new loadSongs().execute();
         return view;
     }

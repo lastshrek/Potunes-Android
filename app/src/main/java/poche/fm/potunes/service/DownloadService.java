@@ -92,11 +92,9 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
     public int onStartCommand(Intent intent, int flags, int startId) {
         msg = intent.getIntExtra("MSG", 0);
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
-        String album = preferences.getString("album", "album");
         switch (msg) {
             case 1:
                 Track track = (Track) intent.getSerializableExtra("track");
-                track.setAlbum(album);
                 checkFiles(track);
                 break;
             case 2:
@@ -107,7 +105,6 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
                 //获取专辑名称
                 ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
                 for (Track mTrack : datas) {
-                    mTrack.setAlbum(album);
                     checkFiles(mTrack);
                 }
         }

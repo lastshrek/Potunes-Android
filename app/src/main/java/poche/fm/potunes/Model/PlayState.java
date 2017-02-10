@@ -67,7 +67,6 @@ public class PlayState implements Serializable {
     }
 
     public void setMode(int mode) {
-        System.out.println("设置模式" + mode);
         this.mode = mode;
     }
 

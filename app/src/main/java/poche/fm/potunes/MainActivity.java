@@ -17,7 +17,9 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 
 import com.facebook.drawee.backends.pipeline.Fresco;
@@ -35,6 +37,7 @@ import org.litepal.LitePal;
 import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.fragment.MoreFragment;
+import poche.fm.potunes.fragment.MyMusicFragment;
 import poche.fm.potunes.fragment.PlaylistAdapter;
 import poche.fm.potunes.fragment.MediaBrowserFragment;
 import poche.fm.potunes.fragment.PlaylistFragment;
@@ -43,7 +46,9 @@ import poche.fm.potunes.service.MusicService;
 import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.LogHelper;
 
-public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener, TrackListFragment.OnListFragmentInteractionListener, MoreFragment.OnFragmentInteractionListener {
+public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
+        TrackListFragment.OnListFragmentInteractionListener,
+        MoreFragment.OnFragmentInteractionListener, MyMusicFragment.OnFragmentInteractionListener {
 
 
     public static final String EXTRA_CURRENT_MEDIA_DESCRIPTION =
@@ -78,16 +83,13 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
         setContentView(R.layout.activity_main);
         initializeToolbar();
-//        mMyMusic = (ImageView) findViewById(R.id.my_music);
-//        mMyMusic.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Intent intent = new Intent();
-////                intent.setClass(MainActivity.this, MyMusicActivity.class);
-//                intent.putExtra("title", "我的音乐");
-//                startActivity(intent);
-//            }
-//        });
+        mMyMusic = (ImageView) findViewById(R.id.my_music);
+        mMyMusic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                navigateToBrowser("my_music");
+            }
+        });
         bindService(new Intent(this, PlayerService.class), new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
@@ -157,6 +159,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             return;
         }
 
+
         if (!TextUtils.equals(mediaId, fragment.getMediaId())) {
             if (mediaId.equals("online_tracks")) {
                 // If this is not the top level media (root), we add it to the fragment back stack,
@@ -168,6 +171,15 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
                 transaction.addToBackStack(null);
                 transaction.commit();
                 setTitle(playlist.getTitle());
+            }
+            if (mediaId.equals("my_music")) {
+                MyMusicFragment myMusic = MyMusicFragment.newInstance();
+
+                myMusic.setMediaId(mediaId);
+                transaction.replace(R.id.container, myMusic, mediaId);
+                transaction.addToBackStack(null);
+                transaction.commit();
+                setTitle(R.string.my_music);
             }
         }
     }

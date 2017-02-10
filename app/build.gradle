@@ -60,7 +60,6 @@ dependencies {
     compile 'com.tencent.mm.opensdk:wechat-sdk-android-with-mta:1.0.2'
     compile 'com.github.rubensousa:bottomsheetbuilder:1.5.1'
     compile 'com.google.android.gms:play-services-cast-framework:9.8.0'
-    compile 'me.wcy:lrcview:1.4.0'
-    testCompile 'junit:junit:4.12'
     compile 'org.greenrobot:eventbus:3.0.0'
+    testCompile 'junit:junit:4.12'
 }

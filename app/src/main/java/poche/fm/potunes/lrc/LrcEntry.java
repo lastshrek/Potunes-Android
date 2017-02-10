@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 class LrcEntry implements Comparable<LrcEntry> {
     private long time;
     private String text;
-    private StaticLayout staticLayout;
     private TextPaint paint;
+    private StaticLayout staticLayout;
     private String TAG = "LrcEntry ======";
 
     private LrcEntry(long time, String text) {
@@ -42,9 +42,14 @@ class LrcEntry implements Comparable<LrcEntry> {
         return time;
     }
 
+    String getText() {
+        return this.text;
+    }
+
     StaticLayout getStaticLayout() {
         return staticLayout;
     }
+
 
     float getTextHeight() {
         if (paint == null || staticLayout == null) {
@@ -52,7 +57,6 @@ class LrcEntry implements Comparable<LrcEntry> {
         }
         return staticLayout.getLineCount() * paint.getTextSize();
     }
-
     @Override
     public int compareTo(LrcEntry entry) {
         if (entry == null) {
