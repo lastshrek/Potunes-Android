@@ -132,7 +132,6 @@ public class TrackListFragment extends Fragment {
                     Request request = new Request.Builder()
                             .url("https://poche.fm/api/app/playlists/" + playlist_id)
                             .build();
-
                     Response response = client.newCall(request).execute();
                     String responseData = response.body().string();
                     parseJSONWithGSON(responseData);
@@ -153,6 +152,7 @@ public class TrackListFragment extends Fragment {
                     MainActivity main = (MainActivity) getActivity();
                     for (Track track : datas) {
                         track.setAlbum(main.mToolbarTitle.getText().toString());
+                        Log.d(TAG, "run: " + track.getAlbum());
                         tracks.add(track);
                     }
                     Message msg = Message.obtain();
@@ -161,6 +161,7 @@ public class TrackListFragment extends Fragment {
                     sHandler.sendMessage(msg);
 
                 } catch (Exception e) {
+                    Log.d(TAG, "歌单解析失败");
                     e.printStackTrace();
                 }
             }

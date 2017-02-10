@@ -256,7 +256,7 @@ public class PlayerActivity extends AppCompatActivity {
         mSeekbar.setOnSeekBarChangeListener(new SeekBarChangeListener());
         mPlaylist.setOnClickListener(new ViewOnclickListener());
     }
-    
+
     private class ViewOnclickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -307,13 +307,18 @@ public class PlayerActivity extends AppCompatActivity {
                     break;
             }
         }
-        
+
     }
     private class SeekBarChangeListener implements SeekBar.OnSeekBarChangeListener {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress,
                                       boolean fromUser) {
 
+            if (progress == PlayerService.mPlayState.getDuration()) {
+                Log.d(TAG, "onProgressChanged: " + progress);
+
+                mLrcView.setNextTime();
+            }
         }
 
         @Override
@@ -323,6 +328,7 @@ public class PlayerActivity extends AppCompatActivity {
         @Override
         public void onStopTrackingTouch(SeekBar seekBar) {
             mPlayerService.seekTo(seekBar.getProgress());
+            mLrcView.onDrag(seekBar.getProgress());
         }
     }
     public void loadLrc(final String url) {
@@ -359,7 +365,6 @@ public class PlayerActivity extends AppCompatActivity {
                 String title = mToolbarTitle.getText().toString().trim();
                 String artist = mToolbarArtist.getText().toString().trim();
                 if(!title.equals(track.getTitle().trim()) || !artist.equals(track.getArtist().trim())) {
-                    mLrcView.onDrag(0);
                     //刷新文本信息
                     mToolbarTitle.setText(track.getTitle());
                     mToolbarArtist.setText(track.getArtist());
@@ -367,15 +372,13 @@ public class PlayerActivity extends AppCompatActivity {
                     String thumb = track.getCover();
                     Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
                     Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
-                }
-                if (track_id != track.getID()) {
                     loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
-                    mLrcView.onDrag(0);
-                    track_id = track.getID();
+
                 }
+
                 currentTime = PlayerService.mPlayState.getProgress();
                 if (mLrcView.hasLrc()) {
-                    mLrcView.changeCurrent(currentTime);
+                    mLrcView.updateTime(currentTime);
                 }
                 mStart.setText(MediaUtil.formatTime(currentTime));
                 mSeekbar.setProgress((int)currentTime);
@@ -400,6 +403,7 @@ public class PlayerActivity extends AppCompatActivity {
                 } else {
                     mRepeat.setImageDrawable(mSingle);
                 }
+
             }
         }
     }

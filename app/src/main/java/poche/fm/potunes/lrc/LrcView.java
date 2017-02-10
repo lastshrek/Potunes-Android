@@ -1,199 +1,195 @@
 package poche.fm.potunes.lrc;
 
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.AsyncTask;
+import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 import android.widget.Scroller;
+import android.widget.TextView;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import poche.fm.potunes.R;
-import poche.fm.potunes.utils.TextUtil;
 
-@SuppressLint("DrawAllocation")
+
+
+/**
+ * Created by purchas on 2017/2/3.
+ */
+
 public class LrcView extends View {
+	private List<LrcEntry> mLrcEntryList = new ArrayList<>();
+	private TextPaint mPaint = new TextPaint();
+	private float mTextSize;
+	private float mDividerHeight;
+	private long mAnimationDuration;
+	private int mNormalColor;
+	private int mCurrentColor;
+	private String mLabel;
+	private float mLrcPadding;
+	private ValueAnimator mAnimator;
+	private float mAnimateOffset;
+	private long mNextTime = 0L;
+	private int mCurrentLine = 0;
+	private Rect mTextBounds;
+	private List<LrcEntry> mTemp = new ArrayList<>();
+
+
 	private static final int SCROLL_TIME = 500;
 	private static final String DEFAULT_TEXT = "暂未找到歌词";
 	private String TAG = "LrcView";
 
-	private List<LrcEntry> mLrcEntryList = new ArrayList<>();
-
-	private long mNextTime = 0l; // 保存下一句开始的时间
-
-	private int mViewWidth; // view的宽度
-	private int mLrcHeight; // lrc界面的高度
-	private int mRows;      // 多少行
-	private int mCurrentLine = 0; // 当前行
-	private int mOffsetY;   // y上的偏移
-	private int mMaxScroll; // 最大滑动距离=一行歌词高度+歌词间距
-
-	private float mTextSize; // 字体
-	private float mDividerHeight; // 行间距
-	
-	private Rect mTextBounds;
-	private TextPaint mCurrentPaint = new TextPaint(); // 当前歌词的大小
-
-
-	private Scroller mScroller;
-	private int  normalTextColor;
-	private int currentTextColor;
-
+	public LrcView(Context context) {
+		this(context, null);
+	}
 
 	public LrcView(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
 	}
+
 	public LrcView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
-		mScroller = new Scroller(context, new LinearInterpolator());
-		inflateAttributes(attrs);
+		init(attrs);
 	}
-	// 初始化操作
-	private void inflateAttributes(AttributeSet attrs) {
-		// 解析自定义属性
-		TypedArray ta = getContext().obtainStyledAttributes(attrs, R.styleable.Lrc);
-		mTextSize = ta.getDimension(R.styleable.Lrc_textSize, 50.0f);
-		mRows = ta.getInteger(R.styleable.Lrc_rows, 12);
-		mDividerHeight = ta.getDimension(R.styleable.Lrc_dividerHeight, LrcUtils.dp2px(getContext(), 16));
 
-		normalTextColor = ta.getColor(R.styleable.Lrc_normalTextColor, 0xffffffff);
-		currentTextColor = ta.getColor(R.styleable.Lrc_currentTextColor, 0xFFFF4081);
+	private void init(AttributeSet attrs) {
+		TypedArray ta = getContext().obtainStyledAttributes(attrs, me.wcy.lrcview.R.styleable.LrcView);
+		mTextSize = ta.getDimension(me.wcy.lrcview.R.styleable.LrcView_lrcTextSize, LrcUtils.sp2px(getContext(), 15));
+		mDividerHeight = ta.getDimension(me.wcy.lrcview.R.styleable.LrcView_lrcDividerHeight, LrcUtils.dp2px(getContext(), 20));
+		mAnimationDuration = ta.getInt(me.wcy.lrcview.R.styleable.LrcView_lrcAnimationDuration, 500);
+		mAnimationDuration = mAnimationDuration < 0 ? 1000 : mAnimationDuration;
+		mNormalColor = ta.getColor(me.wcy.lrcview.R.styleable.LrcView_lrcNormalTextColor, 0xFFFFFFFF);
+		mCurrentColor = ta.getColor(me.wcy.lrcview.R.styleable.LrcView_lrcCurrentTextColor, 0xFFFF4081);
+		mLabel = ta.getString(me.wcy.lrcview.R.styleable.LrcView_lrcLabel);
+		mLabel = TextUtils.isEmpty(mLabel) ? "暂无歌词" : mLabel;
+		mLrcPadding = ta.getDimension(me.wcy.lrcview.R.styleable.LrcView_lrcPadding, 0);
 		ta.recycle();
 
+		mPaint.setAntiAlias(true);
+		mPaint.setTextSize(mTextSize);
+		mPaint.setTextAlign(Paint.Align.LEFT);
 
-		// 计算lrc面板的高度
-		mLrcHeight = (int) (mTextSize + mDividerHeight) * mRows + 5;
-		
-		// 初始化paint
-		mCurrentPaint.setTextSize(mTextSize);
-		mCurrentPaint.setColor(currentTextColor);
-		mCurrentPaint.setAntiAlias(true);
-		
 		mTextBounds = new Rect();
-		mCurrentPaint.getTextBounds(DEFAULT_TEXT, 0, DEFAULT_TEXT.length(), mTextBounds);
-		mMaxScroll = (int) (mTextBounds.height() + mDividerHeight);
+		mPaint.getTextBounds(DEFAULT_TEXT, 0, DEFAULT_TEXT.length(), mTextBounds);
+
 	}
+
 	@Override
-	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-		// 重新设置view的高度
-		int measuredHeightSpec = MeasureSpec.makeMeasureSpec(mLrcHeight, MeasureSpec.AT_MOST);
-		super.onMeasure(widthMeasureSpec, measuredHeightSpec);
+	protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+		super.onLayout(changed, left, top, right, bottom);
+		initEntryList();
 	}
-	
-	@Override
-	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-		super.onSizeChanged(w, h, oldw, oldh);
-		// 获取view宽度
-		mViewWidth = getMeasuredWidth();
+
+	public void setNextTime() {
+
+
+		initNextTime();
+		mCurrentLine = 0;
+
+		onDrag(mLrcEntryList.get(0).getTime());
+
 	}
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		float centerY = (getMeasuredHeight() + mTextBounds.height() - mDividerHeight) / 2;
-		mCurrentPaint.setColor(currentTextColor);
-		if (mLrcEntryList.isEmpty()) {
-			canvas.drawText(DEFAULT_TEXT,
-					(mViewWidth - mCurrentPaint.measureText(DEFAULT_TEXT)) / 2,
-					centerY, mCurrentPaint);
+		super.onDraw(canvas);
+		canvas.translate(0, mAnimateOffset);
+		// 中心Y坐标
+		float centerY = (getMeasuredHeight() + mTextBounds.height()) / 2;
 
+		mPaint.setColor(mCurrentColor);
+
+		// 无歌词文件
+		if (!hasLrc()) {
+			@SuppressLint("DrawAllocation")
+			StaticLayout staticLayout = new StaticLayout(mLabel, mPaint, (int) getLrcWidth(),
+					Layout.Alignment.ALIGN_CENTER, 1f, 0f, false);
+			drawText(canvas, staticLayout, centerY - staticLayout.getLineCount() * mTextSize / 2);
 			return;
 		}
+
 		// 画当前行
-		float currentY = centerY - mLrcEntryList.get(mCurrentLine).getTextHeight() / 2;
-		drawText(canvas, mLrcEntryList.get(mCurrentLine).getStaticLayout(), currentY);
+		float currY = centerY - (mTextBounds.height() + mDividerHeight) / 2;
+		drawText(canvas, mLrcEntryList.get(mCurrentLine).getStaticLayout(), currY);
 
 		// 画当前行上面的
-		mCurrentPaint.setColor(normalTextColor);
-		float upY = currentY;
+		mPaint.setColor(mNormalColor);
+		float upY = currY;
 		for (int i = mCurrentLine - 1; i >= 0; i--) {
-			upY -= mDividerHeight + mLrcEntryList.get(i).getTextHeight();
+			upY -= mDividerHeight * 2 + mTextBounds.height();
+
+            if (mAnimator == null || !mAnimator.isRunning()) {
+                // 动画已经结束，超出屏幕停止绘制
+                if (upY < 0) {
+                    break;
+                }
+            }
+
 			drawText(canvas, mLrcEntryList.get(i).getStaticLayout(), upY);
+
+			// 动画未结束，超出屏幕多绘制一行
+            if (upY < 0) {
+                break;
+            }
 		}
 
 		// 画当前行下面的
-		float downY = currentY + mLrcEntryList.get(mCurrentLine).getTextHeight() + mDividerHeight;
+		float downY = currY + mTextBounds.height() + mDividerHeight * 2;
 		for (int i = mCurrentLine + 1; i < mLrcEntryList.size(); i++) {
+			if (mAnimator == null || !mAnimator.isRunning()) {
+                // 动画已经结束，超出屏幕停止绘制
+                if (downY + mTextBounds.height() > getHeight()) {
+                    break;
+                }
+			}
+
 			drawText(canvas, mLrcEntryList.get(i).getStaticLayout(), downY);
+
+			 //动画未结束，超出屏幕多绘制一行
+            if (downY + mTextBounds.height() > getHeight()) {
+                break;
+            }
+
 			downY += mLrcEntryList.get(i).getTextHeight() + mDividerHeight;
 		}
-
 	}
 
 	private void drawText(Canvas canvas, StaticLayout staticLayout, float y) {
 		canvas.save();
-		canvas.translate(mDividerHeight, y);
+		canvas.translate(mLrcPadding, y);
 		staticLayout.draw(canvas);
 		canvas.restore();
 	}
-	
-	@Override
-	public void computeScroll() {
-		if(mScroller.computeScrollOffset()) {
-			mOffsetY = mScroller.getCurrY();
-			if(mScroller.isFinished()) {
-				int cur = mScroller.getCurrX();
-				mCurrentLine = cur <= 1 ? 0 : cur - 1;
-				mOffsetY = 0;
-			}
-			postInvalidate();
-		}
+	private float getLrcWidth() {
+		return getWidth() - mLrcPadding * 2;
 	}
 
-	// 外部提供方法传入当前播放时间
-	public synchronized void changeCurrent(long time) {
-		// 如果当前时间小于下一句开始的时间
-		// 直接return
-		if (mNextTime > time) {
-			return;
-		}
-		
-		// 每次进来都遍历存放的时间
-		int timeSize = mLrcEntryList.size();
-		for (int i = 0; i < timeSize; i++) {
-			
-			// 解决最后一行歌词不能高亮的问题
-			if(mNextTime == mLrcEntryList.get(timeSize - 1).getTime()) {
-				mNextTime += 60 * 1000;
-				mScroller.abortAnimation();
-				mScroller.startScroll(timeSize, 0, 0, mMaxScroll, SCROLL_TIME);
-				postInvalidate();
-				return;
-			}
-
-			if (mLrcEntryList.get(i).getTime() > time) {
-				mNextTime = mLrcEntryList.get(i).getTime();
-				mScroller.abortAnimation();
-				mScroller.startScroll(i, 0, 0, mMaxScroll, SCROLL_TIME);
-				postInvalidate();
-
-				return;
-			}
-		}
-	}
-	// 拖动进度条时
-	public void onDrag(int progress) {
-		for(int i=0;i<mLrcEntryList.size();i++) {
-			if((mLrcEntryList.get(i).getTime()) > progress) {
-				mNextTime = i == 0 ? 0 : mLrcEntryList.get(i-1).getTime();
-				return;
-			}
-		}
+	/**
+	 * 设置歌词为空时屏幕中央显示的文字，如“暂无歌词”
+	 */
+	public void setLabel(String label) {
+		mLabel = label;
+		postInvalidate();
 	}
 
-	// 加载Lrc
+
+	/**
+	 * 加载歌词文件
+	 *
+	 * @param lrcText 歌词文本
+	 */
 	public void loadLrc(final String lrcText, final String chLrcText) {
 		reset();
 
@@ -224,6 +220,75 @@ public class LrcView extends View {
 			initEntryList();
 			initNextTime();
 		}
+
+		postInvalidate();
+	}
+
+	/**
+	 * 刷新歌词
+	 *
+	 * @param time 当前播放时间
+	 */
+	public void updateTime(long time) {
+		Log.d(TAG, "updateTime: " + time + "   " + mNextTime);
+
+		// 避免重复绘制
+		if (time < mNextTime) {
+			return;
+		}
+		for (int i = mCurrentLine; i < mLrcEntryList.size(); i++) {
+			if (mLrcEntryList.get(i).getTime() > time) {
+				mNextTime = mLrcEntryList.get(i).getTime();
+				mCurrentLine = (i < 1) ? 0 : (i - 1);
+				newlineOnUI(i);
+				break;
+			} else if (i == mLrcEntryList.size() - 1) {
+				// 最后一行
+				mCurrentLine = mLrcEntryList.size() - 1;
+				mNextTime = Long.MAX_VALUE;
+				newlineOnUI(i);
+				break;
+			}
+		}
+	}
+
+	/**
+	 * 将歌词滚动到指定时间
+	 *
+	 * @param time 指定的时间
+	 */
+	public void onDrag(long time) {
+		for (int i = 0; i < mLrcEntryList.size(); i++) {
+			if (mLrcEntryList.get(i).getTime() > time) {
+				if (i == 0) {
+					mCurrentLine = i;
+					initNextTime();
+				} else {
+					mCurrentLine = i - 1;
+					mNextTime = mLrcEntryList.get(i).getTime();
+				}
+				newlineOnUI(i);
+				break;
+			}
+		}
+	}
+
+	/**
+	 * 歌词是否有效
+	 *
+	 * @return true，如果歌词有效，否则false
+	 */
+	public boolean hasLrc() {
+		Log.d(TAG, "hasLrc: " + mLrcEntryList.isEmpty());
+		return !mLrcEntryList.isEmpty();
+	}
+
+	private void reset() {
+		mLrcEntryList.clear();
+		mCurrentLine = 0;
+		mNextTime = 0L;
+
+		stopAnimation();
 		postInvalidate();
 	}
 
@@ -235,11 +300,9 @@ public class LrcView extends View {
 		Collections.sort(mLrcEntryList);
 
 		for (LrcEntry lrcEntry : mLrcEntryList) {
-			lrcEntry.init(mCurrentPaint, (int)(mViewWidth - mDividerHeight * 2));
+			lrcEntry.init(mPaint, (int) getLrcWidth());
 		}
 	}
-
-
 
 	private void initNextTime() {
 		if (mLrcEntryList.size() > 1) {
@@ -249,25 +312,42 @@ public class LrcView extends View {
 		}
 	}
 
-	private void reset() {
-		mLrcEntryList.clear();
-		mCurrentLine = 0;
-		mNextTime = 0l;
-	}
-	
-	// 是否设置歌词
-	public boolean hasLrc() {
-		return !mLrcEntryList.isEmpty();
+	private void newlineOnUI(final int index) {
+		post(new Runnable() {
+			@Override
+			public void run() {
+				newlineAnimation(index);
+			}
+		});
 	}
 
+	/**
+	 * 换行动画<br>
+	 * 属性动画只能在主线程使用
+	 */
+	private void newlineAnimation(int index) {
+		if (mAnimator == null) {
+			mAnimator = ValueAnimator.ofFloat(0, 0.0f);
+		} else {
+			mAnimator.cancel();
+			mAnimator.setFloatValues(0, 0.0f);
+		}
+		long duration = mAnimationDuration * mLrcEntryList.get(index).getStaticLayout().getLineCount();
+		mAnimator = ValueAnimator.ofFloat(mTextBounds.height() + mDividerHeight * 2, 0.0f);
+		mAnimator.setDuration(duration);
+		mAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				mAnimateOffset = (float) animation.getAnimatedValue();
+				invalidate();
+			}
+		});
+		mAnimator.start();
+	}
 
-
-    private static class LrcLine implements Comparable<LrcLine> {
-        long time;
-        String line;
-        @Override
-        public int compareTo(LrcLine another) {
-            return (int) (time - another.time);
-        }
-    }
+	private void stopAnimation() {
+		if (mAnimator != null && mAnimator.isRunning()) {
+			mAnimator.end();
+		}
+	}
 }
