@@ -25,7 +25,7 @@ import java.io.IOException;
  * Implements a basic cache of album arts, with async loading support.
  */
 public final class AlbumArtCache {
-    private static final String TAG = LogHelper.makeLogTag(AlbumArtCache.class);
+    private static final String TAG = "AlbumArtCache";
 
     private static final int MAX_ALBUM_ART_CACHE_SIZE = 12*1024*1024;  // 12 MB
     private static final int MAX_ART_WIDTH = 800;  // pixels
@@ -80,11 +80,9 @@ public final class AlbumArtCache {
         // a proper image loading library, like Glide.
         Bitmap[] bitmap = mCache.get(artUrl);
         if (bitmap != null) {
-            LogHelper.d(TAG, "getOrFetch: album art is in cache, using it", artUrl);
             listener.onFetched(artUrl, bitmap[BIG_BITMAP_INDEX], bitmap[ICON_BITMAP_INDEX]);
             return;
         }
-        LogHelper.d(TAG, "getOrFetch: starting asynctask to fetch ", artUrl);
 
         new AsyncTask<Void, Void, Bitmap[]>() {
             @Override
@@ -100,8 +98,6 @@ public final class AlbumArtCache {
                 } catch (IOException e) {
                     return null;
                 }
-                LogHelper.d(TAG, "doInBackground: putting bitmap in cache. cache size=" +
-                    mCache.size());
                 return bitmaps;
             }
 
@@ -120,7 +116,6 @@ public final class AlbumArtCache {
     public static abstract class FetchListener {
         public abstract void onFetched(String artUrl, Bitmap bigImage, Bitmap iconImage);
         public void onError(String artUrl, Exception e) {
-            LogHelper.e(TAG, e, "AlbumArtFetchListener: error while downloading " + artUrl);
         }
     }
 }

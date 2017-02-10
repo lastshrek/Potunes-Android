@@ -1,11 +1,9 @@
 package poche.fm.potunes.fragment;
 
-import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -25,20 +23,12 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
 import java.util.ArrayList;
-import java.util.List;
 
-import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
-import poche.fm.potunes.TrackListActivity;
-import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.handler.HandlerUtil;
 import poche.fm.potunes.service.PlayerService;
-import poche.fm.potunes.widgets.TintImageView;
 
 
 /**

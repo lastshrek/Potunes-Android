@@ -27,15 +27,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".TrackListActivity"
-            android:parentActivityName=".MainActivity">
-            <intent-filter>
-                <action android:name="fm.poche.potunes.Action_START" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
         <!--
  ATTENTION: This was auto-generated to add Google Play services to your project for
      App Indexing.  See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -65,15 +56,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="fm.poche.media.DOWNLOAD_SERVICE" />
-            </intent-filter>
-        </service>
-
-        <service
-            android:name=".service.MusicService"
-            android:exported="true"
-            tools:ignore="ExportedService">
-            <intent-filter>
-                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
 

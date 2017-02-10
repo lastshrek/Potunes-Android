@@ -1,24 +1,17 @@
 package poche.fm.potunes;
 import android.app.ActivityManager;
-import android.content.ComponentName;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
-import android.os.RemoteException;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.media.MediaBrowserCompat;
 import android.os.Bundle;
-import android.support.v4.media.session.MediaControllerCompat;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.util.Log;
+
 import poche.fm.potunes.fragment.QuickControlsFragment;
-import poche.fm.potunes.service.MusicService;
-import poche.fm.potunes.utils.LogHelper;
 import poche.fm.potunes.utils.ResourceHelper;
 
 public abstract class BaseActivity extends ActionBarCastActivity implements QuickControlsFragment.OnFragmentInteractionListener {
 
-    private static final String TAG = LogHelper.makeLogTag(BaseActivity.class);
+    private static final String TAG = "BaseActivity";
     private QuickControlsFragment mControlsFragment;
 
     @Override
@@ -57,7 +50,6 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Quic
     @Override
     protected void onStop() {
         super.onStop();
-        LogHelper.d(TAG, "Activity onStop");
     }
 
 

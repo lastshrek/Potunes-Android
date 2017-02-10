@@ -8,18 +8,13 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.session.MediaControllerCompat;
-import android.support.v4.media.session.MediaSessionCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 
 import com.facebook.drawee.backends.pipeline.Fresco;
@@ -39,12 +34,9 @@ import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.MyMusicFragment;
 import poche.fm.potunes.fragment.PlaylistAdapter;
-import poche.fm.potunes.fragment.MediaBrowserFragment;
 import poche.fm.potunes.fragment.PlaylistFragment;
 import poche.fm.potunes.fragment.TrackListFragment;
-import poche.fm.potunes.service.MusicService;
 import poche.fm.potunes.service.PlayerService;
-import poche.fm.potunes.utils.LogHelper;
 
 public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
         TrackListFragment.OnListFragmentInteractionListener,

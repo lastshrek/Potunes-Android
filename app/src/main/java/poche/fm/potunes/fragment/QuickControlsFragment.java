@@ -5,18 +5,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,16 +32,14 @@ import poche.fm.potunes.Model.PlayState;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
-import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.AlbumArtCache;
-import poche.fm.potunes.utils.LogHelper;
 import poche.fm.potunes.widgets.TintImageView;
 
 
 public class QuickControlsFragment extends Fragment {
 
-    private static final String TAG = LogHelper.makeLogTag(QuickControlsFragment.class);
+    private static final String TAG = "QuickControlsFragment.class";
     public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION"; // 控制动作
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT"; // 音乐当前时间改变动作
     public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";// 音乐播放长度改变动作
@@ -72,7 +67,6 @@ public class QuickControlsFragment extends Fragment {
     private final MediaControllerCompat.Callback mCallback = new MediaControllerCompat.Callback() {
         @Override
         public void onPlaybackStateChanged(PlaybackStateCompat state) {
-            LogHelper.d(TAG, "Received playback state change to state ", state.getState());
             QuickControlsFragment.this.onPlaybackStateChanged(state);
         }
 
@@ -81,8 +75,6 @@ public class QuickControlsFragment extends Fragment {
             if (metadata == null) {
                 return;
             }
-            LogHelper.d(TAG, "Received metadata state change to mediaId=",
-                    metadata.getDescription().getMediaId(), " song=", metadata.getDescription().getTitle());
             QuickControlsFragment.this.onMetadataChanged(metadata);
         }
     };
@@ -249,14 +241,12 @@ public class QuickControlsFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        LogHelper.d(TAG, "fragment.onStart");
 
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        LogHelper.d(TAG, "fragment.onStop");
         MediaControllerCompat controller = getActivity().getSupportMediaController();
         if (controller != null) {
             controller.unregisterCallback(mCallback);
@@ -278,10 +268,7 @@ public class QuickControlsFragment extends Fragment {
     }
 
     private void onPlaybackStateChanged(PlaybackStateCompat state) {
-        LogHelper.d(TAG, "onPlaybackStateChanged ", state);
         if (getActivity() == null) {
-            LogHelper.w(TAG, "onPlaybackStateChanged called when getActivity null," +
-                    "this should not happen if the callback was properly unregistered. Ignoring.");
             return;
         }
         if (state == null) {
@@ -294,7 +281,6 @@ public class QuickControlsFragment extends Fragment {
                 enablePlay = true;
                 break;
             case PlaybackStateCompat.STATE_ERROR:
-                LogHelper.e(TAG, "error playbackstate: ", state.getErrorMessage());
                 Toast.makeText(getActivity(), state.getErrorMessage(), Toast.LENGTH_LONG).show();
                 break;
         }
@@ -309,10 +295,7 @@ public class QuickControlsFragment extends Fragment {
     }
 
     private void onMetadataChanged(MediaMetadataCompat metadata) {
-        LogHelper.d(TAG, "onMetadataChanged ", metadata);
         if (getActivity() == null) {
-            LogHelper.w(TAG, "onMetadataChanged called when getActivity null," +
-                    "this should not happen if the callback was properly unregistered. Ignoring.");
             return;
         }
         if (metadata == null) {
@@ -339,8 +322,6 @@ public class QuickControlsFragment extends Fragment {
                             @Override
                             public void onFetched(String artUrl, Bitmap bitmap, Bitmap icon) {
                                 if (icon != null) {
-                                    LogHelper.d(TAG, "album art icon of w=", icon.getWidth(),
-                                            " h=", icon.getHeight());
                                     if (isAdded()) {
                                         mAlbumArt.setImageBitmap(icon);
                                     }
