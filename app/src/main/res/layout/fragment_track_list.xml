@@ -7,7 +7,7 @@
     <com.malinskiy.materialicons.widget.IconButton
         android:id="@+id/download_all"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="{zmdi-download}  下载全部"
         android:textSize="16sp"
         android:textColor="#000000"

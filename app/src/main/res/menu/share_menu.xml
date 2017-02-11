@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:icon="@drawable/weixin"
+        android:icon="@drawable/wechat"
         android:title="微信好友" />
 
     <item
-        android:icon="@drawable/actionbar_music_prs"
+        android:icon="@drawable/wechat_square"
         android:title="微信朋友圈" />
 
 

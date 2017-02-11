@@ -98,7 +98,10 @@ public class LrcView extends View {
 		initNextTime();
 		mCurrentLine = 0;
 
-		onDrag(mLrcEntryList.get(0).getTime());
+		if (!mLrcEntryList.isEmpty()) {
+			onDrag(mLrcEntryList.get(0).getTime());
+
+		}
 
 	}
 

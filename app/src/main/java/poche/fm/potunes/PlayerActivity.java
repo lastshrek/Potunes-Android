@@ -56,7 +56,7 @@ public class PlayerActivity extends AppCompatActivity {
     private TextView mToolbarArtist;
     private ProgressBar mLoading;
     private SeekBar mSeekbar;
-    private TintImageView mPlayPause;
+    private ImageView mPlayPause;
     private TextView mStart;
     private TextView mEnd;
     private Drawable mPauseDrawable;
@@ -92,6 +92,21 @@ public class PlayerActivity extends AppCompatActivity {
     private PlayerReceiver playerReceiver;
     private Handler handler = new UIHandler();
 
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected: ");
+            PlayerService.PlayerServiceBinder pb = (PlayerService.PlayerServiceBinder)service;
+            mPlayerService = pb.getPlayService();
+
+        }
+
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d(TAG, "onServiceDisconnected: ");
+        }
+
+    };
+
     private final class UIHandler extends Handler{
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -118,20 +133,7 @@ public class PlayerActivity extends AppCompatActivity {
         setViewOnclickListener();
 
         //绑定服务
-        bindService(new Intent(this, PlayerService.class), new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                Log.d(TAG, "onServiceConnected: ");
-                PlayerService.PlayerServiceBinder pb = (PlayerService.PlayerServiceBinder)service;
-                mPlayerService = pb.getPlayService();
-
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                Log.d(TAG, "onServiceDisconnected: ");
-            }
-        }, Context.BIND_AUTO_CREATE);
+        bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void findViewById() {
@@ -205,17 +207,17 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
         mRepeat = (TintImageView) findViewById(R.id.play_repeat);
-        mNoShuffle = ContextCompat.getDrawable(this, R.drawable.playing_noshuffle);
-        mShuffle = ContextCompat.getDrawable(this, R.drawable.playing_shuffle);
-        mSingle = ContextCompat.getDrawable(this, R.drawable.playing_single);
+        mNoShuffle = ContextCompat.getDrawable(this, R.drawable.play_icn_loop_prs);
+        mShuffle = ContextCompat.getDrawable(this, R.drawable.play_icn_shuffle);
+        mSingle = ContextCompat.getDrawable(this, R.drawable.play_icn_one_prs);
         mRepeat.setImageDrawable(mNoShuffle);
-        mPlayPause = (TintImageView) findViewById(R.id.play_pause);
-        mPlayDrawable = ContextCompat.getDrawable(this, R.drawable.playing_pause);
-        mPauseDrawable = ContextCompat.getDrawable(this, R.drawable.playing_play);
+        mPlayPause = (ImageView) findViewById(R.id.play_pause);
+        mPlayDrawable = ContextCompat.getDrawable(this, R.drawable.play_btn_play);
+        mPauseDrawable = ContextCompat.getDrawable(this, R.drawable.play_btn_pause);
         mSkipNext = (ImageView) findViewById(R.id.play_next);
         mSkipPrev = (ImageView) findViewById(R.id.play_prev);
-        mSkipPrev.setImageDrawable(getResources().getDrawable(R.drawable.playing_prev));
-        mSkipNext.setImageDrawable(getResources().getDrawable(R.drawable.playing_next));
+        mSkipPrev.setImageDrawable(getResources().getDrawable(R.drawable.play_btn_prev));
+        mSkipNext.setImageDrawable(getResources().getDrawable(R.drawable.play_btn_next));
         mStart = (TextView) findViewById(R.id.startText);
         mEnd = (TextView) findViewById(R.id.endText);
 
@@ -246,7 +248,7 @@ public class PlayerActivity extends AppCompatActivity {
         });
         dividerLine = (View) findViewById(R.id.view_line);
         mPlaylist = (ImageView) findViewById(R.id.nowPlaying_list);
-        mPlaylist.setImageDrawable(getResources().getDrawable(R.drawable.playing_list));
+        mPlaylist.setImageDrawable(getResources().getDrawable(R.drawable.play_icn_src_prs));
     }
 
     private void setViewOnclickListener() {
@@ -426,6 +428,7 @@ public class PlayerActivity extends AppCompatActivity {
         try {
             unregisterReceiver(playerReceiver);
             playerReceiver = null;
+            unbindService(serviceConnection);
         } catch (Exception e) {
             e.printStackTrace();
         }

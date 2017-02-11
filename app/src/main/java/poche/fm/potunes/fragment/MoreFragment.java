@@ -196,7 +196,6 @@ public class MoreFragment extends DialogFragment {
                         BottomSheetDialog dialog = new BottomSheetBuilder(mContext, R.style.AppTheme_BottomSheetDialog)
                                 .setMode(BottomSheetBuilder.MODE_GRID)
                                 .setMenu(R.menu.share_menu)
-                                .setIconTintColor(R.color.colorAccent)
                                 .setItemClickListener(new BottomSheetItemClickListener() {
                                     @Override
                                     public void onBottomSheetItemClick(MenuItem item) {

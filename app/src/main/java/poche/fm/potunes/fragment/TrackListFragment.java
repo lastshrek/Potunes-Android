@@ -119,6 +119,9 @@ public class TrackListFragment extends Fragment {
         downloadManager = DownloadService.getDownloadManager();
         downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music/");
         downloadManager.getThreadPool().setCorePoolSize(1);
+
+        initTracks(playlist.getPlaylist_id());
+
         return view;
     }
 
@@ -152,7 +155,6 @@ public class TrackListFragment extends Fragment {
                     MainActivity main = (MainActivity) getActivity();
                     for (Track track : datas) {
                         track.setAlbum(main.mToolbarTitle.getText().toString());
-                        Log.d(TAG, "run: " + track.getAlbum());
                         tracks.add(track);
                     }
                     Message msg = Message.obtain();
@@ -196,7 +198,6 @@ public class TrackListFragment extends Fragment {
     public void onStart() {
         super.onStart();
         EventBus.getDefault().register(this);
-        initTracks(playlist.getPlaylist_id());
     }
 
     @Override
