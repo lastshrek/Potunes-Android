@@ -194,6 +194,7 @@ public class LrcView extends View {
 	 * @param lrcText 歌词文本
 	 */
 	public void loadLrc(final String lrcText, final String chLrcText) {
+		Log.d(TAG, "loadLrc: ");
 		reset();
 
 		setTag(lrcText);

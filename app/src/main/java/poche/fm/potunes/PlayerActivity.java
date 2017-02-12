@@ -342,6 +342,7 @@ public class PlayerActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
+
                 try {
                     OkHttpClient client = new OkHttpClient();
                     Request request = new Request.Builder()
@@ -351,8 +352,10 @@ public class PlayerActivity extends AppCompatActivity {
                     String responseData = response.body().string();
                     Gson gson = new Gson();
                     Lrc lrc = gson.fromJson(responseData, Lrc.class);
+                    Log.d(TAG, "run: " + lrc.getLrc());
                     mLrcView.loadLrc(lrc.getLrc(), lrc.getLrc_cn());
                 } catch (Exception e) {
+                    Log.d(TAG, "歌词解析失败");
                     e.printStackTrace();
                 }
             }
@@ -381,6 +384,7 @@ public class PlayerActivity extends AppCompatActivity {
                         String thumb = track.getCover();
                         Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
                         Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
+                        loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
                     } else {
                         long albumid = track.getAlbumid();
                         long trackid = track.getID();
@@ -391,9 +395,10 @@ public class PlayerActivity extends AppCompatActivity {
 
                     List<Track> tracks = DataSupport.select("track_id").where("artist = ? and name = ?", track.getArtist(), track.getTitle()).find(Track.class);
                     if (tracks.size() > 0) {
+                        Log.d(TAG, "onReceive: " + "本地音乐" + tracks.get(0).getID());
                         loadLrc("https://poche.fm/api/app/lyrics/" + tracks.get(0).getID());
                     } else {
-                        loadLrc("https://poche.fm/api/app/lyrics/");
+                        mLrcView.loadLrc(null, null);
                     }
 
                 }
