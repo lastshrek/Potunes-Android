@@ -2,6 +2,7 @@ package poche.fm.potunes.fragment;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -61,6 +62,8 @@ public class TrackListFragment extends Fragment {
     private DownloadManager downloadManager;
     private SwipeRefreshLayout swipeRefresh;
 
+    private String json;
+
     private Handler sHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
             switch (msg.what) {
@@ -94,6 +97,8 @@ public class TrackListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate: chuangjian");
+
         view = inflater.inflate(R.layout.fragment_track_list, container, false);
         // Set the adapter
         mRecyclerView = (RecyclerView) view.findViewById(R.id.tracklist_recycler_view);
@@ -112,6 +117,13 @@ public class TrackListFragment extends Fragment {
                 intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
                 intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
                 intent.setPackage(getActivity().getPackageName());
+                //将json存到本地
+                SharedPreferences preference = getActivity().getSharedPreferences("user", Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = preference.edit();
+                editor.putString("Tracks", json);
+                MainActivity main = (MainActivity) getActivity();
+                editor.putString("album", main.mToolbarTitle.getText().toString());
+                editor.apply();
                 getContext().startService(intent);
             }
         });
@@ -121,6 +133,9 @@ public class TrackListFragment extends Fragment {
         downloadManager.getThreadPool().setCorePoolSize(1);
 
         initTracks(playlist.getPlaylist_id());
+
+        MainActivity main = (MainActivity) getActivity();
+        main.setTitle(playlist.getTitle());
 
         return view;
     }
@@ -137,6 +152,7 @@ public class TrackListFragment extends Fragment {
                             .build();
                     Response response = client.newCall(request).execute();
                     String responseData = response.body().string();
+                    json = responseData;
                     parseJSONWithGSON(responseData);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -144,7 +160,6 @@ public class TrackListFragment extends Fragment {
             }
         }).start();
     }
-
     private void parseJSONWithGSON(final String jsonData) {
         new Thread(new Runnable() {
             @Override
@@ -152,8 +167,8 @@ public class TrackListFragment extends Fragment {
                 try {
                     Gson gson = new Gson();
                     ArrayList<Track> datas = gson.fromJson(jsonData, new TypeToken<List<Track>>(){}.getType());
-                    MainActivity main = (MainActivity) getActivity();
                     for (Track track : datas) {
+                        MainActivity main = (MainActivity) getActivity();
                         track.setAlbum(main.mToolbarTitle.getText().toString());
                         tracks.add(track);
                     }
@@ -169,7 +184,6 @@ public class TrackListFragment extends Fragment {
             }
         }).start();
     }
-
     public String getMediaId() {
         Bundle args = getArguments();
         if (args != null) {

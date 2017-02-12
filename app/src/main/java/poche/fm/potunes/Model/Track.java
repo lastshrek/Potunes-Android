@@ -24,8 +24,10 @@ public class Track extends DataSupport implements Serializable {
     private String album;
     @Column(defaultValue = "0")
     private int isDownloaded;
+    @Column(defaultValue = "0")
+    private long albumid;
 
-    public Track(String name, int track_id, String cover,String artist, String url, String album, int isDownloaded) {
+    public Track(String name, int track_id, String cover,String artist, String url, String album, int isDownloaded, long albumid) {
         this.name = name;
         this.track_id = track_id;
         this.cover = cover;
@@ -33,12 +35,12 @@ public class Track extends DataSupport implements Serializable {
         this.url = url;
         this.album = album;
         this.isDownloaded = isDownloaded;
+        this.albumid = albumid;
     }
 
     public Track() {
         super();
     }
-
 
     public String getTitle() {
         return name;
@@ -62,10 +64,14 @@ public class Track extends DataSupport implements Serializable {
         return album;
     }
 
-
     public int getIsDownloaded() {
         return isDownloaded;
     }
+
+    public long getAlbumid() {
+        return albumid;
+    }
+
 
     public void setTrack_id(int track_id) {
         this.track_id = track_id;
@@ -95,6 +101,11 @@ public class Track extends DataSupport implements Serializable {
     public void setIsDownloaded(int isDownloaded) {
         this.isDownloaded = isDownloaded;
     }
+
+    public void setAlbumid(long albumid) {
+        this.albumid = albumid;
+    }
+
 //    @Override
 //    public int describeContents() {
 //        return 0;

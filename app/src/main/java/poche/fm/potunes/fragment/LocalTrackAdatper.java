@@ -1,8 +1,8 @@
 package poche.fm.potunes.fragment;
 
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -25,26 +25,27 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.MediaUtil;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
-import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.service.PlayerService;
 
 /**
- * Created by purchas on 2017/1/8.
+ * Created by purchas on 2017/2/13.
  */
 
-public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> {
+public class LocalTrackAdatper extends RecyclerView.Adapter<LocalTrackAdatper.ViewHolder>{
     private ArrayList<Track> mTrackList = new ArrayList<>();
     private Context mContext;
     private FragmentManager mFragmentManager;
     private String TAG = "TrackItem";
     private PlayerService mPlayerService;
-
 
 
 
@@ -65,7 +66,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         }
     }
 
-    public TrackAdapter(List<Track> trackList, FragmentManager fragmentManager) {
+    public LocalTrackAdatper(List<Track> trackList, FragmentManager fragmentManager) {
         for (Track track: trackList) {
             mTrackList.add(track);
         }
@@ -73,7 +74,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
     }
 
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public LocalTrackAdatper.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (mContext == null) {
             mContext = parent.getContext();
         }
@@ -81,7 +82,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         TypedValue typedValue = new TypedValue();
         mContext.getTheme().resolveAttribute(R.attr.selectableItemBackground, typedValue, true);
         view.setBackgroundResource(typedValue.resourceId);
-        final ViewHolder holder = new ViewHolder(view);
+        final LocalTrackAdatper.ViewHolder holder = new LocalTrackAdatper.ViewHolder(view);
 
 
 
@@ -96,15 +97,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
                     mPlayerService.tracks = mTrackList;
                     mPlayerService.play(holder.getAdapterPosition());
                 }
-//                int position = holder.getAdapterPosition();
-//                Track track = mTrackList.get(position);
-//                Intent intent = new Intent();
-//                intent.putExtra("url", track.getUrl());
-//                intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
-//                intent.putExtra("position", position);
-//                intent.setClass(mContext, PlayerService.class);
-//
-//                mContext.startService(intent);
             }
         });
 
@@ -140,23 +132,15 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
     }
 
     @Override
-    public void onBindViewHolder(final ViewHolder holder, int position) {
+    public void onBindViewHolder(final LocalTrackAdatper.ViewHolder holder, int position) {
         Track track = mTrackList.get(position);
         holder.artist.setText(track.getArtist());
         holder.name.setText(track.getTitle());
-        String thumb = track.getCover() + "!/fw/150";
-        Glide
-                .with(mContext)
-                .load(thumb)
-                .asBitmap()
-                .placeholder(R.drawable.ic_launcher)
-                .into(new SimpleTarget<Bitmap>(100, 100) {
-                    @Override
-                    public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                        holder.cover.setImageBitmap(resource);
-                    }
-                });
         holder.itemView.setClickable(true);
+
+        long songid = track.getID();
+        long albumid = track.getAlbumid();
+        holder.cover.setImageBitmap(MediaUtil.getArtwork(mContext, songid, albumid, true, true));
     }
 
 

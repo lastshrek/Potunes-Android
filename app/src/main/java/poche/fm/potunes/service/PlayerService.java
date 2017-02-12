@@ -19,7 +19,10 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 
+import org.litepal.crud.DataSupport;
+
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,7 +32,6 @@ import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
-import poche.fm.potunes.fragment.QuickControlsFragment;
 
 /**
  * Created by purchas on 2017/1/14.
@@ -41,13 +43,9 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private MediaPlayer mediaPlayer; //媒体播放器对象
     private int msg;
     public static ArrayList<Track> tracks;
-    private int status = 0; //播放状态，默认顺序播放
-    private int currentTime;
-    private int duration;
-    private Bitmap bitmap;
     private NotificationManager mManager;
     private RemoteViews contentViews;
-    private AudioManager mAudioManager;
+    private Bitmap bitmap;
 
     // 服务要发送的一些Action
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT";  //当前音乐播放时间更新动作
@@ -120,9 +118,16 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
      */
     public void play(final int position) {
         Track track = tracks.get(position);
+        String url;
+        List<Track> tracks = DataSupport.select("url").where("artist = ? and name = ? and isDownloaded = ?", track.getArtist(), track.getTitle(), "1").find(Track.class);
+        if (tracks.size() > 0) {
+            url = tracks.get(0).getUrl();
+        } else {
+            url = track.getUrl();
+        }
         try {
             mediaPlayer.reset();
-            mediaPlayer.setDataSource(track.getUrl());
+            mediaPlayer.setDataSource(url);
             mediaPlayer.prepareAsync();
 
             mPlayState.setCurrentPosition(position);
@@ -220,7 +225,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     }
 
     private void getNotification() {
-        Log.d(TAG, "getNotification: ");
         //通知栏
         Track track = tracks.get(mPlayState.getCurrentPosition());
         contentViews = new RemoteViews(getPackageName(), R.layout.layout_notification);
@@ -243,10 +247,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         Intent playOrPause = new Intent();
         playOrPause.setAction("fm.poche.media.MUSIC_SERVICE");
         if (mPlayState.isPlaying()) {
-            Log.d(TAG, "getNotification: 点击了暂停");
             playOrPause.putExtra("MSG", AppConstant.PlayerMsg.PAUSE_MSG);
         } else {
-            Log.d(TAG, "getNotification: 点击了播放");
             playOrPause.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
         }
         contentViews.setImageViewResource(R.id.notification_pause, mPlayState.isPlaying() ? R.drawable.note_btn_pause : R.drawable.note_btn_play);
@@ -258,26 +260,26 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             @Override
             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
 
-//                contentViews.setImageViewBitmap(R.id.notification_cover, resource);
-//                bitmap = resource;
+                contentViews.setImageViewBitmap(R.id.notification_cover, resource);
+                bitmap = resource;
 
+                Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
+                remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
+                PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
+                        .setCustomContentView(contentViews)
+                        .setCustomBigContentView(contentViews)
+                        .setTicker("正在播放")
+                        .setWhen(System.currentTimeMillis())
+                        .setOngoing(true)
+                        .setContentIntent(pi)
+                        .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
+                Notification notification = mBuilder.build();
+                mManager.notify(1, notification);
             }
         });
-        Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
-        remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
-        PendingIntent pi = PendingIntent.getActivity(this, 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
-                .setCustomContentView(contentViews)
-                .setCustomBigContentView(contentViews)
-                .setTicker("正在播放")
-                .setWhen(System.currentTimeMillis())
-                .setOngoing(true)
-                .setContentIntent(pi)
-                .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
-        Notification notification = mBuilder.build();
-        mManager.notify(1, notification);
     }
 
 

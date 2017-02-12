@@ -4,6 +4,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,9 +19,12 @@ import com.malinskiy.materialicons.widget.IconTextView;
 
 import org.litepal.crud.DataSupport;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-import poche.fm.potunes.Model.DownloadAlbumAdapter;
+import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
 import poche.fm.potunes.Model.Track;
@@ -35,6 +41,7 @@ public class MyMusicFragment extends Fragment {
     private DownloadAlbumAdapter albumAdapter;
     private IconTextView mDownloadHeader;
     private ArrayList<Track> tracks = new ArrayList<>();
+    private ArrayList<Track> localTracks = new ArrayList<>();
 
 
     public MyMusicFragment() {
@@ -49,7 +56,6 @@ public class MyMusicFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
     }
 
     @Override
@@ -62,6 +68,9 @@ public class MyMusicFragment extends Fragment {
         setDownloadedAlbum();
     }
 
+
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -69,10 +78,13 @@ public class MyMusicFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_my_music, container, false);
         mDownloadHeader = (IconTextView) view.findViewById(R.id.download_album_header);
 
+        MainActivity main = (MainActivity) getActivity();
+        main.setTitle(R.string.my_music);
         return view;
     }
     //设置音乐overflow条目
     private void setMusicInfo() {
+        mStatics.clear();
         setInfo("本地音乐", "{zmdi-collection-music}");
         setInfo("下载管理", "{zmdi-square-down}");
     }
@@ -99,6 +111,7 @@ public class MyMusicFragment extends Fragment {
             } while (cursor.moveToNext());
         }
         cursor.close();
+        tracks.clear();
         for (String title: titleArray) {
             Track track = DataSupport.where("album = ?", title).limit(1).find(Track.class).get(0);
             tracks.add(track);
@@ -131,18 +144,7 @@ public class MyMusicFragment extends Fragment {
         super.onDetach();
         mListener = null;
     }
-    public String getMediaId() {
-        Bundle args = getArguments();
-        if (args != null) {
-            return args.getString(ARG_MEDIA_ID);
-        }
-        return null;
-    }
-    public void setMediaId(String mediaId) {
-        Bundle args = new Bundle(1);
-        args.putString(ARG_MEDIA_ID, mediaId);
-        setArguments(args);
-    }
+
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);

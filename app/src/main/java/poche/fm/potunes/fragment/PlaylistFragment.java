@@ -17,12 +17,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
 import org.litepal.crud.DataSupport;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -73,13 +70,11 @@ public class PlaylistFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-//        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-//        EventBus.getDefault().unregister(this);
     }
 
 
@@ -151,15 +146,22 @@ public class PlaylistFragment extends Fragment {
                 try {
                     playlists.clear();
                     playlists = loadLocalPlaylists();
-
                     if (playlists.size() == 0) {
-                        OkHttpClient client = new OkHttpClient();
-                        Request request = new Request.Builder()
-                                .url("https://www.poche.fm/api/app/playlists/")
-                                .build();
-                        Response response = client.newCall(request).execute();
-                        String responseData = response.body().string();
-                        parseJSONWithGSON(responseData);
+                        if (playlists.size() == 0) {
+                            OkHttpClient client = new OkHttpClient();
+                            Request request = new Request.Builder()
+                                    .url("https://poche.fm/api/app/playlists/")
+                                    .build();
+                            Response response = client.newCall(request).execute();
+                            String responseData = response.body().string();
+                            parseJSONWithGSON(responseData);
+                        }
+
+                        Message msg = Message.obtain();
+                        msg.what = TEST;
+                        msg.obj = playlists;
+                        sHandler.sendMessage(msg);
+
                     }
 
                     Message msg = Message.obtain();

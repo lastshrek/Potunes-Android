@@ -26,6 +26,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 
 public class DownloadService extends Service implements ExecutorWithListener.OnAllTaskEndListener{
@@ -47,10 +48,9 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
         super.onCreate();
 
         LitePal.initialize(getBaseContext());
-
         // 设置DownloadManager
         downloadManager = com.lzy.okserver.download.DownloadService.getDownloadManager();
-        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music/");
+        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
         downloadManager.getThreadPool().setCorePoolSize(1);
 
         downloadListener = new DownloadListener() {
@@ -67,17 +67,21 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
                     downloadManager.removeTask(track.getUrl(), false);
                 }
 
-                // 将数据库的已下载修改状态
-                track.setIsDownloaded(1);
-                track.save();
-
                 // 重命名文件
                 String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
                 downloadTitle = downloadTitle.replace("/", " ");
+                // 将数据库的已下载修改状态
+                track.setIsDownloaded(1);
+                track.setUrl(downloadManager.getTargetFolder() + downloadTitle);
+                track.save();
+
+
                 File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
                 File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
                 old.renameTo(rename);
-
+                MediaScanner mediaScanner = new MediaScanner(getBaseContext());
+                mediaScanner.scanFile(downloadManager.getTargetFolder() + downloadTitle, null);
+                Log.d(TAG, "onFinish: " + downloadManager.getTargetFolder() + downloadTitle);
             }
 
             @Override
@@ -100,11 +104,13 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
             case 2:
                 //获取本地Tracks数据
                 String json = preferences.getString("Tracks", "Tracks");
+                String album = preferences.getString("album", "album");
                 Gson gson = new Gson();
                 tracks.clear();
                 //获取专辑名称
                 ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
                 for (Track mTrack : datas) {
+                    mTrack.setAlbum(album);
                     checkFiles(mTrack);
                 }
         }

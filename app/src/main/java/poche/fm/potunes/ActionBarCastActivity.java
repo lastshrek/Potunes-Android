@@ -26,9 +26,11 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 
@@ -38,6 +40,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     private ActionBarDrawerToggle mDrawerToggle;
     private DrawerLayout mDrawerLayout;
     public TextView mToolbarTitle;
+
 
 
     private boolean mToolbarInitialized;
@@ -96,6 +99,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
     }
 
     @Override
@@ -176,6 +180,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         } else {
             // Lastly, it will rely on the system behavior for back
             super.onBackPressed();
+
         }
     }
 
@@ -189,6 +194,10 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     public void setTitle(int titleId) {
         super.setTitle(titleId);
         mToolbar.setTitle(titleId);
+    }
+
+    public String getToolbarTitle() {
+        return mToolbarTitle.getText().toString();
     }
 
 
@@ -219,6 +228,8 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
             setSupportActionBar(mToolbar);
         }
         mToolbarTitle = (TextView) findViewById(R.id.app_title);
+
+
         mToolbarInitialized = true;
     }
 
@@ -245,6 +256,8 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
             return;
         }
         boolean isRoot = getSupportFragmentManager().getBackStackEntryCount() == 0;
+        Log.d("", "updateDrawerToggle: " + getSupportFragmentManager().getBackStackEntryCount());
+
         mDrawerToggle.setDrawerIndicatorEnabled(isRoot);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowHomeEnabled(!isRoot);

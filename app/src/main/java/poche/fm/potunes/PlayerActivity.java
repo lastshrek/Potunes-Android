@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -31,6 +32,10 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
+
+import org.litepal.crud.DataSupport;
+
+import java.util.List;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -370,11 +375,26 @@ public class PlayerActivity extends AppCompatActivity {
                     //刷新文本信息
                     mToolbarTitle.setText(track.getTitle());
                     mToolbarArtist.setText(track.getArtist());
-                    // 封面
-                    String thumb = track.getCover();
-                    Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
-                    Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
-                    loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
+
+                    if (track.getAlbumid() == 0) {
+                        // 封面
+                        String thumb = track.getCover();
+                        Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
+                        Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
+                    } else {
+                        long albumid = track.getAlbumid();
+                        long trackid = track.getID();
+                        Bitmap bitmap = poche.fm.potunes.Model.MediaUtil.getArtwork(getBaseContext(), trackid, albumid, true, false);
+                        mBackgroundImage.setImageBitmap(bitmap);
+                        mPlayingCover.setImageBitmap(bitmap);
+                    }
+
+                    List<Track> tracks = DataSupport.select("track_id").where("artist = ? and name = ?", track.getArtist(), track.getTitle()).find(Track.class);
+                    if (tracks.size() > 0) {
+                        loadLrc("https://poche.fm/api/app/lyrics/" + tracks.get(0).getID());
+                    } else {
+                        loadLrc("https://poche.fm/api/app/lyrics/");
+                    }
 
                 }
 

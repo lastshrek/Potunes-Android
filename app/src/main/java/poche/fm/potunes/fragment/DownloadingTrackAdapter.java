@@ -1,4 +1,4 @@
-package poche.fm.potunes.Model;
+package poche.fm.potunes.fragment;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -15,10 +15,11 @@ import com.lzy.okserver.download.DownloadManager;
 import com.lzy.okserver.download.DownloadService;
 import com.lzy.okserver.listener.DownloadListener;
 import com.lzy.okserver.task.ExecutorWithListener;
-import com.malinskiy.materialicons.widget.IconTextView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 
 /**

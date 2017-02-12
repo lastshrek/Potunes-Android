@@ -8,9 +8,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -29,8 +31,12 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 
+import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
+import poche.fm.potunes.fragment.LocalDownloadAlbumFragment;
+import poche.fm.potunes.fragment.LocalTracksFragment;
 import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.MyMusicFragment;
 import poche.fm.potunes.fragment.PlaylistAdapter;
@@ -40,7 +46,10 @@ import poche.fm.potunes.service.PlayerService;
 
 public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
         TrackListFragment.OnListFragmentInteractionListener,
-        MoreFragment.OnFragmentInteractionListener, MyMusicFragment.OnFragmentInteractionListener {
+        MoreFragment.OnFragmentInteractionListener,
+        MyMusicFragment.OnFragmentInteractionListener,
+        LocalDownloadAlbumFragment.OnFragmentInteractionListener,
+        LocalTracksFragment.OnFragmentInteractionListener{
 
 
     public static final String EXTRA_CURRENT_MEDIA_DESCRIPTION =
@@ -53,20 +62,38 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
      */
     private GoogleApiClient client;
     private PlaylistAdapter adapter;
-    private ImageView mMyMusic;
     private long time = 0;
+    private ImageView mMyMusic;
+
 
     private String TAG = "MainActivity";
     private SQLiteDatabase db;
     private static final String APP_ID = "wx0fc8d0673ec86694";
     private IWXAPI api;
-    private static final String FRAGMENT_TAG = "potunes_list_container";
-    private Playlist playlist;
+    private static final String FRAGMENT_TAG = "playlist_fragment";
+    public Playlist playlist;
+    public String mLocalAlbum;
 
     private PlayerService playerService;
     public PlayerService getPlayerService() {
         return playerService;
     }
+
+    public Fragment currentFragment;
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected: 绑定服务成功");
+            PlayerService.PlayerServiceBinder playerServiceBinder = (PlayerService.PlayerServiceBinder) service;
+            playerService = playerServiceBinder.getPlayService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d(TAG, "onServiceDisconnected: 绑定服务失败");
+        }
+    };
 
 
     @Override
@@ -79,49 +106,79 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         mMyMusic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                navigateToBrowser("my_music");
+                MyMusicFragment mMyMusicFragment = MyMusicFragment.newInstance();
+                switchFragment(currentFragment, mMyMusicFragment);
             }
         });
-        bindService(new Intent(this, PlayerService.class), new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                Log.d(TAG, "onServiceConnected: 绑定服务成功");
-                PlayerService.PlayerServiceBinder playerServiceBinder = (PlayerService.PlayerServiceBinder) service;
-                playerService = playerServiceBinder.getPlayService();
-            }
 
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                Log.d(TAG, "onServiceDisconnected: 绑定服务失败");
-            }
-        }, Context.BIND_AUTO_CREATE);
+        PlaylistFragment mPlaylistFragment = getPlaylistFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        if (mPlaylistFragment == null) {
+            mPlaylistFragment = new PlaylistFragment();
+            currentFragment = mPlaylistFragment;
+            transaction.replace(R.id.container, mPlaylistFragment, FRAGMENT_TAG);
+            transaction.commit();
+        }
 
-        initializeFromParams(savedInstanceState, getIntent());
+
+        //绑定服务
+        bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
         Fresco.initialize(MainActivity.this);
         // initial database
         LitePal.initialize(MainActivity.this);
         db = LitePal.getDatabase();
-
+        EventBus.getDefault().register(this);
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
+        unbindService(serviceConnection);
     }
-
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(MessageEvent event) {
         if (event.playlist != null) {
             playlist = event.playlist;
         }
     }
-
-
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMessageEvent(LocalAlbumMessageEvent event) {
+        if (event.album != null) {
+            mLocalAlbum = event.album;
+            LocalDownloadAlbumFragment mLocalDownloadAlbumFragment = LocalDownloadAlbumFragment.newInstance();
+            switchFragment(currentFragment, mLocalDownloadAlbumFragment);
+            setTitle(mLocalAlbum);
+        }
+    }
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMessageEvent(LocalTracksEvent event) {
+        LocalTracksFragment mLocalTracksFragment = LocalTracksFragment.newInstance();
+        switchFragment(currentFragment, mLocalTracksFragment);
+        setTitle("本地音乐");
+    }
+    public void switchFragment(Fragment from, Fragment to) {
+        Log.d(TAG, "currentFragment: " + currentFragment);
+        if (currentFragment != to) {
+            currentFragment = to;
+            FragmentTransaction transaction = getSupportFragmentManager()
+                    .beginTransaction()
+                    .setCustomAnimations(android.R.anim.fade_in, R.anim.fade_out);
+            if (!to.isAdded()) {	// 先判断是否被add过
+                transaction.hide(from).add(R.id.container, to);
+                transaction.addToBackStack(null);
+                transaction.commit(); // 隐藏当前的fragment，add下一个到Activity中
+            } else {
+                transaction.hide(from).show(to).commit(); // 隐藏当前的fragment，显示下一个
+            }
+        }
+        if (!getToolbarTitle().equals(R.string.app_name)) {
+            mMyMusic.setVisibility(View.INVISIBLE);
+        }
+    }
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         String mediaId = getMediaId();
@@ -139,51 +196,28 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         return super.onOptionsItemSelected(item);
     }
 
-    public void navigateToBrowser(String mediaId) {
-        PlaylistFragment fragment = getPlaylistFragment();
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-
-        if (fragment == null) {
-            fragment = new PlaylistFragment();
-            fragment.setMediaId(mediaId);
-            transaction.replace(R.id.container, fragment, FRAGMENT_TAG);
-            transaction.commit();
-            return;
-        }
-
-
-        if (!TextUtils.equals(mediaId, fragment.getMediaId())) {
-            if (mediaId.equals("online_tracks")) {
-                // If this is not the top level media (root), we add it to the fragment back stack,
-                // so that actionbar toggle and Back will work appropriately:
-                TrackListFragment tracklistFragment = TrackListFragment.newInstance();
-                tracklistFragment.playlist = playlist;
-                tracklistFragment.setMediaId(mediaId);
-                transaction.replace(R.id.container, tracklistFragment, mediaId);
-                transaction.addToBackStack(null);
-                transaction.commit();
-                setTitle(playlist.getTitle());
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK ) {
+            FragmentManager fragmentManager = getSupportFragmentManager();
+            if (fragmentManager.getBackStackEntryCount() == 0) {
+                super.onBackPressed();
             }
-            if (mediaId.equals("my_music")) {
-                MyMusicFragment myMusic = MyMusicFragment.newInstance();
-
-                myMusic.setMediaId(mediaId);
-                transaction.replace(R.id.container, myMusic, mediaId);
-                transaction.addToBackStack(null);
-                transaction.commit();
+            fragmentManager.popBackStackImmediate();
+            if (currentFragment instanceof LocalDownloadAlbumFragment && fragmentManager.getBackStackEntryCount() > 0
+                    || getToolbarTitle().equals("本地音乐")) {
                 setTitle(R.string.my_music);
             }
+            Log.d(TAG, "onKeyDown: " + currentFragment);
+            if (fragmentManager.getBackStackEntryCount() == 0) {
+                mMyMusic.setVisibility(View.VISIBLE);
+                currentFragment = getPlaylistFragment();
+            }
         }
+        return false;
     }
-    private void initializeFromParams(Bundle savedInstanceState, Intent intent) {
-        String mediaId = null;
-        if (savedInstanceState != null) {
-            // If there is a saved media ID, use it
-            mediaId = savedInstanceState.getString(SAVED_MEDIA_ID);
-        }
-        Log.d(TAG, "initializeFromParams: " + mediaId);
-        navigateToBrowser(mediaId);
-    }
+
+
     public String getMediaId() {
         PlaylistFragment fragment = getPlaylistFragment();
         if (fragment == null) {
@@ -194,9 +228,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     private PlaylistFragment getPlaylistFragment() {
         return (PlaylistFragment) getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG);
     }
-
-
-
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -223,7 +254,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     @Override
     public void onStop() {
         super.onStop();
-
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         AppIndex.AppIndexApi.end(client, getIndexApiAction());

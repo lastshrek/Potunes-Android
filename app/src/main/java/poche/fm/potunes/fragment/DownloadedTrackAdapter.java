@@ -1,6 +1,5 @@
-package poche.fm.potunes.Model;
+package poche.fm.potunes.fragment;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,6 +20,8 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 
+import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.service.PlayerService;
@@ -33,6 +34,8 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
     private ArrayList<Track> mTrackList;
     private Context mContext;
     private String TAG = "TrackItem";
+    private PlayerService mPlayerService;
+
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView cover;
@@ -69,22 +72,12 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 存储当前歌曲播放位置
-                int position = holder.getAdapterPosition();
-                SharedPreferences preference = mContext.getSharedPreferences("user",Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = preference.edit();
-                editor.putInt("position", position);
-                editor.apply();
-
-                Track track = mTrackList.get(position);
-                Intent intent = new Intent();
-                intent.putExtra("url", track.getUrl());
-                intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
-                intent.putExtra("TRACKS", mTrackList);
-                intent.putExtra("position", position);
-                intent.setClass(mContext, PlayerService.class);
-//                Activity activity = (DownloadedTracksActivity) mContext;
-//                activity.startService(intent);
+                MainActivity main = (MainActivity) mContext;
+                mPlayerService = main.getPlayerService();
+                if (mPlayerService != null && mTrackList != null) {
+                    mPlayerService.tracks = mTrackList;
+                    mPlayerService.play(holder.getAdapterPosition());
+                }
             }
         });
 

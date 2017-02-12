@@ -16,6 +16,8 @@ import com.lzy.okserver.download.DownloadService;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconTextView;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.List;
 
 import poche.fm.potunes.R;
@@ -77,7 +79,7 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 public void onClick(View v) {
                     switch (position) {
                         case 0:
-
+                            EventBus.getDefault().post(new LocalTracksEvent("localtracks"));
                             break;
                         case 1:
                             downloadManager = DownloadService.getDownloadManager();

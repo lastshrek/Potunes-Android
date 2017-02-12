@@ -14,6 +14,7 @@ import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,6 +29,7 @@ import com.facebook.drawee.view.SimpleDraweeView;
 import java.util.ArrayList;
 
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.MediaUtil;
 import poche.fm.potunes.Model.PlayState;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
@@ -39,7 +41,7 @@ import poche.fm.potunes.widgets.TintImageView;
 
 public class QuickControlsFragment extends Fragment {
 
-    private static final String TAG = "QuickControlsFragment.class";
+    private static final String TAG = "QuickControls";
     public static final String CTL_ACTION = "fm.poche.action.CTL_ACTION"; // 控制动作
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT"; // 音乐当前时间改变动作
     public static final String MUSIC_DURATION = "fm.poche.action.MUSIC_DURATION";// 音乐播放长度改变动作
@@ -193,7 +195,14 @@ public class QuickControlsFragment extends Fragment {
                     //刷新文本信息
                     mTitle.setText(track.getTitle());
                     mArtist.setText(track.getArtist());
-                    Glide.with(mContext).load(track.getCover()).into(mAlbumArt);
+                    if (track.getAlbumid() == 0) {
+                        Glide.with(mContext).load(track.getCover()).into(mAlbumArt);
+                    } else {
+                        long albumid = track.getAlbumid();
+                        long trackid = track.getID();
+                        Bitmap bitmap = MediaUtil.getArtwork(mContext, trackid, albumid, true, true);
+                        mAlbumArt.setImageBitmap(bitmap);
+                    }
                 }
 
                 isPlaying = PlayerService.mPlayState.isPlaying();

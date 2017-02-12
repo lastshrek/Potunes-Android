@@ -1,7 +1,6 @@
-package poche.fm.potunes.Model;
+package poche.fm.potunes.fragment;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.TypedValue;
@@ -13,8 +12,13 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.ArrayList;
 
+import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 
 /**
@@ -58,6 +62,10 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
+                Track track = mAlbumList.get(position);
+                EventBus.getDefault().post(new LocalAlbumMessageEvent(track.getAlbum()));
+//                MainActivity activity = (MainActivity) mContext;
+//                activity.navigateToBrowser("local_album");
 //                Track track = mAlbumList.get(position);
 //                Intent intent = new Intent(mContext, DownloadedTracksActivity.class);
 //                intent.putExtra("album_title", track.getAlbum());

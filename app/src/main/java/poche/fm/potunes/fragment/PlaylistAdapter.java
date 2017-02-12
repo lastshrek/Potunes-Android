@@ -34,6 +34,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
     private Context mContext;
     private List<Playlist> mPlaylist;
     private FragmentManager mFragmentManager;
+    private static final String FRAGMENT_TAG = "playlist_fragment";
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         CardView cardView;
@@ -69,7 +70,10 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
                 Playlist playlist = mPlaylist.get(position);
                 EventBus.getDefault().post(new MessageEvent(playlist));
                 MainActivity activity = (MainActivity) mContext;
-                activity.navigateToBrowser("online_tracks");
+                TrackListFragment mTrackListFragment = TrackListFragment.newInstance();
+                mTrackListFragment.playlist = activity.playlist;
+                PlaylistFragment mPlaylistFragment = (PlaylistFragment) activity.getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG);
+                activity.switchFragment(mPlaylistFragment , mTrackListFragment);
             }
         });
 
