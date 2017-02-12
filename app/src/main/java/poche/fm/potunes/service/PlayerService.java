@@ -27,6 +27,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import poche.fm.potunes.Model.MediaUtil;
 import poche.fm.potunes.Model.PlayState;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
@@ -255,30 +256,53 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         PendingIntent intent_play = PendingIntent.getService(this, 3, playOrPause, PendingIntent.FLAG_UPDATE_CURRENT);
         contentViews.setOnClickPendingIntent(R.id.notification_pause, intent_play);
 
-         //设置封面
-        Glide.with(getBaseContext()).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(200, 200) {
-            @Override
-            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+        if (track.getAlbumid() == 0) {
+            //设置封面
+            Glide.with(getBaseContext()).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(200, 200) {
+                @Override
+                public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
 
-                contentViews.setImageViewBitmap(R.id.notification_cover, resource);
-                bitmap = resource;
+                    contentViews.setImageViewBitmap(R.id.notification_cover, resource);
+                    bitmap = resource;
 
-                Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
-                remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
-                PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
+                    remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
+                    PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-                NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
-                        .setCustomContentView(contentViews)
-                        .setCustomBigContentView(contentViews)
-                        .setTicker("正在播放")
-                        .setWhen(System.currentTimeMillis())
-                        .setOngoing(true)
-                        .setContentIntent(pi)
-                        .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
-                Notification notification = mBuilder.build();
-                mManager.notify(1, notification);
-            }
-        });
+                    NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
+                            .setCustomContentView(contentViews)
+                            .setCustomBigContentView(contentViews)
+                            .setTicker("正在播放")
+                            .setWhen(System.currentTimeMillis())
+                            .setOngoing(true)
+                            .setContentIntent(pi)
+                            .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
+                    Notification notification = mBuilder.build();
+                    mManager.notify(1, notification);
+                }
+            });
+        } else {
+            long albumid = track.getAlbumid();
+            long track_id = track.getID();
+            bitmap = MediaUtil.getArtwork(getBaseContext(), track_id, albumid, true, false);
+            contentViews.setImageViewBitmap(R.id.notification_cover, bitmap);
+            Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
+            remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
+            PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
+                    .setCustomContentView(contentViews)
+                    .setCustomBigContentView(contentViews)
+                    .setTicker("正在播放")
+                    .setWhen(System.currentTimeMillis())
+                    .setOngoing(true)
+                    .setContentIntent(pi)
+                    .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
+            Notification notification = mBuilder.build();
+            mManager.notify(1, notification);
+        }
+
+
 
     }
 

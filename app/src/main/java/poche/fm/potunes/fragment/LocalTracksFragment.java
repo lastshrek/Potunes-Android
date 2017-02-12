@@ -104,7 +104,8 @@ public class LocalTracksFragment extends Fragment {
 
             String mime_type = cursor.getString(cursor
                     .getColumnIndex(MediaStore.Audio.Media.MIME_TYPE));
-            if (mime_type.equals("audio/ext-mpeg")) {
+
+            if (mime_type.equals("audio/ext-mpeg") || mime_type.equals("audio/ext-flac")) {
                 track.setName(title);
                 track.setTrack_id((int)id);
                 track.setArtist(artist);
@@ -113,7 +114,6 @@ public class LocalTracksFragment extends Fragment {
                 track.setAlbumid(albumId);
                 tracks.add(track);
             }
-
         }
         cursor.close();
 
