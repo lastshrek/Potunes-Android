@@ -25,6 +25,7 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.handler.HandlerUtil;
@@ -86,20 +87,8 @@ public class PlayQueueFragment extends AttachDialogFragment {
 
         current = PlayerService.mPlayState.getCurrentPosition();
 
-        getActivity().bindService(new Intent(getContext(), PlayerService.class), new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                Log.d(TAG, "onServiceConnected: ");
-                PlayerService.PlayerServiceBinder pb = (PlayerService.PlayerServiceBinder)service;
-                mPlayerService = pb.getPlayService();
-
-            }
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                Log.d(TAG, "onServiceDisconnected: ");
-            }
-            
-        },Context.BIND_AUTO_CREATE);
+        MainActivity main = (MainActivity) getActivity();
+        mPlayerService = main.getPlayerService();
         new loadSongs().execute();
         return view;
     }

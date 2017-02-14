@@ -147,21 +147,18 @@ public class PlaylistFragment extends Fragment {
                     playlists.clear();
                     playlists = loadLocalPlaylists();
                     if (playlists.size() == 0) {
-                        if (playlists.size() == 0) {
-                            OkHttpClient client = new OkHttpClient();
-                            Request request = new Request.Builder()
-                                    .url("https://poche.fm/api/app/playlists/")
-                                    .build();
-                            Response response = client.newCall(request).execute();
-                            String responseData = response.body().string();
-                            parseJSONWithGSON(responseData);
-                        }
+                        OkHttpClient client = new OkHttpClient();
+                        Request request = new Request.Builder()
+                                .url("https://poche.fm/api/app/playlists/")
+                                .build();
+                        Response response = client.newCall(request).execute();
+                        String responseData = response.body().string();
+                        parseJSONWithGSON(responseData);
 
                         Message msg = Message.obtain();
                         msg.what = TEST;
                         msg.obj = playlists;
                         sHandler.sendMessage(msg);
-
                     }
 
                     Message msg = Message.obtain();
@@ -178,6 +175,7 @@ public class PlaylistFragment extends Fragment {
     }
     private List<Playlist> loadLocalPlaylists() {
         List<Playlist> mPlaylists = DataSupport.order("id asc").find(Playlist.class);
+        Log.d(TAG, "loadLocalPlaylists: " + mPlaylists.size());
         return mPlaylists;
     }
     private void parseJSONWithGSON(String jsonData) {
@@ -205,19 +203,18 @@ public class PlaylistFragment extends Fragment {
 
                     Gson gson = new Gson();
                     List<Playlist> datas = gson.fromJson(responseData, new TypeToken<List<Playlist>>(){}.getType());
-                    int maxID = playlists.get(0).getPlaylist_id();
-                    List<Playlist> tempLists = new ArrayList<>();
+                    int maxID = DataSupport.findFirst(Playlist.class).getPlaylist_id();
+                    final List<Playlist> tempLists = new ArrayList<>();
                     for (Playlist playlist : datas) {
                         if (playlist.getPlaylist_id() > maxID) {
                             tempLists.add(playlist);
+                            Log.d(TAG, "run: " + playlist.getPlaylist_id() + " " + maxID);
                             playlist.save();
                         }
                     }
                     for (Playlist playlist: playlists) {
                         tempLists.add(playlist);
                     }
-
-                    playlists.clear();
                     playlists = tempLists;
 
 
@@ -226,7 +223,7 @@ public class PlaylistFragment extends Fragment {
                         public void run() {
                             Message msg = Message.obtain();
                             msg.what = TEST;
-                            msg.obj = playlists;
+                            msg.obj = tempLists;
 
                             sHandler.sendMessage(msg);
                             adapter.notifyDataSetChanged();

@@ -90,44 +90,18 @@ public class PlayerActivity extends AppCompatActivity {
 
     // 0:noshuffle, 1:single, 2:shuffle
     private int shuffle;
-
-
-    private static final int PROCESSING = 1;
-    private static final int FAILURE = -1;
     private PlayerReceiver playerReceiver;
-    private Handler handler = new UIHandler();
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
-
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.d(TAG, "onServiceConnected: ");
-            PlayerService.PlayerServiceBinder pb = (PlayerService.PlayerServiceBinder)service;
-            mPlayerService = pb.getPlayService();
-
+            PlayerService.PlayBinder pb = (PlayerService.PlayBinder)service;
+            mPlayerService = pb.getPlayerService();
         }
-
         public void onServiceDisconnected(ComponentName name) {
             Log.d(TAG, "onServiceDisconnected: ");
         }
-
     };
-
-    private final class UIHandler extends Handler{
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case PROCESSING: //更新进度
-                    mLoading.setProgress(msg.getData().getInt("size"));
-                    float num = (float) mLoading.getProgress() / (float) mLoading.getMax();
-                    int result = (int) (num * 100);
-                    if (mLoading.getProgress() == mLoading.getMax()) {
-                        Toast.makeText(getApplicationContext(), "缓冲完成", Toast.LENGTH_LONG).show();
-                    }
-                    break;
-                case FAILURE:
-                    Toast.makeText(getApplicationContext(), "缓冲失败", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,9 +110,10 @@ public class PlayerActivity extends AppCompatActivity {
         findViewById();
         // Set on clicklistener
         setViewOnclickListener();
-
         //绑定服务
         bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+
+
     }
 
     private void findViewById() {
@@ -225,11 +200,7 @@ public class PlayerActivity extends AppCompatActivity {
         mSkipNext.setImageDrawable(getResources().getDrawable(R.drawable.play_btn_next));
         mStart = (TextView) findViewById(R.id.startText);
         mEnd = (TextView) findViewById(R.id.endText);
-
         mSeekbar = (SeekBar) findViewById(R.id.seekBar1);
-
-
-
         mLoading = (ProgressBar) findViewById(R.id.progressBar1);
         View mControllers = findViewById(R.id.controllers);
         mControllers.setVisibility(View.VISIBLE);
@@ -255,7 +226,6 @@ public class PlayerActivity extends AppCompatActivity {
         mPlaylist = (ImageView) findViewById(R.id.nowPlaying_list);
         mPlaylist.setImageDrawable(getResources().getDrawable(R.drawable.play_icn_src_prs));
     }
-
     private void setViewOnclickListener() {
         ViewOnclickListener clickListener = new ViewOnclickListener();
         mPlayPause.setOnClickListener(clickListener);
@@ -263,7 +233,6 @@ public class PlayerActivity extends AppCompatActivity {
         mSeekbar.setOnSeekBarChangeListener(new SeekBarChangeListener());
         mPlaylist.setOnClickListener(new ViewOnclickListener());
     }
-
     private class ViewOnclickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -272,11 +241,11 @@ public class PlayerActivity extends AppCompatActivity {
                     if (PlayerService.mPlayState.isPlaying()) {
                         mPlayerService.pause();
                         PlayerService.mPlayState.setPlaying(false);
-                        mPlayPause.setImageDrawable(mPauseDrawable);
+                        mPlayPause.setImageDrawable(mPlayDrawable);
                     } else {
                         mPlayerService.resume();
                         PlayerService.mPlayState.setPlaying(true);
-                        mPlayPause.setImageDrawable(mPlayDrawable);
+                        mPlayPause.setImageDrawable(mPauseDrawable);
                     }
                     break;
                 case R.id.play_repeat:
@@ -322,8 +291,6 @@ public class PlayerActivity extends AppCompatActivity {
                                       boolean fromUser) {
 
             if (progress == PlayerService.mPlayState.getDuration()) {
-                Log.d(TAG, "onProgressChanged: " + progress);
-
                 mLrcView.setNextTime();
             }
         }
@@ -342,7 +309,6 @@ public class PlayerActivity extends AppCompatActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-
                 try {
                     OkHttpClient client = new OkHttpClient();
                     Request request = new Request.Builder()
@@ -416,6 +382,7 @@ public class PlayerActivity extends AppCompatActivity {
                 }
 
                 boolean isMediaPlaying = PlayerService.mPlayState.isPlaying();
+                Log.d(TAG, "onReceive: " + isMediaPlaying);
                 if (!isMediaPlaying) {
                     mPlayPause.setImageDrawable(mPlayDrawable);
                 } else {
@@ -430,7 +397,6 @@ public class PlayerActivity extends AppCompatActivity {
                 } else {
                     mRepeat.setImageDrawable(mSingle);
                 }
-
             }
         }
     }
@@ -450,13 +416,6 @@ public class PlayerActivity extends AppCompatActivity {
     // 销毁
     @Override
     protected  void onDestroy() {
-        try {
-            unregisterReceiver(playerReceiver);
-            playerReceiver = null;
-            unbindService(serviceConnection);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         super.onDestroy();
     }
     private void registeReceiver() {
@@ -470,11 +429,27 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        registeReceiver();
+
+        Track track = PlayState.getCurrentMusic(PlayerService.tracks , PlayerService.mPlayState.getCurrentPosition());
+        if (track != null) {
+            registeReceiver();
+        }
     }
     @Override
     protected void onStop() {
         super.onStop();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (playerReceiver != null) {
+            unregisterReceiver(playerReceiver);
+            playerReceiver = null;
+        }
+        if (serviceConnection != null) {
+            unbindService(serviceConnection);
+        }
     }
 
 }

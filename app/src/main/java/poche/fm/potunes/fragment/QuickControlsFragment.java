@@ -179,10 +179,9 @@ public class QuickControlsFragment extends Fragment {
             String action = intent.getAction();
             if (action.equals(MUSIC_CURRENT)) {
                 // 注册服务
-                if (mPlayerService == null) {
-                    MainActivity main = (MainActivity) getActivity();
-                    mPlayerService = main.getPlayerService();
-                }
+                MainActivity main = (MainActivity) getActivity();
+                mPlayerService = main.getPlayerService();
+
                 Track track = PlayState.getCurrentMusic(PlayerService.tracks, PlayerService.mPlayState.getCurrentPosition());
                 if (track == null) {
                     return;
@@ -250,7 +249,6 @@ public class QuickControlsFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-
     }
 
     @Override
@@ -296,11 +294,9 @@ public class QuickControlsFragment extends Fragment {
 
         if (enablePlay) {
             mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
-
         } else {
             mPlayPause.setImageResource(R.drawable.playbar_btn_pause);
         }
-
     }
 
     private void onMetadataChanged(MediaMetadataCompat metadata) {

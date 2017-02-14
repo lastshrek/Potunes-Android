@@ -17,4 +17,8 @@ public class AppConstant {
         public static final int SINGLE = 1;
         public static final int ALBUM = 2;
     }
+
+    public class LockScreen {
+        public static final String LOCK_SCREEN_ACTION = "android.intent.lockscreen";
+    }
 }

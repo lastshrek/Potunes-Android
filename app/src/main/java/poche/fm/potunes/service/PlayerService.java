@@ -7,7 +7,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.IBinder;
@@ -59,6 +58,24 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
     public static PlayState mPlayState = new PlayState();
 
+    public PlayerService() {
+        mediaPlayer = new MediaPlayer();
+        mediaPlayer.setOnCompletionListener(this);
+    }
+
+    @Override
+    public IBinder onBind(Intent arg0) {
+        Log.d(TAG, "onBind: " + mediaPlayer + mExecutorService);
+        mExecutorService.execute(updateStatusRunnable);
+        return new PlayBinder();
+    }
+    public class PlayBinder extends Binder {
+        public PlayerService getPlayerService() {
+            return PlayerService.this;
+        }
+    }
+
+
 
     //创建单个线程池
     private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
@@ -81,16 +98,10 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     };
 
     public int getCurrentProgress(){
-        if(mediaPlayer != null){
+        if(mediaPlayer != null) {
             return mediaPlayer.getCurrentPosition();
         } else {
             return 0;
-        }
-    }
-
-    public class PlayerServiceBinder extends Binder {
-        public PlayerService getPlayService(){
-            return PlayerService.this;
         }
     }
 
@@ -103,15 +114,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     @Override
     public void onCreate() {
         super.onCreate();
-        mediaPlayer = new MediaPlayer();
-        mediaPlayer.setOnCompletionListener(this);
         mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-    }
-
-    @Override
-    public IBinder onBind(Intent arg0) {
-        mExecutorService.execute(updateStatusRunnable);
-        return new PlayerServiceBinder();
     }
 
     /**
@@ -202,28 +205,17 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mExecutorService.shutdown();
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        msg = intent.getIntExtra("MSG", 0);
-
-        Log.d(TAG, "onStartCommand: " + msg);
-        if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {
-            //暂停
-            pause();
-        }  else if (msg == AppConstant.PlayerMsg.CONTINUE_MSG) { //继续播放
-            resume();
-        } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
-            previous();
-        } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
-            //下一首
-            next();
+        Log.d(TAG, "onDestroy: 毁");
+        if (mExecutorService != null && !mExecutorService.isShutdown()) {
+            mExecutorService.shutdown();
         }
-        getNotification();
-        return super.onStartCommand(intent,flags, startId);
+
+//        if(mediaPlayer != null) {
+//            mediaPlayer.stop();
+//            mediaPlayer.release();
+//        }
     }
+
 
     private void getNotification() {
         //通知栏

@@ -17,6 +17,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 
 import com.facebook.drawee.backends.pipeline.Fresco;
@@ -31,6 +32,8 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 
+import java.util.List;
+
 import poche.fm.potunes.Model.LocalAlbumMessageEvent;
 import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MessageEvent;
@@ -42,7 +45,9 @@ import poche.fm.potunes.fragment.MyMusicFragment;
 import poche.fm.potunes.fragment.PlaylistAdapter;
 import poche.fm.potunes.fragment.PlaylistFragment;
 import poche.fm.potunes.fragment.TrackListFragment;
+import poche.fm.potunes.service.LockScreenService;
 import poche.fm.potunes.service.PlayerService;
+import poche.fm.potunes.utils.Validator;
 
 public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
         TrackListFragment.OnListFragmentInteractionListener,
@@ -64,13 +69,11 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     private PlaylistAdapter adapter;
     private long time = 0;
     private ImageView mMyMusic;
-
-
+    private static final String APP_ID = "wx0fc8d0673ec86694";
+    private static final String FRAGMENT_TAG = "playlist_fragment";
     private String TAG = "MainActivity";
     private SQLiteDatabase db;
-    private static final String APP_ID = "wx0fc8d0673ec86694";
     private IWXAPI api;
-    private static final String FRAGMENT_TAG = "playlist_fragment";
     public Playlist playlist;
     public String mLocalAlbum;
 
@@ -85,8 +88,8 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.d(TAG, "onServiceConnected: 绑定服务成功");
-            PlayerService.PlayerServiceBinder playerServiceBinder = (PlayerService.PlayerServiceBinder) service;
-            playerService = playerServiceBinder.getPlayService();
+            PlayerService.PlayBinder playerServiceBinder = (PlayerService.PlayBinder) service;
+            playerService = playerServiceBinder.getPlayerService();
         }
 
         @Override
@@ -95,11 +98,9 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         }
     };
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
         initializeToolbar();
         mMyMusic = (ImageView) findViewById(R.id.my_music);
@@ -123,6 +124,10 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
         //绑定服务
         bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+        // 锁屏服务
+        Intent intent = new Intent();
+        intent.setClass(MainActivity.this, LockScreenService.class);
+        startService(intent);
         Fresco.initialize(MainActivity.this);
         // initial database
         LitePal.initialize(MainActivity.this);
@@ -131,13 +136,17 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
     }
+
+
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
         unbindService(serviceConnection);
+        Log.d(TAG, "onDestroy: 毁");
     }
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(MessageEvent event) {
@@ -195,13 +204,13 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     public boolean onOptionsItemSelected(MenuItem item) {
         return super.onOptionsItemSelected(item);
     }
-
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        Log.d(TAG, "onKeyDown: " + keyCode);
         if (keyCode == KeyEvent.KEYCODE_BACK ) {
             FragmentManager fragmentManager = getSupportFragmentManager();
             if (fragmentManager.getBackStackEntryCount() == 0) {
-                super.onBackPressed();
+                moveTaskToBack(true);
             }
             fragmentManager.popBackStackImmediate();
             if (currentFragment instanceof LocalDownloadAlbumFragment && fragmentManager.getBackStackEntryCount() > 0
@@ -216,7 +225,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         }
         return false;
     }
-
 
     public String getMediaId() {
         PlaylistFragment fragment = getPlaylistFragment();
@@ -259,5 +267,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
     }
+
 
 }

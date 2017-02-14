@@ -179,8 +179,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
             fragmentManager.popBackStackImmediate();
         } else {
             // Lastly, it will rely on the system behavior for back
-            super.onBackPressed();
-
+            moveTaskToBack(true);
         }
     }
 

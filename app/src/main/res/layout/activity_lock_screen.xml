@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/activity_lockscreen"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:background="@color/black"
+    android:orientation="vertical">
+
+
+    <TextView
+        android:id="@+id/lock_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:ellipsize="end"
+        android:gravity="center_horizontal"
+        android:maxLines="1"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="20"
+        android:text="@string/app_name"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textColor="@color/white" />
+
+    <TextView
+        android:id="@+id/lock_artist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-light"
+        android:gravity="center_horizontal"
+        android:maxLines="1"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="20"
+        android:text="@string/app_name"
+        android:alpha="0.7"
+        android:textColor="@color/white" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="68dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginEnd="30dp">
+
+        <ImageView
+            android:id="@+id/lock_play_repeat"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:textAlignment="center"
+            android:src="@drawable/play_icn_loop_prs"
+            android:layout_weight="1"/>
+
+        <ImageView
+            android:id="@+id/lock_play_prev"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:textAlignment="center"
+            android:src="@drawable/play_btn_prev"
+            />
+
+        <ImageView
+            android:id="@+id/lock_play_pause"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:contentDescription="@string/play_pause"
+            android:src="@drawable/play_btn_pause"
+            />
+        <ImageView
+            android:id="@+id/lock_play_next"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:textAlignment="center"
+            android:src="@drawable/play_btn_next"
+            />
+        </LinearLayout>
+    <ImageView
+        android:id="@+id/lock_playing_cover"
+        android:layout_width="263dp"
+        android:layout_height="263dp"
+        android:layout_marginTop="30dp"
+        android:layout_gravity="center_horizontal"
+        android:scaleType="fitCenter"
+        android:background="@drawable/logo"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="30dp"
+        android:layout_gravity="center">
+
+        <TextView
+            android:id="@+id/unlock_text"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/white"
+            android:text="@string/unlock_screen"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:shadowColor="@color/white"
+            >
+        </TextView>
+    </LinearLayout>
+
+
+
+
+
+
+
+
+
+</LinearLayout>

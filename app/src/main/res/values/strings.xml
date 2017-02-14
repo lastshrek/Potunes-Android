@@ -26,7 +26,7 @@
     <string name="queue_is_empty">播放队列为空</string>
     <string name="my_music">我的音乐</string>
     <string name="downloading">下载管理</string>
-    <string name="search_queue_title">Search Result</string>
+    <string name="unlock_screen">单击解锁</string>
 
     <string name="casting_to_device">Casting to %1$s</string>
 
