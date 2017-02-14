@@ -442,7 +442,6 @@ public class PlayerActivity extends AppCompatActivity {
 
     @Override
     public void onPause() {
-        super.onPause();
         if (playerReceiver != null) {
             unregisterReceiver(playerReceiver);
             playerReceiver = null;
@@ -450,6 +449,7 @@ public class PlayerActivity extends AppCompatActivity {
         if (serviceConnection != null) {
             unbindService(serviceConnection);
         }
+        super.onPause();
     }
 
 }
