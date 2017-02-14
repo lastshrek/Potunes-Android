@@ -26,11 +26,6 @@
         app:realtimeBlurRadius="40dp"
         app:realtimeOverlayColor="#8000"/>
 
-
-
-
-
-
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -168,7 +163,8 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="68dp">
+                android:layout_height="68dp"
+                android:layout_marginBottom="40dp">
 
                 <poche.fm.potunes.widgets.TintImageView
                     android:id="@+id/play_repeat"

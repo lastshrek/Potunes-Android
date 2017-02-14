@@ -87,8 +87,21 @@ public class PlayQueueFragment extends AttachDialogFragment {
 
         current = PlayerService.mPlayState.getCurrentPosition();
 
-        MainActivity main = (MainActivity) getActivity();
-        mPlayerService = main.getPlayerService();
+        getActivity().bindService(new Intent(getContext(), PlayerService.class), new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                Log.d(TAG, "onServiceConnected: ");
+                PlayerService.PlayBinder pb = (PlayerService.PlayBinder)service;
+                mPlayerService = pb.getPlayerService();
+
+            }
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                Log.d(TAG, "onServiceDisconnected: ");
+            }
+
+        },Context.BIND_AUTO_CREATE);
+
         new loadSongs().execute();
         return view;
     }

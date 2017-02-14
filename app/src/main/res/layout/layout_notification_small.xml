@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_small"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:paddingEnd="15dp"
+    android:layout_height="wrap_content"
+    android:background="@color/statusBarTranslucent">
+
+    <ImageView
+        android:id="@+id/notification_cover_small"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:scaleType="centerCrop"
+        android:layout_gravity="center_vertical"/>
+
+
+    <LinearLayout
+        android:layout_width="120dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_gravity="center_vertical">
+        <TextView
+            android:id="@+id/notification_title_small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:textColor="@color/black"
+            tools:text="dddddddddd"/>
+
+        <TextView
+            android:id="@+id/notification_artist_small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="9sp"
+            android:layout_marginTop="4dp"
+            tools:text="dddddd"
+            android:textColor="@color/black"
+            android:maxLines="1"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_marginStart="10dp"
+        android:id="@+id/action_small"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+        <ImageButton
+            android:padding="5dp"
+            android:id="@+id/notification_prev_small"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/noti_prev"
+            android:background="@color/statusBarTranslucent"
+            android:scaleType="centerCrop"
+            android:layout_weight="1"/>
+
+        <ImageButton
+            android:padding="5dp"
+            android:id="@+id/notification_pause_small"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/noti_pause"
+            android:scaleType="centerCrop"
+            android:background="@color/statusBarTranslucent"
+            android:layout_weight="1"/>
+
+        <ImageButton
+            android:padding="5dp"
+            android:id="@+id/notification_next_small"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/noti_next"
+            android:scaleType="centerCrop"
+            android:background="@color/statusBarTranslucent"
+            android:layout_weight="1"/>
+    </LinearLayout>
+
+
+
+</LinearLayout>

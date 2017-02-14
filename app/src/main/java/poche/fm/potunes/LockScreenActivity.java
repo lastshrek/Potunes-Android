@@ -23,13 +23,14 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
+import poche.fm.potunes.Model.HomeWatcher;
 import poche.fm.potunes.Model.PlayState;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.service.LockScreenService;
 import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.Validator;
 
-public class LockScreenActivity extends Activity {
+public class LockScreenActivity extends Activity implements HomeWatcher.OnHomePressedListener {
 
     public static boolean isLocked = false;
     private String TAG = "LockScreenActivity:";
@@ -52,6 +53,7 @@ public class LockScreenActivity extends Activity {
     private TextView mUnlock;
     private LockReceiver mLockReceiver;
     private PlayerService mPlayerService;
+    private HomeWatcher mHomeWatcher;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -68,16 +70,13 @@ public class LockScreenActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        //定义和注册广播接收器
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
-
         setContentView(R.layout.activity_lock_screen);
         findViewById();
-
-
-
         isLocked = true;
-
         try {
             startService(new Intent(this, LockScreenService.class));
         } catch (Exception e) {
@@ -219,14 +218,31 @@ public class LockScreenActivity extends Activity {
     @Override 
     public void onResume() {
         super.onResume();
-        //定义和注册广播接收器
         //绑定服务
         bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+
         mLockReceiver = null;
         mLockReceiver = new LockReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(MUSIC_CURRENT);
         registerReceiver(mLockReceiver, filter);
+
+        //home监听
+        mHomeWatcher = new HomeWatcher(this);
+        mHomeWatcher.setOnHomePressedListener(this);
+        mHomeWatcher.startWatch();
+    }
+
+    @Override
+    public void onHomePressed() {
+        Log.d(TAG, "onHomePressed");
+        isLocked = false;
+        finish();
+    }
+
+    @Override
+    public void onHomeLongPressed() {
+        Log.d(TAG, "onHomeLongPressed");
     }
 
     @Override
@@ -239,12 +255,16 @@ public class LockScreenActivity extends Activity {
         if (serviceConnection != null) {
             unbindService(serviceConnection);
         }
+        if (mHomeWatcher != null) {
+            mHomeWatcher.stopWatch();
+        }
     }
 
 
     @Override
     public boolean onKeyDown(int keyCode, android.view.KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_HOME || keyCode == KeyEvent.KEYCODE_BACK) {
+        Log.d(TAG, "onKeyDown: ");
+        if ((keyCode == KeyEvent.KEYCODE_HOME)) {
             // Key code constant: Home key. This key is handled by the framework and is never delivered to applications.
             return true;
         }

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -44,8 +45,10 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private int msg;
     public static ArrayList<Track> tracks;
     private NotificationManager mManager;
-    private RemoteViews contentViews;
+    private RemoteViews mBigContentViews;
+    private RemoteViews mContentViews;
     private Bitmap bitmap;
+    private Notification notification;
 
     // 服务要发送的一些Action
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT";  //当前音乐播放时间更新动作
@@ -73,6 +76,27 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         public PlayerService getPlayerService() {
             return PlayerService.this;
         }
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        msg = intent.getIntExtra("MSG", 0);
+
+        if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
+            play(0);
+        } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {
+            //暂停
+            pause();
+        } else if (msg == AppConstant.PlayerMsg.CONTINUE_MSG) { //继续播放
+            resume();
+        } else if (msg == AppConstant.PlayerMsg.PRIVIOUS_MSG) { //上一首
+            previous();
+        } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
+            //下一首
+            next();
+        }
+        getNotification();
+        return super.onStartCommand(intent, flags, startId);
     }
 
 
@@ -115,6 +139,14 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     public void onCreate() {
         super.onCreate();
         mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+
+//
+//        myReceiver = new MyReceiver();
+//        IntentFilter filter = new IntentFilter();
+//        filter.addAction(PlayerActivity.CTL_ACTION);
+//        filter.addAction(QuickControlsFragment.CTL_ACTION);
+//        registerReceiver(myReceiver, filter);
     }
 
     /**
@@ -227,22 +259,23 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private void getNotification() {
         //通知栏
         Track track = tracks.get(mPlayState.getCurrentPosition());
-        contentViews = new RemoteViews(getPackageName(), R.layout.layout_notification);
-        contentViews.setTextViewText(R.id.notification_title, track.getTitle());
-        contentViews.setTextViewText(R.id.notification_artist, track.getArtist());
-        contentViews.setImageViewResource(R.id.notification_cover, R.drawable.placeholder_disk_210);
+        mBigContentViews = new RemoteViews(getPackageName(), R.layout.layout_notification);
+        mBigContentViews.setTextViewText(R.id.notification_title, track.getTitle());
+        mBigContentViews.setTextViewText(R.id.notification_artist, track.getArtist());
+        mBigContentViews.setImageViewResource(R.id.notification_cover, R.drawable.placeholder_disk_210);
         //上一首
         Intent prev = new Intent();
         prev.setAction("fm.poche.media.MUSIC_SERVICE");
         prev.putExtra("MSG", AppConstant.PlayerMsg.PRIVIOUS_MSG);
         PendingIntent intent_prev = PendingIntent.getService(this, 1, prev, PendingIntent.FLAG_UPDATE_CURRENT);
-        contentViews.setOnClickPendingIntent(R.id.notification_prev, intent_prev);
+        mBigContentViews.setOnClickPendingIntent(R.id.notification_prev, intent_prev);
         // 下一首
         Intent next = new Intent();
         next.setAction("fm.poche.media.MUSIC_SERVICE");
         next.putExtra("MSG", AppConstant.PlayerMsg.NEXT_MSG);
         PendingIntent intent_next = PendingIntent.getService(this, 2, next, PendingIntent.FLAG_UPDATE_CURRENT);
-        contentViews.setOnClickPendingIntent(R.id.notification_next, intent_next);
+        mBigContentViews.setOnClickPendingIntent(R.id.notification_next, intent_next);
+
         // 暂停
         Intent playOrPause = new Intent();
         playOrPause.setAction("fm.poche.media.MUSIC_SERVICE");
@@ -251,9 +284,24 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         } else {
             playOrPause.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
         }
-        contentViews.setImageViewResource(R.id.notification_pause, mPlayState.isPlaying() ? R.drawable.note_btn_pause : R.drawable.note_btn_play);
+        mBigContentViews.setImageViewResource(R.id.notification_pause, mPlayState.isPlaying() ? R.drawable.note_btn_pause : R.drawable.note_btn_play);
         PendingIntent intent_play = PendingIntent.getService(this, 3, playOrPause, PendingIntent.FLAG_UPDATE_CURRENT);
-        contentViews.setOnClickPendingIntent(R.id.notification_pause, intent_play);
+        mBigContentViews.setOnClickPendingIntent(R.id.notification_pause, intent_play);
+        mBigContentViews.setInt(R.id.layout, "setBackgroundColor", R.color.colorAccent);
+        // small
+        mContentViews = new RemoteViews(getPackageName(), R.layout.layout_notification_small);
+        mContentViews.setTextViewText(R.id.notification_title_small, track.getTitle());
+        mContentViews.setTextViewText(R.id.notification_artist_small, track.getArtist());
+        mContentViews.setImageViewResource(R.id.notification_cover_small, R.drawable.placeholder_disk_210);
+        mContentViews.setInt(R.id.layout, "setBackgroundColor", R.color.colorAccent);
+        mContentViews.setOnClickPendingIntent(R.id.notification_next_small, intent_next);
+        mContentViews.setOnClickPendingIntent(R.id.notification_prev_small, intent_prev);
+        mContentViews.setImageViewResource(R.id.notification_pause_small, mPlayState.isPlaying() ? R.drawable.noti_pause : R.drawable.noti_play);
+
+        mContentViews.setOnClickPendingIntent(R.id.notification_pause_small, intent_play);
+
+
+
 
         if (track.getAlbumid() == 0) {
             //设置封面
@@ -261,22 +309,24 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                 @Override
                 public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
 
-                    contentViews.setImageViewBitmap(R.id.notification_cover, resource);
+                    mBigContentViews.setImageViewBitmap(R.id.notification_cover, resource);
+                    mContentViews.setImageViewBitmap(R.id.notification_cover_small, resource);
                     bitmap = resource;
 
                     Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
                     remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
                     PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext());
 
-                    NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
-                            .setCustomContentView(contentViews)
-                            .setCustomBigContentView(contentViews)
+                    mBuilder.setCustomBigContentView(mBigContentViews)
+                            .setCustomContentView(mContentViews)
                             .setTicker("正在播放")
                             .setWhen(System.currentTimeMillis())
                             .setOngoing(true)
                             .setContentIntent(pi)
-                            .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
-                    Notification notification = mBuilder.build();
+                            .setPriority(NotificationCompat.PRIORITY_MAX)
+                            .setSmallIcon(R.drawable.actionbar_discover_selected);
+                    notification = mBuilder.build();
                     mManager.notify(1, notification);
                 }
             });
@@ -284,14 +334,14 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             long albumid = track.getAlbumid();
             long track_id = track.getID();
             bitmap = MediaUtil.getArtwork(getBaseContext(), track_id, albumid, true, false);
-            contentViews.setImageViewBitmap(R.id.notification_cover, bitmap);
+            mBigContentViews.setImageViewBitmap(R.id.notification_cover, bitmap);
             Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
             remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
             PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext())
-                    .setCustomContentView(contentViews)
-                    .setCustomBigContentView(contentViews)
+                    .setCustomContentView(mBigContentViews)
+                    .setCustomBigContentView(mBigContentViews)
                     .setTicker("正在播放")
                     .setWhen(System.currentTimeMillis())
                     .setOngoing(true)

@@ -29,6 +29,7 @@ public class LauncherHomeActivity extends Activity {
 
     @Override
     protected void onResume() {
+        Log.d("Home", "onResume: ");
         super.onResume();
 
         Intent intent = new Intent(this, LockScreenService.class);
