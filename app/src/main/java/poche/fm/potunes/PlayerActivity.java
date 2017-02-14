@@ -106,14 +106,12 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //绑定服务
+        bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
         // initial subviews
         findViewById();
         // Set on clicklistener
         setViewOnclickListener();
-        //绑定服务
-        bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
-
-
     }
 
     private void findViewById() {
@@ -416,6 +414,7 @@ public class PlayerActivity extends AppCompatActivity {
     // 销毁
     @Override
     protected  void onDestroy() {
+        unbindService(serviceConnection);
         super.onDestroy();
     }
     private void registeReceiver() {
@@ -446,9 +445,7 @@ public class PlayerActivity extends AppCompatActivity {
             unregisterReceiver(playerReceiver);
             playerReceiver = null;
         }
-        if (serviceConnection != null) {
-            unbindService(serviceConnection);
-        }
+
         super.onPause();
     }
 

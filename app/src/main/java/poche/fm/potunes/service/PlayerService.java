@@ -203,6 +203,16 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     }
 
     @Override
+    public boolean onUnbind(Intent intent) {
+        // All clients have unbound with unbindService()
+
+        if(mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+        }
+        return false;
+    }
+    @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy: 毁");
@@ -210,10 +220,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             mExecutorService.shutdown();
         }
 
-//        if(mediaPlayer != null) {
-//            mediaPlayer.stop();
-//            mediaPlayer.release();
-//        }
+
     }
 
 
