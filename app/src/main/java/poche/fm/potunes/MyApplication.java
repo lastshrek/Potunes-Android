@@ -7,6 +7,8 @@ import com.lzy.okserver.download.DownloadManager;
 
 import javax.net.ssl.HostnameVerifier;
 
+import cn.jpush.android.api.JPushInterface;
+
 /**
  * Created by purchas on 2017/1/22.
  */
@@ -19,12 +21,8 @@ public class MyApplication extends Application {
         super.onCreate();
 
         OkGo.init(this);
-        try {
-            OkGo.getInstance()
-                    .setCertificates();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        JPushInterface.setDebugMode(true);
+        JPushInterface.init(this);
     }
 
 

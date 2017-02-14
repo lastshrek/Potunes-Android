@@ -1,8 +1,10 @@
 package poche.fm.potunes;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -34,6 +36,7 @@ import org.litepal.LitePal;
 
 import java.util.List;
 
+import cn.jpush.android.api.JPushInterface;
 import poche.fm.potunes.Model.LocalAlbumMessageEvent;
 import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MessageEvent;
@@ -47,6 +50,7 @@ import poche.fm.potunes.fragment.PlaylistFragment;
 import poche.fm.potunes.fragment.TrackListFragment;
 import poche.fm.potunes.service.LockScreenService;
 import poche.fm.potunes.service.PlayerService;
+import poche.fm.potunes.utils.ExampleUtil;
 import poche.fm.potunes.utils.Validator;
 
 public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
@@ -60,6 +64,13 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     public static final String EXTRA_CURRENT_MEDIA_DESCRIPTION =
             "fm.poche.potunes.CURRENT_MEDIA_DESCRIPTION";
     private static final String SAVED_MEDIA_ID="fm.poche.potunes.MEDIA_ID";
+    public static final String MESSAGE_RECEIVED_ACTION = "fm.poche.potunes.MESSAGE_RECEIVED_ACTION";
+
+    public static final String KEY_TITLE = "title";
+    public static final String KEY_MESSAGE = "message";
+    public static final String KEY_EXTRAS = "extras";
+    //for receive customer msg from jpush server
+    private MessageReceiver mMessageReceiver;
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -120,6 +131,11 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             transaction.replace(R.id.container, mPlaylistFragment, FRAGMENT_TAG);
             transaction.commit();
         }
+        init();
+
+        String appKey = ExampleUtil.getAppKey(getApplicationContext());
+        if (null == appKey) appKey = "AppKey异常";
+        Log.d(TAG, "onCreate: appkey" + appKey);
 
 
         //绑定服务
@@ -133,20 +149,56 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         LitePal.initialize(MainActivity.this);
         db = LitePal.getDatabase();
         EventBus.getDefault().register(this);
+
+        registerMessageReceiver();  // used for receive msg
+
+
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
     }
+    public void registerMessageReceiver() {
+        mMessageReceiver = new MessageReceiver();
+        IntentFilter filter = new IntentFilter();
+        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+        filter.addAction(MESSAGE_RECEIVED_ACTION);
+        registerReceiver(mMessageReceiver, filter);
+    }
 
+    public class MessageReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (MESSAGE_RECEIVED_ACTION.equals(intent.getAction())) {
+                String messge = intent.getStringExtra(KEY_MESSAGE);
+                String extras = intent.getStringExtra(KEY_EXTRAS);
+                StringBuilder showMsg = new StringBuilder();
+                showMsg.append(KEY_MESSAGE + " : " + messge + "\n");
+                if (!ExampleUtil.isEmpty(extras)) {
+                    showMsg.append(KEY_EXTRAS + " : " + extras + "\n");
+                }
+                setCostomMsg(showMsg.toString());
+            }
+        }
+    }
+
+    private void setCostomMsg(String msg){
+        Log.d(TAG, "setCostomMsg: " + msg);
+    }
+
+    // 初始化 JPush。如果已经初始化，但没有登录成功，则执行重新登录。
+    private void init(){
+        JPushInterface.init(getApplicationContext());
+    }
 
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         EventBus.getDefault().unregister(this);
         unbindService(serviceConnection);
-        Log.d(TAG, "onDestroy: 毁");
+        unregisterReceiver(mMessageReceiver);
+        super.onDestroy();
     }
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(MessageEvent event) {
@@ -206,7 +258,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     }
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Log.d(TAG, "onKeyDown: " + keyCode);
         if (keyCode == KeyEvent.KEYCODE_BACK ) {
             FragmentManager fragmentManager = getSupportFragmentManager();
             if (fragmentManager.getBackStackEntryCount() == 0) {
