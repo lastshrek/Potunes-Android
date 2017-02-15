@@ -114,8 +114,6 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         }
     }
 
-
-
     @Override
     public int getItemCount() {
         return mList.size();

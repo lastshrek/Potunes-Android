@@ -32,6 +32,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
+import com.umeng.analytics.MobclickAgent;
 
 import org.litepal.crud.DataSupport;
 
@@ -428,7 +429,7 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
+        MobclickAgent.onResume(this);
         Track track = PlayState.getCurrentMusic(PlayerService.tracks , PlayerService.mPlayState.getCurrentPosition());
         if (track != null) {
             registeReceiver();
@@ -445,7 +446,7 @@ public class PlayerActivity extends AppCompatActivity {
             unregisterReceiver(playerReceiver);
             playerReceiver = null;
         }
-
+        MobclickAgent.onPause(this);
         super.onPause();
     }
 

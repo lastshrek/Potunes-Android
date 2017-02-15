@@ -1,15 +1,18 @@
 package poche.fm.potunes;
 
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -28,6 +31,7 @@ import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.umeng.analytics.MobclickAgent;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -198,6 +202,10 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         EventBus.getDefault().unregister(this);
         unbindService(serviceConnection);
         unregisterReceiver(mMessageReceiver);
+        MobclickAgent.onKillProcess(this);
+        // 程序结束时销毁状态栏
+        NotificationManager manager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        manager.cancel(1);
         super.onDestroy();
     }
     @Subscribe(threadMode = ThreadMode.POSTING)
@@ -231,7 +239,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             if (!to.isAdded()) {	// 先判断是否被add过
                 transaction.hide(from).add(R.id.container, to);
                 transaction.addToBackStack(null);
-                transaction.commit(); // 隐藏当前的fragment，add下一个到Activity中
+                transaction.commitAllowingStateLoss(); // 隐藏当前的fragment，add下一个到Activity中
             } else {
                 transaction.hide(from).show(to).commit(); // 隐藏当前的fragment，显示下一个
             }
@@ -313,6 +321,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     @Override
     public void onResume() {
         isForeground = true;
+        MobclickAgent.onResume(this);
         super.onResume();
     }
     @Override
@@ -326,7 +335,20 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     @Override
     public void onPause() {
         isForeground = false;
+        MobclickAgent.onPause(this);
         super.onPause();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                onMessageEvent(new LocalTracksEvent("local"));
+            } else {
+                Toast.makeText(this, "您没有赋予扫描本地音乐权限，无权查看本地音乐", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
 }

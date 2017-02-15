@@ -4,6 +4,7 @@ import android.app.Application;
 
 import com.lzy.okgo.OkGo;
 import com.lzy.okserver.download.DownloadManager;
+import com.umeng.analytics.MobclickAgent;
 
 import javax.net.ssl.HostnameVerifier;
 
@@ -23,6 +24,8 @@ public class MyApplication extends Application {
         OkGo.init(this);
         JPushInterface.setDebugMode(true);
         JPushInterface.init(this);
+        MobclickAgent.startWithConfigure(new MobclickAgent.UMAnalyticsConfig(this, "58a412462ae85b1cf700184f", "poche.fm"));
+        MobclickAgent.setDebugMode( true );
     }
 
 

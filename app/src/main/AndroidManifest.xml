@@ -4,6 +4,7 @@
     android:name="org.litepal.LitePalApplication"
     package="poche.fm.potunes">
 
+    <uses-sdk android:minSdkVersion="4"></uses-sdk>
     <!-- Required -->
     <permission
         android:name="poche.fm.potunes.permission.JPUSH_MESSAGE"
