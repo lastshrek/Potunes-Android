@@ -3,6 +3,7 @@
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     >
     <ImageView
         android:id="@+id/notification_cover"
@@ -37,7 +38,7 @@
                     android:fadingEdgeLength="10dp"
                     android:maxLines="1"
                     android:text="11111"
-                    android:textColor="@color/white"
+                    android:textAppearance="@style/TextAppearance.StatusBar.EventContent.Time"
                     android:textSize="16sp" />
                 <TextView
                     android:id="@+id/notification_artist"
@@ -49,7 +50,7 @@
                     android:fadingEdgeLength="10dp"
                     android:maxLines="1"
                     android:text="222222222"
-                    android:textColor="@color/white"
+                    android:textAppearance="@style/TextAppearance.StatusBar.EventContent.Line2"
                     android:textSize="12sp" />
             </LinearLayout>
 

@@ -47,7 +47,8 @@ public class LockScreenService extends Service {
     public class LockScreenReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (PlayerService.tracks.isEmpty()) return;
+
+            if (PlayerService.tracks == null) return;
             Track track = PlayerService.tracks.get(PlayerService.mPlayState.getCurrentPosition());
             if (track == null) return;
 

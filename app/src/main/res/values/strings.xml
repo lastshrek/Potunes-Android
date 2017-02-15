@@ -31,4 +31,12 @@
     <string name="casting_to_device">Casting to %1$s</string>
 
 
+    <string name="drawer_item_home">首页</string>
+    <string name="drawer_item_mobile_play">使用移动网络播放</string>
+    <string name="drawer_item_mobile_download">使用移动网络下载</string>
+    <string name="drawer_item_lock_screen">使用系统默认锁屏</string>
+    <string name="drawer_item_settings">设置</string>
+    <string name="drawer_item_check_update">检查更新</string>
+
+
 </resources>

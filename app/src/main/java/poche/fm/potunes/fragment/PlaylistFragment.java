@@ -145,10 +145,10 @@ public class PlaylistFragment extends Fragment {
             @Override
             public void run() {
                 try {
-                    swipeRefresh.setRefreshing(true);
                     playlists.clear();
                     playlists = loadLocalPlaylists();
                     if (playlists.size() == 0) {
+                        swipeRefresh.setRefreshing(true);
                         OkHttpClient client = new OkHttpClient();
                         Request request = new Request.Builder()
                                 .url("https://poche.fm/api/app/playlists/")

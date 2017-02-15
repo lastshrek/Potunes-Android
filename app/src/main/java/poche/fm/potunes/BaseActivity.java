@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
+import android.util.Log;
 
 import poche.fm.potunes.fragment.QuickControlsFragment;
 import poche.fm.potunes.utils.ResourceHelper;
@@ -16,6 +17,7 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Quic
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onDestroy");
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= 21) {
             // Since our app icon has the same color as colorPrimary, our entry in the Recent Apps
@@ -52,12 +54,6 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Quic
         super.onStop();
     }
 
-
-
-
-    protected void onMediaControllerConnected() {
-        // empty implementation, can be overridden by clients.
-    }
     @Override
     public void onFragmentInteraction(Uri uri) {
 

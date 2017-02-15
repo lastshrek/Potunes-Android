@@ -1,5 +1,6 @@
 package poche.fm.potunes;
 
+import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -30,6 +31,12 @@ import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.Nameable;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.umeng.analytics.MobclickAgent;
 
@@ -118,8 +125,11 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
         initializeToolbar();
+
+
         mMyMusic = (ImageView) findViewById(R.id.my_music);
         mMyMusic.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -138,9 +148,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             transaction.commit();
         }
         init();
-
-        String appKey = ExampleUtil.getAppKey(getApplicationContext());
-
 
         //绑定服务
         bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
@@ -162,6 +169,8 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
     }
+
+
     public void registerMessageReceiver() {
         mMessageReceiver = new MessageReceiver();
         IntentFilter filter = new IntentFilter();
@@ -171,7 +180,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     }
 
     public class MessageReceiver extends BroadcastReceiver {
-
         @Override
         public void onReceive(Context context, Intent intent) {
             if (MESSAGE_RECEIVED_ACTION.equals(intent.getAction())) {
@@ -195,8 +203,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     private void init(){
         JPushInterface.init(getApplicationContext());
     }
-
-
     @Override
     public void onDestroy() {
         EventBus.getDefault().unregister(this);
@@ -229,6 +235,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         switchFragment(currentFragment, mLocalTracksFragment);
         setTitle("本地音乐");
     }
+
     public void switchFragment(Fragment from, Fragment to) {
         Log.d(TAG, "currentFragment: " + currentFragment);
         if (currentFragment != to) {
@@ -257,19 +264,12 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         super.onSaveInstanceState(outState);
     }
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        return true;
-    }
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        return super.onOptionsItemSelected(item);
-    }
-    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        Log.d(TAG, "onKeyDown: " + keyCode);
         if (keyCode == KeyEvent.KEYCODE_BACK ) {
             FragmentManager fragmentManager = getSupportFragmentManager();
             if (fragmentManager.getBackStackEntryCount() == 0) {
-                moveTaskToBack(true);
+                return super.onKeyDown(keyCode, event);
             }
             fragmentManager.popBackStackImmediate();
             if (currentFragment instanceof LocalDownloadAlbumFragment && fragmentManager.getBackStackEntryCount() > 0
@@ -283,6 +283,11 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             }
         }
         return false;
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 
     public String getMediaId() {

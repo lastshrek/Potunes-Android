@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:paddingEnd="10dp"
     android:layout_height="wrap_content"
-    android:background="@color/statusBarTranslucent">
+    android:background="@color/white">
 
     <ImageView
         android:id="@+id/notification_cover_small"
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:maxLines="1"
-            android:textColor="@color/black"
+            android:textAppearance="@style/TextAppearance.StatusBar.EventContent.Time"
             tools:text="dddddddddd"/>
 
         <TextView
@@ -39,7 +39,7 @@
             android:textSize="9sp"
             android:layout_marginTop="4dp"
             tools:text="dddddd"
-            android:textColor="@color/black"
+            android:textAppearance="@style/TextAppearance.StatusBar.EventContent"
             android:maxLines="1"/>
     </LinearLayout>
 

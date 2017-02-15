@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Build;
@@ -27,6 +28,7 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.MediaUtil;
 import poche.fm.potunes.Model.PlayState;
 import poche.fm.potunes.Model.Track;
@@ -93,10 +95,11 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
             //下一首
             next();
-        } else if (msg == AppConstant.PlayerMsg.STOP_MSG) {
-            mManager.cancel(1);
         }
         getNotification();
+        if (msg == AppConstant.PlayerMsg.STOP_MSG) {
+            mManager.cancel(1);
+        }
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -123,7 +126,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     };
 
     public int getCurrentProgress(){
-        if(mediaPlayer != null) {
+        if(mediaPlayer != null ) {
             return mediaPlayer.getCurrentPosition();
         } else {
             return 0;
@@ -140,12 +143,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     public void onCreate() {
         super.onCreate();
         mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-//
-//        myReceiver = new MyReceiver();
-//        IntentFilter filter = new IntentFilter();
-//        filter.addAction(PlayerActivity.CTL_ACTION);
-//        filter.addAction(QuickControlsFragment.CTL_ACTION);
-//        registerReceiver(myReceiver, filter);
     }
 
     /**
@@ -162,9 +159,15 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         }
         try {
             mediaPlayer.reset();
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mediaPlayer.setDataSource(url);
             mediaPlayer.prepareAsync();
-
+            mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                @Override
+                public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                    Log.d(TAG, "onBufferingUpdate: " + percent);
+                }
+            });
             mPlayState.setCurrentPosition(position);
             mPlayState.setPlaying(true);
 
@@ -240,6 +243,10 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             mediaPlayer.stop();
             mediaPlayer.release();
         }
+
+        if (mExecutorService != null && !mExecutorService.isShutdown()) {
+            mExecutorService.shutdown();
+        }
         return false;
     }
     @Override
@@ -288,7 +295,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         close.putExtra("MSG", AppConstant.PlayerMsg.STOP_MSG);
         PendingIntent intent_close = PendingIntent.getService(this, 5, close, PendingIntent.FLAG_UPDATE_CURRENT);
         mBigContentViews.setOnClickPendingIntent(R.id.notification_close, intent_close);
-        mBigContentViews.setInt(R.id.layout, "setBackgroundColor", R.color.colorAccent);
         // small
         mContentViews = new RemoteViews(getPackageName(), R.layout.layout_notification_small);
         mContentViews.setTextViewText(R.id.notification_title_small, track.getTitle());
@@ -299,6 +305,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         mContentViews.setOnClickPendingIntent(R.id.notification_prev_small, intent_prev);
         mContentViews.setImageViewResource(R.id.notification_pause_small, mPlayState.isPlaying() ? R.drawable.noti_pause : R.drawable.noti_play);
         mContentViews.setOnClickPendingIntent(R.id.notification_pause_small, intent_play);
+        mContentViews.setOnClickPendingIntent(R.id.notification_close_small, intent_close);
 
         if (track.getAlbumid() == 0) {
             //设置封面

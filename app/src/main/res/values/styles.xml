@@ -15,7 +15,7 @@
         <!--<item name="android:windowBackground">@null</item>-->
         <!--<item name="android:windowAnimationStyle">@style/NoAnimation</item>-->
         <!--导航栏的颜色-->
-        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/black</item>
 
 
         <!--状态栏的颜色-->
@@ -187,7 +187,7 @@
 
     <style name="Toolbar.SubTitle" parent="@style/TextAppearance.Widget.AppCompat.Toolbar.Subtitle">
         <item name="android:textSize">9.0sp</item>
-        <item name="android:textColor">@color/menu_item_white</item>
+        <item name="android:textColor">@color/colorAccent</item>
     </style>
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
