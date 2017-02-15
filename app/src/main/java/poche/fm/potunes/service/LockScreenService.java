@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.os.IBinder;
 import android.util.Log;
 
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.domain.AppConstant;
 
 /**
@@ -39,12 +40,18 @@ public class LockScreenService extends Service {
     @Override
     public void onDestroy() {
         unregisterReceiver(mReceiver);
+
         super.onDestroy();
     }
 
     public class LockScreenReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            if (PlayerService.tracks.isEmpty()) return;
+            Track track = PlayerService.tracks.get(PlayerService.mPlayState.getCurrentPosition());
+            if (track == null) return;
+
+
             if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
                 Intent lockIntent = new Intent(AppConstant.LockScreen.LOCK_SCREEN_ACTION);
                 lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK

@@ -87,6 +87,8 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     private IWXAPI api;
     public Playlist playlist;
     public String mLocalAlbum;
+    public static boolean isForeground = false;
+
 
     private PlayerService playerService;
     public PlayerService getPlayerService() {
@@ -134,8 +136,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         init();
 
         String appKey = ExampleUtil.getAppKey(getApplicationContext());
-        if (null == appKey) appKey = "AppKey异常";
-        Log.d(TAG, "onCreate: appkey" + appKey);
 
 
         //绑定服务
@@ -311,6 +311,11 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         AppIndex.AppIndexApi.start(client, getIndexApiAction());
     }
     @Override
+    public void onResume() {
+        isForeground = true;
+        super.onResume();
+    }
+    @Override
     public void onStop() {
         super.onStop();
         // ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -318,6 +323,10 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         AppIndex.AppIndexApi.end(client, getIndexApiAction());
         client.disconnect();
     }
-
+    @Override
+    public void onPause() {
+        isForeground = false;
+        super.onPause();
+    }
 
 }

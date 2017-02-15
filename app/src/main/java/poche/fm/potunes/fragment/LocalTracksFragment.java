@@ -101,11 +101,10 @@ public class LocalTracksFragment extends Fragment {
             long size = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.SIZE));  //文件大小
             long albumId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)); //albumid
             String album = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
-
             String mime_type = cursor.getString(cursor
                     .getColumnIndex(MediaStore.Audio.Media.MIME_TYPE));
 
-            if (mime_type.equals("audio/ext-mpeg") || mime_type.equals("audio/ext-flac")) {
+            if (path.indexOf(".mp3") > 0 || path.indexOf(".flac") > 0) {
                 track.setName(title);
                 track.setTrack_id((int)id);
                 track.setArtist(artist);
@@ -116,7 +115,7 @@ public class LocalTracksFragment extends Fragment {
             }
         }
         cursor.close();
-
+        Log.d(TAG, "initTracks: " + tracks.size());
         Message msg = Message.obtain();
         msg.what = TRACK;
         msg.obj = tracks;

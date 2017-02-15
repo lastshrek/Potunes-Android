@@ -11,6 +11,7 @@ public class AppConstant {
         public static final int CONTINUE_MSG = 4;	//继续
         public static final int PRIVIOUS_MSG = 5;	//上一首
         public static final int NEXT_MSG = 6;		//下一首
+        public static final int STOP_MSG = 7;
     }
 
     public class DownloadMsg {

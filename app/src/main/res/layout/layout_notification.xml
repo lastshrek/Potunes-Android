@@ -4,87 +4,116 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
-
     <ImageView
         android:id="@+id/notification_cover"
         android:layout_width="100dp"
         android:layout_height="100dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
         android:scaleType="centerCrop" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:orientation="vertical"
-        >
-
-        <TextView
-            android:id="@+id/notification_title"
-            android:layout_width="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:ellipsize="end"
-            android:fadingEdge="horizontal"
-            android:fadingEdgeLength="10dp"
-            android:maxLines="1"
-            android:text=""
-            android:textColor="@color/white"
-            android:textSize="16sp" />
+            android:layout_marginStart="10dp"
+            android:orientation="horizontal"
 
-        <TextView
-            android:id="@+id/notification_artist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:ellipsize="end"
-            android:fadingEdge="horizontal"
-            android:fadingEdgeLength="10dp"
-            android:maxLines="1"
-            android:text=""
-            android:textColor="@color/white"
-            android:textSize="12sp" />
+            >
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginEnd="15dp"
+                android:layout_weight="1"
+                >
+                <TextView
+                    android:id="@+id/notification_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:ellipsize="end"
+                    android:fadingEdge="horizontal"
+                    android:fadingEdgeLength="10dp"
+                    android:maxLines="1"
+                    android:text="11111"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+                <TextView
+                    android:id="@+id/notification_artist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:ellipsize="end"
+                    android:fadingEdge="horizontal"
+                    android:fadingEdgeLength="10dp"
+                    android:maxLines="1"
+                    android:text="222222222"
+                    android:textColor="@color/white"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_weight="4"
+                >
+                <ImageButton
+                    android:padding="5dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:id="@+id/notification_close"
+                    android:src="@drawable/notification_close"
+                    android:layout_gravity="center_vertical"
+                    android:scaleType="centerInside"
+                    android:background="@color/statusBarTranslucent"
+                    />
+            </LinearLayout>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_marginEnd="10dp"
             android:id="@+id/action"
             android:layout_width="match_parent"
             android:layout_height="41dp"
-            android:layout_marginTop="10dp">
-
-
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            >
             <ImageButton
                 android:padding="7dp"
                 android:id="@+id/notification_prev"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="40dp"
                 android:layout_gravity="center_vertical"
-                android:src="@drawable/play_btn_prev"
+                android:src="@drawable/noti_prev"
                 android:layout_marginEnd="10dp"
                 android:background="@color/statusBarTranslucent"
+                android:scaleType="centerInside"
                 android:layout_weight="1"/>
-
             <ImageButton
                 android:padding="7dp"
                 android:id="@+id/notification_pause"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="40dp"
                 android:layout_gravity="center_vertical"
-                android:src="@drawable/note_btn_play"
+                android:src="@drawable/noti_pause"
                 android:layout_marginEnd="10dp"
                 android:background="@color/statusBarTranslucent"
+                android:scaleType="centerInside"
                 android:layout_weight="1"/>
-
             <ImageButton
                 android:id="@+id/notification_next"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="40dp"
                 android:layout_gravity="center_vertical"
                 android:padding="7dp"
                 android:layout_marginEnd="10dp"
-                android:src="@drawable/play_btn_next"
+                android:src="@drawable/noti_next"
                 android:background="@color/statusBarTranslucent"
+                android:scaleType="centerInside"
                 android:layout_weight="1"/>
         </LinearLayout>
+
     </LinearLayout>
 </LinearLayout>

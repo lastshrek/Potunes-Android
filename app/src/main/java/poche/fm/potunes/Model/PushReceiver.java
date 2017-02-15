@@ -14,6 +14,7 @@ import java.util.Iterator;
 
 import cn.jpush.android.api.JPushInterface;
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.utils.ExampleUtil;
 
 /**
  * 自定义接收器
@@ -102,23 +103,23 @@ public class PushReceiver extends BroadcastReceiver {
 	
 	//send msg to MainActivity
 	private void processCustomMessage(Context context, Bundle bundle) {
-//		if (MainActivity.) {
-//			String message = bundle.getString(JPushInterface.EXTRA_MESSAGE);
-//			String extras = bundle.getString(JPushInterface.EXTRA_EXTRA);
-//			Intent msgIntent = new Intent(MainActivity.MESSAGE_RECEIVED_ACTION);
-//			msgIntent.putExtra(MainActivity.KEY_MESSAGE, message);
-//			if (!ExampleUtil.isEmpty(extras)) {
-//				try {
-//					JSONObject extraJson = new JSONObject(extras);
-//					if (extraJson.length() > 0) {
-//						msgIntent.putExtra(MainActivity.KEY_EXTRAS, extras);
-//					}
-//				} catch (JSONException e) {
-//
-//				}
-//
-//			}
-//			context.sendBroadcast(msgIntent);
-//		}
+		if (MainActivity.isForeground) {
+			String message = bundle.getString(JPushInterface.EXTRA_MESSAGE);
+			String extras = bundle.getString(JPushInterface.EXTRA_EXTRA);
+			Intent msgIntent = new Intent(MainActivity.MESSAGE_RECEIVED_ACTION);
+			msgIntent.putExtra(MainActivity.KEY_MESSAGE, message);
+			if (!ExampleUtil.isEmpty(extras)) {
+				try {
+					JSONObject extraJson = new JSONObject(extras);
+					if (extraJson.length() > 0) {
+						msgIntent.putExtra(MainActivity.KEY_EXTRAS, extras);
+					}
+				} catch (JSONException e) {
+
+				}
+
+			}
+			context.sendBroadcast(msgIntent);
+		}
 	}
 }

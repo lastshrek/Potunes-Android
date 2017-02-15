@@ -47,6 +47,7 @@ public class PlaylistFragment extends Fragment {
                     adapter = new PlaylistAdapter((List<Playlist>) msg.obj, getFragmentManager());
                     mRecyclerView.setAdapter(adapter);
                     adapter.notifyDataSetChanged();
+                    swipeRefresh.setRefreshing(false);
                     break;
             }
         }
@@ -144,6 +145,7 @@ public class PlaylistFragment extends Fragment {
             @Override
             public void run() {
                 try {
+                    swipeRefresh.setRefreshing(true);
                     playlists.clear();
                     playlists = loadLocalPlaylists();
                     if (playlists.size() == 0) {

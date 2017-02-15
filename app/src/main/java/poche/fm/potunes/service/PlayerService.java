@@ -68,7 +68,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
     @Override
     public IBinder onBind(Intent arg0) {
-        Log.d(TAG, "onBind: " + mediaPlayer + mExecutorService);
         mExecutorService.execute(updateStatusRunnable);
         return new PlayBinder();
     }
@@ -94,6 +93,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         } else if (msg == AppConstant.PlayerMsg.NEXT_MSG) {
             //下一首
             next();
+        } else if (msg == AppConstant.PlayerMsg.STOP_MSG) {
+            mManager.cancel(1);
         }
         getNotification();
         return super.onStartCommand(intent, flags, startId);
@@ -139,8 +140,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     public void onCreate() {
         super.onCreate();
         mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-
 //
 //        myReceiver = new MyReceiver();
 //        IntentFilter filter = new IntentFilter();
@@ -237,7 +236,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     @Override
     public boolean onUnbind(Intent intent) {
         // All clients have unbound with unbindService()
-
         if(mediaPlayer != null) {
             mediaPlayer.stop();
             mediaPlayer.release();
@@ -247,12 +245,9 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy: 毁");
         if (mExecutorService != null && !mExecutorService.isShutdown()) {
             mExecutorService.shutdown();
         }
-
-
     }
 
 
@@ -284,9 +279,15 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         } else {
             playOrPause.putExtra("MSG", AppConstant.PlayerMsg.CONTINUE_MSG);
         }
-        mBigContentViews.setImageViewResource(R.id.notification_pause, mPlayState.isPlaying() ? R.drawable.note_btn_pause : R.drawable.note_btn_play);
+        mBigContentViews.setImageViewResource(R.id.notification_pause, mPlayState.isPlaying() ? R.drawable.noti_pause : R.drawable.noti_play);
         PendingIntent intent_play = PendingIntent.getService(this, 3, playOrPause, PendingIntent.FLAG_UPDATE_CURRENT);
         mBigContentViews.setOnClickPendingIntent(R.id.notification_pause, intent_play);
+        //删除通知
+        Intent close = new Intent();
+        close.setAction("fm.poche.media.MUSIC_SERVICE");
+        close.putExtra("MSG", AppConstant.PlayerMsg.STOP_MSG);
+        PendingIntent intent_close = PendingIntent.getService(this, 5, close, PendingIntent.FLAG_UPDATE_CURRENT);
+        mBigContentViews.setOnClickPendingIntent(R.id.notification_close, intent_close);
         mBigContentViews.setInt(R.id.layout, "setBackgroundColor", R.color.colorAccent);
         // small
         mContentViews = new RemoteViews(getPackageName(), R.layout.layout_notification_small);
@@ -297,11 +298,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         mContentViews.setOnClickPendingIntent(R.id.notification_next_small, intent_next);
         mContentViews.setOnClickPendingIntent(R.id.notification_prev_small, intent_prev);
         mContentViews.setImageViewResource(R.id.notification_pause_small, mPlayState.isPlaying() ? R.drawable.noti_pause : R.drawable.noti_play);
-
         mContentViews.setOnClickPendingIntent(R.id.notification_pause_small, intent_play);
-
-
-
 
         if (track.getAlbumid() == 0) {
             //设置封面
@@ -312,7 +309,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                     mBigContentViews.setImageViewBitmap(R.id.notification_cover, resource);
                     mContentViews.setImageViewBitmap(R.id.notification_cover_small, resource);
                     bitmap = resource;
-
                     Intent remoteIntent = new Intent(getBaseContext(), PlayerActivity.class);
                     remoteIntent.putExtra("isPlaying", mPlayState.isPlaying());
                     PendingIntent pi = PendingIntent.getActivity(getBaseContext(), 4, remoteIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -324,7 +320,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                             .setWhen(System.currentTimeMillis())
                             .setOngoing(true)
                             .setContentIntent(pi)
-                            .setPriority(NotificationCompat.PRIORITY_MAX)
                             .setSmallIcon(R.drawable.actionbar_discover_selected);
                     notification = mBuilder.build();
                     mManager.notify(1, notification);
@@ -346,8 +341,9 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                     .setWhen(System.currentTimeMillis())
                     .setOngoing(true)
                     .setContentIntent(pi)
+                    .setAutoCancel(true)
                     .setSmallIcon(R.drawable.common_google_signin_btn_icon_dark);
-            Notification notification = mBuilder.build();
+            notification = mBuilder.build();
             mManager.notify(1, notification);
         }
 

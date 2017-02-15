@@ -81,7 +81,6 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
                 old.renameTo(rename);
                 MediaScanner mediaScanner = new MediaScanner(getBaseContext());
                 mediaScanner.scanFile(downloadManager.getTargetFolder() + downloadTitle, null);
-                Log.d(TAG, "onFinish: " + downloadManager.getTargetFolder() + downloadTitle);
             }
 
             @Override

@@ -1,7 +1,12 @@
 package poche.fm.potunes.Model;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.provider.SyncStateContract;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,6 +25,7 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.util.List;
 
+import poche.fm.potunes.Manifest;
 import poche.fm.potunes.R;
 
 /**
@@ -79,7 +85,16 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 public void onClick(View v) {
                     switch (position) {
                         case 0:
-                            EventBus.getDefault().post(new LocalTracksEvent("localtracks"));
+                            int permissionCheck = ContextCompat.checkSelfPermission(mContext, android.Manifest.permission.READ_EXTERNAL_STORAGE);
+
+                            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                                final int REQUEST_EXTERNAL_STORAGE = 1;
+                                ActivityCompat.requestPermissions(
+                                        (Activity)mContext, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_EXTERNAL_STORAGE);
+                            } else {
+                                EventBus.getDefault().post(new LocalTracksEvent("localtracks"));
+                            }
+
                             break;
                         case 1:
                             downloadManager = DownloadService.getDownloadManager();
@@ -94,14 +109,12 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                             break;
 
                     }
-
                 }
             });
         }
-
-
-
     }
+
+
 
     @Override
     public int getItemCount() {
