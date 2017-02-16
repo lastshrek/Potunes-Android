@@ -1,16 +1,20 @@
 package poche.fm.potunes.adapter;
 
 import android.content.Context;
+import android.support.design.widget.BottomSheetDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.github.rubensousa.bottomsheetbuilder.BottomSheetBuilder;
+import com.github.rubensousa.bottomsheetbuilder.adapter.BottomSheetItemClickListener;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -63,19 +67,16 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
                 int position = holder.getAdapterPosition();
                 Track track = mAlbumList.get(position);
                 EventBus.getDefault().post(new LocalAlbumMessageEvent(track.getAlbum()));
-//                MainActivity activity = (MainActivity) mContext;
-//                activity.navigateToBrowser("local_album");
-//                Track track = mAlbumList.get(position);
-//                Intent intent = new Intent(mContext, DownloadedTracksActivity.class);
-//                intent.putExtra("album_title", track.getAlbum());
-//                mContext.startActivity(intent);
             }
         });
 
         holder.menu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG, "onClick: 点击了menu");
                 int position = holder.getAdapterPosition();
+
+
 
             }
         });

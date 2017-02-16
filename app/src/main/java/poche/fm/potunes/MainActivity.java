@@ -165,7 +165,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         // 检查更新
         UpdateUtil update = new UpdateUtil(this);
         update.checkUpdate(true);
-        Log.d(TAG, "onCreate: MainActivity");
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.

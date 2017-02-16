@@ -39,6 +39,7 @@
     <string name="not_available">暂不可用</string>
     <string name="earphone_plugged">插入耳机</string>
     <string name="earphone_unplugged">耳机未插入</string>
+    <string name="set_ringtone_success">设置铃声成功</string>
 
 
     <string name="casting_to_device">Casting to %1$s</string>

@@ -232,9 +232,6 @@ public class MoreFragment extends DialogFragment {
                         dialog.setCanceledOnTouchOutside(true);
                         dialog.show();
                         break;
-                    case 2:
-                        dismiss();
-                        Log.d(TAG, "onItemClick: 设为铃声");
                 } 
             }
         });

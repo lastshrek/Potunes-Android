@@ -135,8 +135,6 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             this.title = (TextView) view.findViewById(R.id.pop_list_item);
 
         }
-
-
     }
 
 }

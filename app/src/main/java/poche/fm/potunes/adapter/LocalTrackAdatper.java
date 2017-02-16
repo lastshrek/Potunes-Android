@@ -77,7 +77,6 @@ public class LocalTrackAdatper extends RecyclerView.Adapter<LocalTrackAdatper.Vi
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 MainActivity main = (MainActivity) mContext;
                 mPlayerService = main.getPlayerService();
 
