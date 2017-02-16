@@ -1,5 +1,6 @@
 package poche.fm.potunes;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
@@ -14,9 +15,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -62,6 +65,7 @@ import poche.fm.potunes.fragment.TrackListFragment;
 import poche.fm.potunes.service.LockScreenService;
 import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.ExampleUtil;
+import poche.fm.potunes.utils.UpdateUtil;
 import poche.fm.potunes.utils.Validator;
 
 public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
@@ -163,6 +167,18 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
         registerMessageReceiver();  // used for receive msg
 
+        int permissionCheck = ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            final int REQUEST_EXTERNAL_STORAGE = 1;
+            ActivityCompat.requestPermissions(
+                    this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_EXTERNAL_STORAGE);
+        }
+
+        // 检查更新
+        UpdateUtil update = new UpdateUtil(this);
+        update.checkUpdate(true);
+        Log.d(TAG, "onCreate: MainActivity");
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -231,6 +247,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     }
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(LocalTracksEvent event) {
+        if (event.local.equals("local")) return;
         LocalTracksFragment mLocalTracksFragment = LocalTracksFragment.newInstance();
         switchFragment(currentFragment, mLocalTracksFragment);
         setTitle("本地音乐");
@@ -351,7 +368,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 onMessageEvent(new LocalTracksEvent("local"));
             } else {
-                Toast.makeText(this, "您没有赋予扫描本地音乐权限，无权查看本地音乐", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "您没有赋予扫描本地音乐权限，无权查看本地音乐以及下载内容", Toast.LENGTH_SHORT).show();
             }
         }
     }

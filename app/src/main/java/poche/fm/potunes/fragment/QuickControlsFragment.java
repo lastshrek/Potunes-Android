@@ -205,6 +205,7 @@ public class QuickControlsFragment extends Fragment {
                 }
 
                 isPlaying = PlayerService.mPlayState.isPlaying();
+                Log.d(TAG, "onReceive: "+ isPlaying);
                 if (!isPlaying) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_play);
                 } else {

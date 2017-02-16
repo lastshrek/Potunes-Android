@@ -17,6 +17,8 @@ package poche.fm.potunes;
 
 import android.app.ActivityOptions;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -51,9 +53,11 @@ import com.mikepenz.materialdrawer.model.interfaces.IProfile;
 import com.mikepenz.materialdrawer.model.interfaces.Nameable;
 
 import poche.fm.potunes.fragment.LocalDownloadAlbumFragment;
+import poche.fm.potunes.utils.UpdateUtil;
 
 
 public abstract class ActionBarCastActivity extends AppCompatActivity {
+    private String TAG = "ActionbarActivity";
 
     private Toolbar mToolbar;
     public TextView mToolbarTitle;
@@ -73,7 +77,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
         @Override
         public void onCheckedChanged(IDrawerItem drawerItem, CompoundButton buttonView, boolean isChecked) {
             if (drawerItem instanceof Nameable) {
-                Log.i("material-drawer", "DrawerItem: " + ((Nameable) drawerItem).getName() + " - toggleChecked: " + isChecked);
+                Toast.makeText(getApplicationContext(), R.string.not_available, Toast.LENGTH_SHORT).show();
             } else {
                 Log.i("material-drawer", "toggleChecked: " + isChecked);
             }
@@ -208,14 +212,16 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                                 startActivity(new Intent(ActionBarCastActivity.this, MainActivity.class), extras);
                                 finish();
                                 break;
-                            case 5:
-                                result.resetDrawerContent();
+                            // 检查更新
+                            case 6:
+                                Toast.makeText(getApplicationContext(), R.string.check_update, Toast.LENGTH_LONG).show();
+                                UpdateUtil update = new UpdateUtil(ActionBarCastActivity.this);
+                                update.checkUpdate(false);
                                 break;
                             default:
-                                result.updateItem(drawerItem);
+                                Toast.makeText(getApplicationContext(), R.string.not_available, Toast.LENGTH_SHORT).show();
                                 break;
                         }
-                        Log.d("", "onItemClick: " + position);
                         return false;
                     }
                 })

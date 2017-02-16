@@ -5,7 +5,10 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -15,6 +18,7 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -51,6 +55,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private RemoteViews mContentViews;
     private Bitmap bitmap;
     private Notification notification;
+    private AudioManager mAudioManager;
+    private HeadsetPlugReceiver headsetPlugReceiver;
 
     // 服务要发送的一些Action
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT";  //当前音乐播放时间更新动作
@@ -82,7 +88,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         msg = intent.getIntExtra("MSG", 0);
-
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
             play(0);
         } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {
@@ -136,6 +141,9 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     @Override
     public void onCompletion(MediaPlayer mp) {
         //播放完成时进行下一曲
+        if (!mediaPlayer.isLooping()) {
+            mAudioManager.abandonAudioFocus(audioFocusChangeListener);
+        }
         next();
     }
 
@@ -143,59 +151,64 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     public void onCreate() {
         super.onCreate();
         mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        registerHeadsetPlugReceiver();
     }
 
     /**
      * 播放音乐
      */
     public void play(final int position) {
-        Track track = tracks.get(position);
-        String url;
-        List<Track> tracks = DataSupport.select("url").where("artist = ? and name = ? and isDownloaded = ?", track.getArtist(), track.getTitle(), "1").find(Track.class);
-        if (tracks.size() > 0) {
-            url = tracks.get(0).getUrl();
-        } else {
-            url = track.getUrl();
+        if (requestFocus()) {
+            Track track = tracks.get(position);
+            String url;
+            List<Track> tracks = DataSupport.select("url").where("artist = ? and name = ? and isDownloaded = ?", track.getArtist(), track.getTitle(), "1").find(Track.class);
+            if (tracks.size() > 0) {
+                url = tracks.get(0).getUrl();
+            } else {
+                url = track.getUrl();
+            }
+            try {
+                mediaPlayer.reset();
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                mediaPlayer.setDataSource(url);
+                mediaPlayer.prepareAsync();
+                mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                    @Override
+                    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                        Log.d(TAG, "onBufferingUpdate: " + percent);
+                    }
+                });
+                mPlayState.setCurrentPosition(position);
+                mPlayState.setPlaying(true);
+
+                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                    @Override
+                    public void onPrepared(MediaPlayer mp) {
+                        mPlayState.setDuration(mediaPlayer.getDuration());
+                        mediaPlayer.start();
+                        getNotification();
+                    }
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        try {
-            mediaPlayer.reset();
-            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            mediaPlayer.setDataSource(url);
-            mediaPlayer.prepareAsync();
-            mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-                @Override
-                public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                    Log.d(TAG, "onBufferingUpdate: " + percent);
-                }
-            });
-            mPlayState.setCurrentPosition(position);
-            mPlayState.setPlaying(true);
-
-            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    mPlayState.setDuration(mediaPlayer.getDuration());
-                    mediaPlayer.start();
-                    getNotification();
-                }
-            });
-
-        } catch (Exception e) {
-            Log.d(TAG, "play: 音乐地址解析错误");
-            e.printStackTrace();
-        }
-
     }
     public void pause() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mPlayState.setPlaying(false);
+            Log.d(TAG, "pause: " + mPlayState.isPlaying());
             mediaPlayer.pause();
+            getNotification();
         }
     }
     public void resume() {
         if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
             mPlayState.setPlaying(true);
             mediaPlayer.start();
+            getNotification();
         }
     }
     public void previous() {
@@ -232,6 +245,11 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             play(currentPosition);
         }
     }
+    public void stop() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+        }
+    }
     public void seekTo(int position) {
         if (mediaPlayer != null) mediaPlayer.seekTo(position);
     }
@@ -247,6 +265,10 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         if (mExecutorService != null && !mExecutorService.isShutdown()) {
             mExecutorService.shutdown();
         }
+
+        if (headsetPlugReceiver != null) {
+            unregisterReceiver(headsetPlugReceiver);
+        }
         return false;
     }
     @Override
@@ -256,9 +278,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             mExecutorService.shutdown();
         }
     }
-
-
     private void getNotification() {
+        if (tracks == null) return;
         //通知栏
         Track track = tracks.get(mPlayState.getCurrentPosition());
         mBigContentViews = new RemoteViews(getPackageName(), R.layout.layout_notification);
@@ -353,11 +374,68 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             notification = mBuilder.build();
             mManager.notify(1, notification);
         }
+    }
 
+    // 来电监听
+    AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        @Override
+        public void onAudioFocusChange(int focusChange) {
+            if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                // Pause playback
+                pause();
+            } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                // Resume playback
+                resume();
+            } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                // mAm.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
+                mAudioManager.abandonAudioFocus(audioFocusChangeListener);
+                // Stop playback
+                stop();
+            }
+        }
+    };
 
+    private boolean requestFocus() {
+        // Request audio focus for playback
+        int result = mAudioManager.requestAudioFocus(audioFocusChangeListener,
+                // Use the music stream.
+                AudioManager.STREAM_MUSIC,
+                // Request permanent focus.
+                AudioManager.AUDIOFOCUS_GAIN);
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+    }
+
+    // 耳机插拔
+    public class HeadsetPlugReceiver extends BroadcastReceiver {
+        private static final String TAG = "HeadsetPlugReceiver";
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (mediaPlayer == null) return;
+            if (intent.hasExtra("state")){
+                if (intent.getIntExtra("state", 0) == 0){
+                    // 拔出耳机
+                    if (mediaPlayer.isPlaying())  {
+                        pause();
+                    }
+                    Toast.makeText(context, R.string.earphone_unplugged, Toast.LENGTH_LONG).show();
+                }
+                else if (intent.getIntExtra("state", 0) == 1){
+                    if (!mediaPlayer.isPlaying()) {
+                        resume();
+                    }
+                    Toast.makeText(context, R.string.earphone_plugged, Toast.LENGTH_LONG).show();
+                }
+            }
+        }
 
     }
 
+    private void registerHeadsetPlugReceiver() {
+        headsetPlugReceiver = new HeadsetPlugReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("android.intent.action.HEADSET_PLUG");
+        registerReceiver(headsetPlugReceiver, intentFilter);
+    }
 
 }
 

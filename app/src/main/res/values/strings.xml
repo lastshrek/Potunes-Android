@@ -27,6 +27,21 @@
     <string name="my_music">我的音乐</string>
     <string name="downloading">下载管理</string>
     <string name="unlock_screen">单击解锁</string>
+    <string name="check_update">检查更新中</string>
+    <string name="new_version">检查更新中</string>
+    <string name="now_latest">已经是最新版啦</string>
+    <string name="found_new">发现新版本</string>
+    <string name="update_later">暂不更新</string>
+    <string name="update_now">火速更新</string>
+    <string name="on_downloading">正在下载</string>
+    <string name="please_wait">请稍后</string>
+    <string name="on_apk_download_complete">下载完成</string>
+    <string name="not_available">暂不可用</string>
+    <string name="earphone_plugged">插入耳机</string>
+    <string name="earphone_unplugged">耳机未插入</string>
+
+
+
 
     <string name="casting_to_device">Casting to %1$s</string>
 

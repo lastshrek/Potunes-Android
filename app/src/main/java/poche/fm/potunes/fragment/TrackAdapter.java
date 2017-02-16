@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -33,6 +34,7 @@ import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.service.PlayerService;
+import poche.fm.potunes.utils.AlbumArtCache;
 
 /**
  * Created by purchas on 2017/1/8.
@@ -83,12 +85,9 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         view.setBackgroundResource(typedValue.resourceId);
         final ViewHolder holder = new ViewHolder(view);
 
-
-
         view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 MainActivity main = (MainActivity) mContext;
                 mPlayerService = main.getPlayerService();
 
@@ -96,15 +95,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
                     mPlayerService.tracks = mTrackList;
                     mPlayerService.play(holder.getAdapterPosition());
                 }
-//                int position = holder.getAdapterPosition();
-//                Track track = mTrackList.get(position);
-//                Intent intent = new Intent();
-//                intent.putExtra("url", track.getUrl());
-//                intent.putExtra("MSG", AppConstant.PlayerMsg.PLAY_MSG);
-//                intent.putExtra("position", position);
-//                intent.setClass(mContext, PlayerService.class);
-//
-//                mContext.startService(intent);
             }
         });
 
@@ -116,7 +106,6 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
                 byte[] byteArray = bmpToByteArray(image, false);
                 MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0, byteArray);
                 morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
-
             }
         });
         return holder;
@@ -145,17 +134,18 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
         holder.artist.setText(track.getArtist());
         holder.name.setText(track.getTitle());
         String thumb = track.getCover() + "!/fw/150";
-        Glide
-                .with(mContext)
-                .load(thumb)
-                .asBitmap()
-                .placeholder(R.drawable.ic_launcher)
-                .into(new SimpleTarget<Bitmap>(100, 100) {
-                    @Override
-                    public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                        holder.cover.setImageBitmap(resource);
-                    }
-                });
+        holder.cover.setImageResource(R.drawable.ic_launcher);
+        AlbumArtCache.getInstance().fetch(thumb, new AlbumArtCache.FetchListener() {
+            @Override
+            public void onFetched(String artUrl, Bitmap bigImage, Bitmap iconImage) {
+                holder.cover.setImageBitmap(iconImage);
+            }
+            @Override
+            public void onError(String artUrl, Exception e) {
+                Toast.makeText(mContext, "获取专辑封面图失败", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         holder.itemView.setClickable(true);
     }
 
