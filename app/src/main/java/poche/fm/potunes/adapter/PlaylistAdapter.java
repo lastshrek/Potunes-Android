@@ -1,13 +1,9 @@
-package poche.fm.potunes.fragment;
+package poche.fm.potunes.adapter;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +20,8 @@ import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.R;
+import poche.fm.potunes.fragment.PlaylistFragment;
+import poche.fm.potunes.fragment.TrackListFragment;
 
 /**
  * Created by purchas on 2017/1/7.

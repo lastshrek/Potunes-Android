@@ -62,7 +62,6 @@ public class PlayState implements Serializable {
     }
 
     public int getMode() {
-
         return mode;
     }
 

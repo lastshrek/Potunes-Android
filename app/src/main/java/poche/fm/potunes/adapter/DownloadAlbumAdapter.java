@@ -1,4 +1,4 @@
-package poche.fm.potunes.fragment;
+package poche.fm.potunes.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -16,7 +16,6 @@ import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 
-import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.LocalAlbumMessageEvent;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;

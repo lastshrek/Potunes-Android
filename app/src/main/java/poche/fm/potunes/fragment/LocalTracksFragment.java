@@ -19,11 +19,9 @@ import android.view.ViewGroup;
 import java.util.ArrayList;
 import java.util.List;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
+import poche.fm.potunes.adapter.LocalTrackAdatper;
 
 
 public class LocalTracksFragment extends Fragment {

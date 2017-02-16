@@ -85,7 +85,6 @@ public class MoreFragment extends DialogFragment {
         // Required empty public constructor
     }
 
-    // TODO: Rename and change types and number of parameters
     public static MoreFragment newInstance(Track track, int startFrom, byte[] byteArray) {
         MoreFragment fragment = new MoreFragment();
         Bundle args = new Bundle();
@@ -129,7 +128,6 @@ public class MoreFragment extends DialogFragment {
         recyclerView.setHasFixedSize(true);
         getTracks();
         setClick();
-//        setItemDecoration();
         return view;
 
     }
@@ -164,7 +162,6 @@ public class MoreFragment extends DialogFragment {
         //设置mlistInfo，listview要显示的内容
         setInfo("下载", "{zmdi-download}");
         setInfo("分享", "{zmdi-share}");
-        setInfo("设为铃声","{zmdi-hearing}");
     }
 
     //为info设置数据，并放入mlistInfo

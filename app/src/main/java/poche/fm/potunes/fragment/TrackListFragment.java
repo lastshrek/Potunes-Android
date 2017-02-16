@@ -38,6 +38,7 @@ import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
+import poche.fm.potunes.adapter.TrackAdapter;
 import poche.fm.potunes.domain.AppConstant;
 
 /**

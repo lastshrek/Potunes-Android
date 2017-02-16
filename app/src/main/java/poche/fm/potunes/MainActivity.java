@@ -1,7 +1,5 @@
 package poche.fm.potunes;
 
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -22,8 +20,6 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -34,12 +30,6 @@ import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.mikepenz.materialdrawer.Drawer;
-import com.mikepenz.materialdrawer.DrawerBuilder;
-import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
-import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
-import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
-import com.mikepenz.materialdrawer.model.interfaces.Nameable;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.umeng.analytics.MobclickAgent;
 
@@ -47,8 +37,6 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
-
-import java.util.List;
 
 import cn.jpush.android.api.JPushInterface;
 import poche.fm.potunes.Model.LocalAlbumMessageEvent;
@@ -59,14 +47,13 @@ import poche.fm.potunes.fragment.LocalDownloadAlbumFragment;
 import poche.fm.potunes.fragment.LocalTracksFragment;
 import poche.fm.potunes.fragment.MoreFragment;
 import poche.fm.potunes.fragment.MyMusicFragment;
-import poche.fm.potunes.fragment.PlaylistAdapter;
+import poche.fm.potunes.adapter.PlaylistAdapter;
 import poche.fm.potunes.fragment.PlaylistFragment;
 import poche.fm.potunes.fragment.TrackListFragment;
 import poche.fm.potunes.service.LockScreenService;
 import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.ExampleUtil;
 import poche.fm.potunes.utils.UpdateUtil;
-import poche.fm.potunes.utils.Validator;
 
 public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
         TrackListFragment.OnListFragmentInteractionListener,

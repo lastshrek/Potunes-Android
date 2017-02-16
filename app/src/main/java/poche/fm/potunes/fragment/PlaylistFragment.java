@@ -23,9 +23,9 @@ import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.R;
+import poche.fm.potunes.adapter.PlaylistAdapter;
 
 public class PlaylistFragment extends Fragment {
 

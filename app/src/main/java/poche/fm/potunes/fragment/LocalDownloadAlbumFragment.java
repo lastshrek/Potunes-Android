@@ -6,13 +6,10 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 import org.litepal.crud.DataSupport;
 
@@ -20,10 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import poche.fm.potunes.MainActivity;
-import poche.fm.potunes.Model.LocalAlbumMessageEvent;
-import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
+import poche.fm.potunes.adapter.DownloadedTrackAdapter;
 
 /**
  * A simple {@link Fragment} subclass.

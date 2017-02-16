@@ -1,4 +1,4 @@
-package poche.fm.potunes.fragment;
+package poche.fm.potunes.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
