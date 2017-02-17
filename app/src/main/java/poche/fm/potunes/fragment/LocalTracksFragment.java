@@ -113,7 +113,6 @@ public class LocalTracksFragment extends Fragment {
             }
         }
         cursor.close();
-        Log.d(TAG, "initTracks: " + tracks.size());
         Message msg = Message.obtain();
         msg.what = TRACK;
         msg.obj = tracks;

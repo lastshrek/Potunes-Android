@@ -1,4 +1,4 @@
-package poche.fm.potunes.Model;
+package poche.fm.potunes.adapter;
 
 import android.app.Activity;
 import android.content.Context;
@@ -26,6 +26,10 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.List;
 
 import poche.fm.potunes.Manifest;
+import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.LocalTracksEvent;
+import poche.fm.potunes.Model.OverFlowItem;
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 
 /**
@@ -97,15 +101,14 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
                             break;
                         case 1:
+                            Log.d(TAG, "onClick: " + "点击了本地音乐");
                             downloadManager = DownloadService.getDownloadManager();
-                            if (downloadManager.getAllTask().size() == 0) {
-                                Toast.makeText(mContext, "当前并无下载任务", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-//                            Intent intent = new Intent();
-//                            intent.setClass(mContext, DownloadingActivity.class);
-//                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                            mContext.startActivity(intent);
+//                            if (downloadManager.getAllTask().size() == 0) {
+//                                Toast.makeText(mContext, "当前并无下载任务", Toast.LENGTH_SHORT).show();
+//                                return;
+//                            }
+                            EventBus.getDefault().post(new LocalTracksEvent("downloading"));
+
                             break;
 
                     }

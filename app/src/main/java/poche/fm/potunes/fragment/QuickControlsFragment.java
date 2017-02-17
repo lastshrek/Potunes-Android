@@ -181,7 +181,6 @@ public class QuickControlsFragment extends Fragment {
                 // 注册服务
                 MainActivity main = (MainActivity) getActivity();
                 mPlayerService = main.getPlayerService();
-
                 Track track = PlayState.getCurrentMusic(PlayerService.tracks, PlayerService.mPlayState.getCurrentPosition());
                 if (track == null) {
                     return;

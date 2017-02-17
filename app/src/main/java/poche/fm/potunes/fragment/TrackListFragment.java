@@ -98,8 +98,6 @@ public class TrackListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate: chuangjian");
-
         view = inflater.inflate(R.layout.fragment_track_list, container, false);
         // Set the adapter
         mRecyclerView = (RecyclerView) view.findViewById(R.id.tracklist_recycler_view);
@@ -113,6 +111,11 @@ public class TrackListFragment extends Fragment {
         downloadAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (tracks.isEmpty()) {
+                    Toast.makeText(getContext(), "还没有歌曲, 别着急", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 Toast.makeText(getContext(), "开始下载", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent();
                 intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");

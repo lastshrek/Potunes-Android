@@ -1,12 +1,10 @@
 package poche.fm.potunes.fragment;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -45,8 +43,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
-import poche.fm.potunes.MainActivity;
-import poche.fm.potunes.Model.MusicFlowAdapter;
+import poche.fm.potunes.adapter.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;

@@ -18,7 +18,7 @@ import org.litepal.crud.DataSupport;
 import java.util.ArrayList;
 
 import poche.fm.potunes.MainActivity;
-import poche.fm.potunes.Model.MusicFlowAdapter;
+import poche.fm.potunes.adapter.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;

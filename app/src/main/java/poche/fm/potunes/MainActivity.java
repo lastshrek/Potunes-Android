@@ -43,6 +43,7 @@ import poche.fm.potunes.Model.LocalAlbumMessageEvent;
 import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
+import poche.fm.potunes.fragment.DownloadingFragment;
 import poche.fm.potunes.fragment.LocalDownloadAlbumFragment;
 import poche.fm.potunes.fragment.LocalTracksFragment;
 import poche.fm.potunes.fragment.MoreFragment;
@@ -50,6 +51,7 @@ import poche.fm.potunes.fragment.MyMusicFragment;
 import poche.fm.potunes.adapter.PlaylistAdapter;
 import poche.fm.potunes.fragment.PlaylistFragment;
 import poche.fm.potunes.fragment.TrackListFragment;
+import poche.fm.potunes.service.DownloadService;
 import poche.fm.potunes.service.LockScreenService;
 import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.ExampleUtil;
@@ -60,7 +62,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         MoreFragment.OnFragmentInteractionListener,
         MyMusicFragment.OnFragmentInteractionListener,
         LocalDownloadAlbumFragment.OnFragmentInteractionListener,
-        LocalTracksFragment.OnFragmentInteractionListener{
+        LocalTracksFragment.OnFragmentInteractionListener, DownloadingFragment.OnFragmentInteractionListener{
 
 
     public static final String EXTRA_CURRENT_MEDIA_DESCRIPTION =
@@ -93,16 +95,16 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
 
     private PlayerService playerService;
+    private DownloadService downloadService;
     public PlayerService getPlayerService() {
         return playerService;
     }
-
+    public DownloadService getDownloadService() { return downloadService; }
     public Fragment currentFragment;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "onServiceConnected: 绑定服务成功");
             PlayerService.PlayBinder playerServiceBinder = (PlayerService.PlayBinder) service;
             playerService = playerServiceBinder.getPlayerService();
         }
@@ -113,14 +115,26 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         }
     };
 
+    private ServiceConnection downloadConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d(TAG, "onServiceConnected: 绑定下载服务成功");
+            DownloadService.DownloadBinder downloadBinder = (DownloadService.DownloadBinder) service;
+            downloadService = downloadBinder.getDownloadService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d(TAG, "onServiceDisconnected: 绑定下载服务失败");
+        }
+    };
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
         initializeToolbar();
-
-
         mMyMusic = (ImageView) findViewById(R.id.my_music);
         mMyMusic.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,6 +156,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
         //绑定服务
         bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+        bindService(new Intent(this, DownloadService.class), downloadConnection, Context.BIND_AUTO_CREATE);
         // 锁屏服务
         Intent intent = new Intent();
         intent.setClass(MainActivity.this, LockScreenService.class);
@@ -209,6 +224,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     public void onDestroy() {
         EventBus.getDefault().unregister(this);
         unbindService(serviceConnection);
+        unbindService(downloadConnection);
         unregisterReceiver(mMessageReceiver);
         MobclickAgent.onKillProcess(this);
         // 程序结束时销毁状态栏
@@ -233,14 +249,26 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     }
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(LocalTracksEvent event) {
+        Log.d(TAG, "onMessageEvent: " + event.local);
+
         if (event.local.equals("local")) return;
-        LocalTracksFragment mLocalTracksFragment = LocalTracksFragment.newInstance();
-        switchFragment(currentFragment, mLocalTracksFragment);
-        setTitle("本地音乐");
+        if (event.local.equals("localtracks")) {
+            LocalTracksFragment mLocalTracksFragment = LocalTracksFragment.newInstance();
+            switchFragment(currentFragment, mLocalTracksFragment);
+            setTitle("本地音乐");
+            return;
+        }
+
+        if (event.local.equals("downloading")) {
+
+            DownloadingFragment mDownloadingFragment = DownloadingFragment.newInstance();
+            switchFragment(currentFragment, mDownloadingFragment);
+//            setTitle("正在下载");
+        }
+
     }
 
     public void switchFragment(Fragment from, Fragment to) {
-        Log.d(TAG, "currentFragment: " + currentFragment);
         if (currentFragment != to) {
             currentFragment = to;
             FragmentTransaction transaction = getSupportFragmentManager()

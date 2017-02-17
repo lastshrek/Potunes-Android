@@ -253,7 +253,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     public void seekTo(int position) {
         if (mediaPlayer != null) mediaPlayer.seekTo(position);
     }
-
     @Override
     public boolean onUnbind(Intent intent) {
         // All clients have unbound with unbindService()
@@ -405,7 +404,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                 AudioManager.AUDIOFOCUS_GAIN);
         return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
     }
-
     // 耳机插拔
     public class HeadsetPlugReceiver extends BroadcastReceiver {
         private static final String TAG = "HeadsetPlugReceiver";
@@ -430,7 +428,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         }
 
     }
-
     private void registerHeadsetPlugReceiver() {
         headsetPlugReceiver = new HeadsetPlugReceiver();
         IntentFilter intentFilter = new IntentFilter();

@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Binder;
 import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
@@ -29,16 +30,14 @@ import java.util.List;
 import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 
-public class DownloadService extends Service implements ExecutorWithListener.OnAllTaskEndListener{
+public class DownloadService extends Service implements ExecutorWithListener.OnAllTaskEndListener {
     
     private String TAG = "DownloadService";
-    private DownloadManager downloadManager;
+    public DownloadManager downloadManager;
     private DownloadListener downloadListener;
     private int msg;
     private ArrayList<Track> tracks = new ArrayList<>();
     private List<DownloadInfo> allTask = new ArrayList<>();
-
-
 
     public DownloadService() {
     }
@@ -46,17 +45,15 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
     @Override
     public void onCreate() {
         super.onCreate();
-
         LitePal.initialize(getBaseContext());
         // 设置DownloadManager
         downloadManager = com.lzy.okserver.download.DownloadService.getDownloadManager();
         downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
         downloadManager.getThreadPool().setCorePoolSize(1);
-
         downloadListener = new DownloadListener() {
             @Override
             public void onProgress(DownloadInfo downloadInfo) {
-                Log.d(TAG, "onProgress: " + downloadInfo.getProgress());
+
             }
 
             @Override
@@ -88,7 +85,6 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
                 Log.d(TAG, "onError: ===============" + errorMsg);
             }
         };
-
     }
 
     @Override
@@ -116,7 +112,6 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
 
         return super.onStartCommand(intent,flags, startId);
     }
-
     private boolean queryFromDB(int trackID) {
         List<Track> results = DataSupport.where("track_id = ?" , "" + trackID).find(Track.class);
         if(results.size() > 0) {
@@ -125,10 +120,9 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
             return false;
         }
     }
-
     private void checkFiles(Track track) {
         if (downloadManager.getDownloadInfo(track.getUrl()) != null || queryFromDB(track.getID())) {
-//            Toast.makeText(getBaseContext(), "任务已经在下载列表中", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), track.getTitle() + "已下载", Toast.LENGTH_SHORT).show();
         } else {
             track.save();
             GetRequest request = OkGo.get(track.getUrl());
@@ -140,7 +134,7 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
     public void onAllTaskEnd() {
         for (DownloadInfo downloadInfo : allTask) {
             if (downloadInfo.getState() != DownloadManager.FINISH) {
-                Toast.makeText(getBaseContext(), "所有下载线程结束，部分下载未完成", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), "尚有歌曲未完成", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -149,8 +143,13 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
+        return new DownloadBinder();
+    }
+
+    public class DownloadBinder extends Binder {
+        public DownloadService getDownloadService() {
+            return DownloadService.this;
+        }
     }
 
     @Override

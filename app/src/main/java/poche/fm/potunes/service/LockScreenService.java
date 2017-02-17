@@ -40,7 +40,6 @@ public class LockScreenService extends Service {
     @Override
     public void onDestroy() {
         unregisterReceiver(mReceiver);
-
         super.onDestroy();
     }
 
