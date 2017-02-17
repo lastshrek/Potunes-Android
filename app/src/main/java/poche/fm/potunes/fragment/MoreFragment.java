@@ -212,6 +212,7 @@ public class MoreFragment extends DialogFragment {
                                         msg.mediaObject = track;
                                         msg.title = adapterMusicInfo.getTitle();
                                         msg.description = adapterMusicInfo.getArtist();
+                                        Log.d(TAG, "onBottomSheetItemClick: " + getArguments().getByteArray("thumb"));
                                         msg.thumbData = getArguments().getByteArray("thumb");
 
                                         //构造一个Req

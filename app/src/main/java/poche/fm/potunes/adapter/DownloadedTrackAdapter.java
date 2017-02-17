@@ -151,17 +151,13 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
         File file1 = new File(ringtoneuri);
         file1.mkdirs();
         File newSoundFile = new File(ringtoneuri, track.getTitle() + ".AMR");
-
-
         Uri mUri = Uri.parse("file://" + track.getUrl());
-        Log.d(TAG, "setRingtone: " + mUri);
 
         ContentResolver mCr = mContext.getContentResolver();
         AssetFileDescriptor soundFile;
         try {
             soundFile = mCr.openAssetFileDescriptor(mUri, "r");
         } catch (FileNotFoundException e) {
-            Log.d(TAG, "setRingtone: " + e);
             soundFile = null;
         }
 
@@ -178,7 +174,7 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
 
             fos.close();
         } catch (IOException io) {
-            Log.d(TAG, "setRingtone: " + io);
+            io.printStackTrace();
         }
 
         ContentValues values = new ContentValues();
@@ -202,25 +198,8 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
             RingtoneManager.setActualDefaultRingtoneUri(mContext.getApplicationContext(), RingtoneManager.TYPE_RINGTONE, newUri);
             Toast.makeText(mContext, R.string.set_ringtone_success, Toast.LENGTH_SHORT).show();
         } catch (Throwable t) {
-            Log.e("sanjay in catch", "catch exception"+t.getMessage());
+            t.printStackTrace();
         }
-    }
-
-    private static byte[] bmpToByteArray(final Bitmap bmp, final boolean needRecycle) {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        bmp.compress(Bitmap.CompressFormat.PNG, 100, output);
-        if (needRecycle) {
-            bmp.recycle();
-        }
-
-        byte[] result = output.toByteArray();
-        try {
-            output.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return result;
     }
 
     @Override
