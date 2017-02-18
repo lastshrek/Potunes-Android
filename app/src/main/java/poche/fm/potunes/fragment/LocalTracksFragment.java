@@ -101,7 +101,6 @@ public class LocalTracksFragment extends Fragment {
             String album = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
             String mime_type = cursor.getString(cursor
                     .getColumnIndex(MediaStore.Audio.Media.MIME_TYPE));
-
             if (path.indexOf(".mp3") > 0 || path.indexOf(".flac") > 0) {
                 track.setName(title);
                 track.setTrack_id((int)id);

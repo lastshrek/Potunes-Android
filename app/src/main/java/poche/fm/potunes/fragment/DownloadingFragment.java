@@ -1,6 +1,7 @@
 package poche.fm.potunes.fragment;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -14,6 +15,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.androidnetworking.AndroidNetworking;
 import com.dinuscxj.progressbar.CircleProgressBar;
 import com.lzy.okserver.download.DownloadInfo;
 import com.lzy.okserver.download.DownloadManager;
@@ -22,27 +24,37 @@ import com.lzy.okserver.task.ExecutorWithListener;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconButton;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
+import poche.fm.potunes.domain.AppConstant;
 
 public class DownloadingFragment extends Fragment {
     private String TAG = "DownloadingFragment";
     private ListView listView;
     private IconButton mOperationView;
     private IconButton mDeleteView;
-    private DownloadManager downloadManager;
-    private DownloadListener mDownloadListener;
     private List<DownloadInfo> allTask = new ArrayList<>();
     private Context mContext;
     private View view;
     private MyAdapter adatper;
+    private MainActivity main;
+
 
 
     private OnFragmentInteractionListener mListener;
@@ -65,25 +77,7 @@ public class DownloadingFragment extends Fragment {
 
         LitePal.initialize(getContext());
         mContext = getContext();
-        // 注册服务
-        MainActivity main = (MainActivity) getActivity();
-        downloadManager = main.getDownloadService().downloadManager;
-        mDownloadListener = new DownloadListener() {
-            @Override
-            public void onProgress(DownloadInfo downloadInfo) {
-                Log.d(TAG, "onProgress: " + downloadInfo.getProgress());
-            }
-
-            @Override
-            public void onFinish(DownloadInfo downloadInfo) {
-
-            }
-
-            @Override
-            public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
-
-            }
-        };
+        main = (MainActivity) getActivity();
     }
 
     @Override
@@ -97,43 +91,53 @@ public class DownloadingFragment extends Fragment {
         mOperationView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Intent intent = new Intent();
+                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                intent.setPackage(getActivity().getPackageName());
                 String buttonText = mOperationView.getText().toString();
                 if (buttonText.indexOf("开始") >= 0) {
                     mOperationView.setText("{zmdi-pause-circle-outline}  全部暂停");
-                    downloadManager.startAllTask();
+                    intent.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
                 } else {
                     mOperationView.setText("{zmdi-download}  全部开始");
-                    downloadManager.stopAllTask();
+                    intent.putExtra("MSG", AppConstant.DownloadMsg.PAUSE);
+
                 }
+                getContext().startService(intent);
             }
         });
         mDeleteView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                downloadManager.removeAllTask();
-                adatper.notifyDataSetChanged();
+                Intent intent = new Intent();
+                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                intent.setPackage(main.getPackageName());
+                intent.putExtra("MSG", AppConstant.DownloadMsg.DELETE);
+                getContext().startService(intent);
+
+                main.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        allTask = DownloadManager.getInstance().getAllTask();
+                        adatper.notifyDataSetChanged();
+                    }
+                });
+
             }
         });
         Iconify.addIcons(mOperationView);
         Iconify.addIcons(mDeleteView);
         listView = (ListView) view.findViewById(R.id.downloading_list_view);
-
+        adatper = new MyAdapter();
+        listView.setAdapter(adatper);
+        allTask = DownloadManager.getInstance().getAllTask();
+        adatper.notifyDataSetChanged();
         MainActivity main = (MainActivity) getActivity();
         main.setTitle("正在下载");
 
-        for (DownloadInfo info: downloadManager.getAllTask()) {
-            allTask.add(info);
-        }
-
-        adatper = new MyAdapter();
-        listView.setAdapter(adatper);
-
         return view;
     }
-
-
-
+    
 
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
@@ -212,6 +216,10 @@ public class DownloadingFragment extends Fragment {
             holder.title.setText(track.getTitle());
             holder.progressBar.setOnClickListener(holder);
 
+            DownloadListener downloadListener = new MyDownloadListener();
+            downloadListener.setUserTag(holder);
+            downloadInfo.setListener(downloadListener);
+
             return convertView;
         }
 
@@ -222,6 +230,7 @@ public class DownloadingFragment extends Fragment {
         TextView position;
         TextView title;
         CircleProgressBar progressBar;
+
 
 
         public ViewHolder(View convertView) {
@@ -239,38 +248,79 @@ public class DownloadingFragment extends Fragment {
         private void refresh() {
             progressBar.setMax(100);
 
-            if (downloadInfo.getDownloadLength() > 0) {
-                mOperationView.setText("" + "全部暂停");
-            }
-
             if (downloadInfo.getTotalLength() > 0) {
                 progressBar.setProgress((int) (downloadInfo.getDownloadLength() * 100 / downloadInfo.getTotalLength()));
             }
-            adatper.notifyDataSetChanged();
         }
 
         @Override
         public void onClick(View v) {
             if (v.getId() == progressBar.getId()) {
-                Log.d(TAG, "onClick: 点击了进度条" + v.getId());
-                Track track = (Track) downloadInfo.getData();
-                downloadManager.restartTask(track.getUrl());
-
-//                switch (downloadInfo.getState()) {
-//                    case DownloadManager.PAUSE:
-//                    case DownloadManager.NONE:
-//                    case DownloadManager.ERROR:
-//                        downloadManager.addTask(downloadInfo.getUrl(), downloadInfo.getRequest(), downloadInfo.getListener());
-//                        break;
-//                    case DownloadManager.DOWNLOADING:
-//                        downloadManager.pauseTask(downloadInfo.getUrl());
-//                        break;
-//                    case DownloadManager.FINISH:
-//
-//                        break;
-//                }
-//                refresh();
+                reDownload(downloadInfo);
             }
+        }
+    }
+
+    private void reDownload(DownloadInfo downloadInfo) {
+        Intent intent = new Intent();
+        intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+        intent.setPackage(main.getPackageName());
+        intent.putExtra("MSG", AppConstant.DownloadMsg.RESTART);
+        intent.putExtra("URL", downloadInfo.getUrl());
+        getContext().startService(intent);
+    }
+    private class MyDownloadListener extends DownloadListener {
+
+        @Override
+        public void onProgress(DownloadInfo downloadInfo) {
+            if (getUserTag() == null) return;
+            ViewHolder holder = (ViewHolder) getUserTag();
+            holder.refresh();  //这里不能使用传递进来的 DownloadInfo，否者会出现条目错乱的问题
+        }
+
+        @Override
+        public void onFinish(DownloadInfo downloadInfo) {
+            Track track = (Track) downloadInfo.getData();
+            final DownloadManager downloadManager = DownloadManager.getInstance();
+            if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
+                downloadManager.removeTask(track.getUrl(), false);
+            }
+            // 重命名文件
+            String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
+            downloadTitle = downloadTitle.replace("/", " ");
+            // 将数据库的已下载修改状态
+            track.setIsDownloaded(1);
+            track.setUrl(downloadManager.getTargetFolder() + downloadTitle);
+            track.save();
+
+
+            File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
+            File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
+            old.renameTo(rename);
+
+            // 文件入媒体库
+            String filename = downloadManager.getTargetFolder() + downloadTitle;
+            Intent intent = new Intent();
+            intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+            intent.setPackage(main.getPackageName());
+            intent.putExtra("MSG", AppConstant.DownloadMsg.SCAN);
+            intent.putExtra("SCAN", filename);
+            main.startService(intent);
+
+            main.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    allTask = downloadManager.getAllTask();
+                    adatper.notifyDataSetChanged();
+                }
+            });
+        }
+
+        @Override
+        public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
+            Track track = (Track) downloadInfo.getData();
+            if (errorMsg != null) Toast.makeText(getContext(), track.getTitle() + "下载失败，尝试重新下载", Toast.LENGTH_SHORT).show();
+            reDownload(downloadInfo);
         }
     }
 }

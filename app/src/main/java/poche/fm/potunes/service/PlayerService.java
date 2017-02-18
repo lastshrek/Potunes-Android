@@ -117,6 +117,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         @Override
         public void run() {
             while(true){
+                if (mediaPlayer == null) continue;
+                if (!mediaPlayer.isPlaying()) continue;
                 mPlayState.setProgress(getCurrentProgress());
                 Intent intent = new Intent();
                 intent.setAction(MUSIC_CURRENT);
@@ -131,6 +133,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     };
 
     public int getCurrentProgress(){
+
         if(mediaPlayer != null ) {
             return mediaPlayer.getCurrentPosition();
         } else {
@@ -169,8 +172,8 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                 url = track.getUrl();
             }
             try {
+                if (mediaPlayer.isPlaying()) mediaPlayer.pause();
                 mediaPlayer.reset();
-                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 mediaPlayer.setDataSource(url);
                 mediaPlayer.prepareAsync();
                 mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {

@@ -17,6 +17,11 @@ public class AppConstant {
     public class DownloadMsg {
         public static final int SINGLE = 1;
         public static final int ALBUM = 2;
+        public static final int PAUSE = 3;
+        public static final int RESUME = 4;
+        public static final int DELETE = 5;
+        public static final int RESTART = 6;
+        public static final int SCAN = 7;
     }
 
     public class LockScreen {

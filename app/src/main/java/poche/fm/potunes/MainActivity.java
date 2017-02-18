@@ -95,11 +95,9 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
 
     private PlayerService playerService;
-    private DownloadService downloadService;
     public PlayerService getPlayerService() {
         return playerService;
     }
-    public DownloadService getDownloadService() { return downloadService; }
     public Fragment currentFragment;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -112,20 +110,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         @Override
         public void onServiceDisconnected(ComponentName name) {
             Log.d(TAG, "onServiceDisconnected: 绑定服务失败");
-        }
-    };
-
-    private ServiceConnection downloadConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d(TAG, "onServiceConnected: 绑定下载服务成功");
-            DownloadService.DownloadBinder downloadBinder = (DownloadService.DownloadBinder) service;
-            downloadService = downloadBinder.getDownloadService();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            Log.d(TAG, "onServiceDisconnected: 绑定下载服务失败");
         }
     };
 
@@ -156,7 +140,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
         //绑定服务
         bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
-        bindService(new Intent(this, DownloadService.class), downloadConnection, Context.BIND_AUTO_CREATE);
         // 锁屏服务
         Intent intent = new Intent();
         intent.setClass(MainActivity.this, LockScreenService.class);
@@ -224,7 +207,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     public void onDestroy() {
         EventBus.getDefault().unregister(this);
         unbindService(serviceConnection);
-        unbindService(downloadConnection);
         unregisterReceiver(mMessageReceiver);
         MobclickAgent.onKillProcess(this);
         // 程序结束时销毁状态栏

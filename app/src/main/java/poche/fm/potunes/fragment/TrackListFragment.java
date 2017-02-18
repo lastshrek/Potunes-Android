@@ -132,10 +132,6 @@ public class TrackListFragment extends Fragment {
             }
         });
 
-        downloadManager = DownloadService.getDownloadManager();
-        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music/");
-        downloadManager.getThreadPool().setCorePoolSize(1);
-
         initTracks(playlist.getPlaylist_id());
 
         MainActivity main = (MainActivity) getActivity();

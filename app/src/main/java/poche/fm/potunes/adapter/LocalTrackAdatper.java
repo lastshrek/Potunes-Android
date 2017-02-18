@@ -1,11 +1,21 @@
 package poche.fm.potunes.adapter;
 
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
+import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import android.provider.MediaStore;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,7 +23,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.load.engine.Resource;
+
 import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -127,8 +140,15 @@ public class LocalTrackAdatper extends RecyclerView.Adapter<LocalTrackAdatper.Vi
 
         long songid = track.getID();
         long albumid = track.getAlbumid();
+
+
+
+
         holder.cover.setImageBitmap(MediaUtil.getArtwork(mContext, songid, albumid, true, true));
+
+
     }
+
 
 
 
