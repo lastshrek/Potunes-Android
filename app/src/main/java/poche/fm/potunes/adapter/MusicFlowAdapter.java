@@ -56,7 +56,6 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         if (mOnItemClickListener != null) {
             //注意这里使用getTag方法获取数据
             mOnItemClickListener.onItemClick(v, (String) v.getTag());
-            Log.d(TAG, "onClick: 点击+++" + v.getTag());
         }
     }
 
@@ -80,8 +79,6 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         ((ListItemViewHolder) holder).title.setText(item.getTitle());
         //设置tag
         ((ListItemViewHolder) holder).itemView.setTag(position + "");
-
-        ((ListItemViewHolder) holder).itemView.setTag(position + "");
         // 设置下载页面
         if (musicInfo == null) {
             ((ListItemViewHolder) holder).itemView.setOnClickListener(new View.OnClickListener() {
@@ -101,16 +98,12 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
                             break;
                         case 1:
-                            Log.d(TAG, "onClick: " + "点击了本地音乐");
-                            downloadManager = DownloadService.getDownloadManager();
-//                            if (downloadManager.getAllTask().size() == 0) {
-//                                Toast.makeText(mContext, "当前并无下载任务", Toast.LENGTH_SHORT).show();
-//                                return;
-//                            }
+                            if (DownloadService.getDownloadManager().getAllTask().size() == 0) {
+                                Toast.makeText(mContext, "当前并无下载任务", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
                             EventBus.getDefault().post(new LocalTracksEvent("downloading"));
-
                             break;
-
                     }
                 }
             });

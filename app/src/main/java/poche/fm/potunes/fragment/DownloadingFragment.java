@@ -241,13 +241,18 @@ public class DownloadingFragment extends Fragment {
 
         public void refresh(DownloadInfo downloadInfo) {
             this.downloadInfo = downloadInfo;
+            int state = downloadInfo.getState();
+            if (state == DownloadManager.PAUSE || state == DownloadManager.NONE) {
+                mOperationView.setText("{zmdi-download}  全部开始");
+            } else {
+                mOperationView.setText("{zmdi-pause-circle-outline}  全部暂停");
+            }
             refresh();
         }
 
         //RunTime UI Refresh
         private void refresh() {
             progressBar.setMax(100);
-
             if (downloadInfo.getTotalLength() > 0) {
                 progressBar.setProgress((int) (downloadInfo.getDownloadLength() * 100 / downloadInfo.getTotalLength()));
             }
