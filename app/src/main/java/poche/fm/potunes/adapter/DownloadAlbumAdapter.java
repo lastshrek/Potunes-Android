@@ -1,6 +1,10 @@
 package poche.fm.potunes.adapter;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
 import android.support.design.widget.BottomSheetDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -11,16 +15,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.github.rubensousa.bottomsheetbuilder.BottomSheetBuilder;
 import com.github.rubensousa.bottomsheetbuilder.adapter.BottomSheetItemClickListener;
 
 import org.greenrobot.eventbus.EventBus;
+import org.litepal.crud.DataSupport;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
 
 import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 
@@ -32,6 +41,7 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
     private ArrayList<Track> mAlbumList;
     private Context mContext;
     private String TAG = "DownloadAlbumItem";
+    private MediaScanner scanner;
     static class ViewHolder extends RecyclerView.ViewHolder {
 
         ImageView cover;
@@ -55,6 +65,7 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
         if (mContext == null) {
             mContext = parent.getContext();
         }
+        scanner = new MediaScanner(mContext);
         View view = LayoutInflater.from(mContext).inflate(R.layout.download_album_item, parent, false);
         TypedValue typedValue = new TypedValue();
         mContext.getTheme().resolveAttribute(R.attr.selectableItemBackground, typedValue, true);
@@ -73,8 +84,33 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
         holder.menu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onClick: 点击了menu");
-                int position = holder.getAdapterPosition();
+                final int position = holder.getAdapterPosition();
+                final BottomSheetDialog dialog = new BottomSheetBuilder(mContext, R.style.AppTheme_BottomSheetDialog)
+                        .setMode(BottomSheetBuilder.MODE_LIST)
+                        .setMenu(R.menu.playlist_menu)
+                        .setItemClickListener(new BottomSheetItemClickListener() {
+                            @Override
+                            public void onBottomSheetItemClick(MenuItem item) {
+
+                                Track track = mAlbumList.get(position);
+                                List<Track> list = DataSupport.where("album = ?", track.getAlbum()).find(Track.class);
+                                for (Track result: list) {
+                                    File file = new File(result.getUrl());
+                                    if (file.exists()) {
+                                        scanner = new MediaScanner(mContext);
+                                        scanner.scanFile(result.getUrl(), null);
+                                        file.delete();
+                                        result.delete();
+                                    }
+                                }
+                                mAlbumList.remove(position);
+                                notifyDataSetChanged();
+                                Toast.makeText(mContext, "删除专辑成功", Toast.LENGTH_SHORT).show();
+                            }
+                        })
+                        .createDialog();
+                dialog.setCanceledOnTouchOutside(true);
+                dialog.show();
 
 
 

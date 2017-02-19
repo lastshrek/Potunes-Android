@@ -15,31 +15,20 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.androidnetworking.AndroidNetworking;
 import com.dinuscxj.progressbar.CircleProgressBar;
 import com.lzy.okserver.download.DownloadInfo;
 import com.lzy.okserver.download.DownloadManager;
 import com.lzy.okserver.listener.DownloadListener;
-import com.lzy.okserver.task.ExecutorWithListener;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconButton;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import poche.fm.potunes.MainActivity;
-import poche.fm.potunes.Model.LocalAlbumMessageEvent;
-import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
@@ -231,8 +220,6 @@ public class DownloadingFragment extends Fragment {
         TextView title;
         CircleProgressBar progressBar;
 
-
-
         public ViewHolder(View convertView) {
             position = (TextView) convertView.findViewById(R.id.downloading_track_postion);
             title = (TextView) convertView.findViewById(R.id.downloading_track_title);
@@ -275,14 +262,12 @@ public class DownloadingFragment extends Fragment {
         getContext().startService(intent);
     }
     private class MyDownloadListener extends DownloadListener {
-
         @Override
         public void onProgress(DownloadInfo downloadInfo) {
             if (getUserTag() == null) return;
             ViewHolder holder = (ViewHolder) getUserTag();
             holder.refresh();  //这里不能使用传递进来的 DownloadInfo，否者会出现条目错乱的问题
         }
-
         @Override
         public void onFinish(DownloadInfo downloadInfo) {
             Track track = (Track) downloadInfo.getData();

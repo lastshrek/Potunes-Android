@@ -23,6 +23,8 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import net.grandcentrix.tray.TrayPreferences;
+
 import java.util.ArrayList;
 
 import poche.fm.potunes.MainActivity;
@@ -133,7 +135,6 @@ public class PlayQueueFragment extends AttachDialogFragment {
                 recyclerView.setAdapter(adapter);
                 playlistNumber.setText("播放列表（" + playlist.size() + "）");
                 recyclerView.scrollToPosition(current);
-
             }
         }
     }
@@ -201,15 +202,12 @@ public class PlayQueueFragment extends AttachDialogFragment {
                             return;
                         }
 
-                        mPlayerService.play(position);
+                        mPlayerService.play(position, mContext);
                         dismiss();
                     }
                 }, 70);
 
             }
         }
-
     }
-
-
 }

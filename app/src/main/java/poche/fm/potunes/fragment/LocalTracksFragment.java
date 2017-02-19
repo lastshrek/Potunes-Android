@@ -16,6 +16,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import org.litepal.LitePal;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,7 +79,7 @@ public class LocalTracksFragment extends Fragment {
         swipeRefresh.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
         swipeRefresh.setEnabled(false);
         swipeRefresh.setRefreshing(true);
-
+        LitePal.initialize(getContext());
         initTracks();
         return view;
     }

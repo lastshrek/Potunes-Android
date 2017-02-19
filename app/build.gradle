@@ -12,6 +12,7 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         renderscriptTargetApi 19
         renderscriptSupportModeEnabled true
+        resValue "string", "tray__authority", "poche.fm.potunes.tray"
 
     }
     buildTypes {
@@ -68,6 +69,6 @@ dependencies {
     compile 'me.wcy:lrcview:1.4.0'
     compile 'com.umeng.analytics:analytics:latest.integration'
     compile 'com.afollestad.material-dialogs:core:0.9.3.0'
-    compile 'com.amitshekhar.android:android-networking:0.4.0'
+    compile 'net.grandcentrix.tray:tray:0.11.1'
     testCompile 'junit:junit:4.12'
 }
