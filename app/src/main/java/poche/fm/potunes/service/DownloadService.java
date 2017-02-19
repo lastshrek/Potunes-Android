@@ -27,6 +27,8 @@ import com.lzy.okserver.listener.DownloadListener;
 import com.lzy.okserver.task.ExecutorWithListener;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 import org.litepal.crud.DataSupport;
 
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.SplashActivity;
@@ -58,6 +61,7 @@ public class DownloadService extends Service {
     public void onCreate() {
         super.onCreate();
         LitePal.initialize(getBaseContext());
+        EventBus.getDefault().register(this);
         mContext = getBaseContext();
         mediaScanner = new MediaScanner(mContext);
         downloadListener = new DownloadListener() {
@@ -134,7 +138,7 @@ public class DownloadService extends Service {
                 downloadManager.pauseAllTask();
                 break;
             case 4:
-                Log.d(TAG, "onStartCommand: 继续下载" + downloadManager.getAllTask().size());
+                Log.d(TAG, "onStartCommand: 继续下载");
                 downloadManager.startAllTask();
                 break;
             case 5:
@@ -155,7 +159,15 @@ public class DownloadService extends Service {
 
 
 
-
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(LocalTracksEvent event) {
+        Log.d(TAG, "onMessageEvent: ==========");
+        if (event.local.equals("resume")) {
+            downloadManager.startAllTask();
+            DownloadInfo downloadInfo = downloadManager.getAllTask().get(0);
+            Log.d(TAG, "onMessageEvent: " + downloadInfo.getState());
+        }
+    }
 
     private boolean queryFromDB(int trackID) {
         List<Track> results = DataSupport.where("track_id = ?" , "" + trackID).find(Track.class);
@@ -167,7 +179,7 @@ public class DownloadService extends Service {
     }
     private void checkFiles(Track track) {
         if (downloadManager.getDownloadInfo(track.getUrl()) != null || queryFromDB(track.getID())) {
-            Toast.makeText(mContext, track.getTitle() + "downloaded", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, track.getTitle() + " downloaded", Toast.LENGTH_SHORT).show();
         } else {
             GetRequest request = OkGo.get(track.getUrl());
             downloadManager.addTask(track.getUrl(), track, request, downloadListener);
@@ -182,6 +194,7 @@ public class DownloadService extends Service {
     @Override
     public void onDestroy() {
        super.onDestroy();
+        EventBus.getDefault().unregister(this);
     }
 
 }

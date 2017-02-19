@@ -23,6 +23,7 @@ import com.lzy.okserver.listener.DownloadListener;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconButton;
 
+import org.greenrobot.eventbus.EventBus;
 import org.litepal.LitePal;
 import org.litepal.crud.DataSupport;
 
@@ -230,7 +231,6 @@ public class DownloadingFragment extends Fragment {
 
         public void refresh(DownloadInfo downloadInfo) {
             this.downloadInfo = downloadInfo;
-            Log.d(TAG, "refresh: " + downloadInfo.getState());
             int state = downloadInfo.getState();
             if (state == DownloadManager.PAUSE || state == DownloadManager.NONE) {
                 mOperationView.setText("{zmdi-download}  全部开始");
@@ -243,6 +243,7 @@ public class DownloadingFragment extends Fragment {
         //RunTime UI Refresh
         private void refresh() {
             progressBar.setMax(100);
+            Log.d(TAG, "refresh: " + downloadInfo.getState());
             if (downloadInfo.getTotalLength() > 0) {
                 progressBar.setProgress((int) (downloadInfo.getDownloadLength() * 100 / downloadInfo.getTotalLength()));
             }

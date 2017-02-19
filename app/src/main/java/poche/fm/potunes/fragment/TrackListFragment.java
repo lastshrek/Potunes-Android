@@ -187,8 +187,9 @@ public class TrackListFragment extends Fragment {
                                     intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
                                     intent.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
                                     intent.setPackage(getActivity().getPackageName());
-                                    getActivity().startService(intent);
+                                    getContext().startService(intent);
                                     appPreferences.put("allow_mobile_download", true);
+
                                 }
                             })
                             .onNegative(new MaterialDialog.SingleButtonCallback() {
@@ -200,6 +201,13 @@ public class TrackListFragment extends Fragment {
                                 }
                             })
                             .show();
+                } else {
+                    Intent resume = new Intent();
+                    resume.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                    resume.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
+                    resume.setPackage(getActivity().getPackageName());
+                    getContext().startService(resume);
+
                 }
                 break;
             default:
@@ -288,7 +296,6 @@ public class TrackListFragment extends Fragment {
 
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(MessageEvent event) {
-        Log.d(TAG, "onMessageEvent: ");
         playlist = event.playlist;
     }
 
