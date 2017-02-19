@@ -113,6 +113,7 @@ public class DownloadService extends Service {
                 Log.d(TAG, "onStartCommand: 单曲下载");
                 Track track = (Track) intent.getSerializableExtra("track");
                 checkFiles(track);
+                downloadManager.stopAllTask();
                 break;
             case 2:
                 Log.d(TAG, "onStartCommand: 专辑下载");
@@ -127,6 +128,7 @@ public class DownloadService extends Service {
                     mTrack.setAlbum(album);
                     checkFiles(mTrack);
                 }
+                downloadManager.stopAllTask();
                 break;
             case 3:
                 downloadManager.pauseAllTask();

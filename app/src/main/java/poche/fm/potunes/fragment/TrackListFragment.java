@@ -164,6 +164,12 @@ public class TrackListFragment extends Fragment {
         int networkType = NetworkHelper.getConnectedType(mContext);
         switch (networkType) {
             case WIFI:
+                Intent intent = new Intent();
+                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                intent.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
+                intent.setPackage(getActivity().getPackageName());
+                getActivity().startService(intent);
+                appPreferences.put("allow_mobile_download", true);
                 break;
             case MOBILE:
                 boolean allow_mobile = appPreferences.getBoolean("allow_mobile_download", false);
@@ -194,13 +200,7 @@ public class TrackListFragment extends Fragment {
                                 }
                             })
                             .show();
-                    Intent intent = new Intent();
-                    intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                    intent.putExtra("MSG", AppConstant.DownloadMsg.PAUSE);
-                    intent.setPackage(getActivity().getPackageName());
-                    getActivity().startService(intent);
                 }
-
                 break;
             default:
                 break;

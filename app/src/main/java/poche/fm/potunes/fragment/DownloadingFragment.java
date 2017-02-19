@@ -230,6 +230,7 @@ public class DownloadingFragment extends Fragment {
 
         public void refresh(DownloadInfo downloadInfo) {
             this.downloadInfo = downloadInfo;
+            Log.d(TAG, "refresh: " + downloadInfo.getState());
             int state = downloadInfo.getState();
             if (state == DownloadManager.PAUSE || state == DownloadManager.NONE) {
                 mOperationView.setText("{zmdi-download}  全部开始");
