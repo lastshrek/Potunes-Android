@@ -10,9 +10,12 @@ import android.os.Binder;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.lzy.okgo.OkGo;
@@ -34,6 +37,8 @@ import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.SplashActivity;
+import poche.fm.potunes.utils.NetworkHelper;
+import poche.fm.potunes.utils.SharedPreferencesUtil;
 
 public class DownloadService extends Service {
     
@@ -41,6 +46,8 @@ public class DownloadService extends Service {
     public DownloadManager downloadManager;
     private DownloadListener downloadListener;
     private MediaScanner mediaScanner;
+    private Context mContext;
+
 
     private int msg;
     private ArrayList<Track> tracks = new ArrayList<>();
@@ -52,8 +59,8 @@ public class DownloadService extends Service {
     public void onCreate() {
         super.onCreate();
         LitePal.initialize(getBaseContext());
-        mediaScanner = new MediaScanner(getBaseContext());
-
+        mContext = getBaseContext();
+        mediaScanner = new MediaScanner(mContext);
         downloadListener = new DownloadListener() {
             @Override
             public void onProgress(DownloadInfo downloadInfo) {
@@ -95,7 +102,6 @@ public class DownloadService extends Service {
         downloadManager = com.lzy.okserver.download.DownloadService.getDownloadManager();
         downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
         downloadManager.getThreadPool().setCorePoolSize(1);
-
     }
 
     @Override
@@ -106,6 +112,7 @@ public class DownloadService extends Service {
             case 1:
                 Track track = (Track) intent.getSerializableExtra("track");
                 checkFiles(track);
+                downloadManager.pauseAllTask();
                 break;
             case 2:
                 //获取本地Tracks数据
@@ -119,15 +126,16 @@ public class DownloadService extends Service {
                     mTrack.setAlbum(album);
                     checkFiles(mTrack);
                 }
+                downloadManager.pauseAllTask();
                 break;
             case 3:
                 downloadManager.pauseAllTask();
                 break;
             case 4:
+                Log.d(TAG, "onStartCommand: 继续下载");
                 downloadManager.startAllTask();
                 break;
             case 5:
-                Log.d(TAG, "onStartCommand: shanchu");
                 downloadManager.pauseAllTask();
                 downloadManager.removeAllTask();
                 break;
@@ -142,6 +150,11 @@ public class DownloadService extends Service {
 
         return super.onStartCommand(intent,flags, startId);
     }
+
+
+
+
+
     private boolean queryFromDB(int trackID) {
         List<Track> results = DataSupport.where("track_id = ?" , "" + trackID).find(Track.class);
         if(results.size() > 0) {
@@ -152,7 +165,7 @@ public class DownloadService extends Service {
     }
     private void checkFiles(Track track) {
         if (downloadManager.getDownloadInfo(track.getUrl()) != null || queryFromDB(track.getID())) {
-//            Toast.makeText(getBaseContext(), track.getTitle() + "已下载", Toast.LENGTH_SHORT).show();
+
         } else {
             track.save();
             GetRequest request = OkGo.get(track.getUrl());

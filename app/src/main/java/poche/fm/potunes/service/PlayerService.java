@@ -66,6 +66,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private AudioManager mAudioManager;
     private HeadsetPlugReceiver headsetPlugReceiver;
     private Context mContext;
+    private SharedPreferencesUtil appPreferences;
 
 
     // 服务要发送的一些Action
@@ -79,7 +80,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     public static final int MOBILE = 0;
     public static final int WIFI = 1;
 
-    private SharedPreferencesUtil appPreferences;
     public static PlayState mPlayState = new PlayState();
     //创建单个线程池
     private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();

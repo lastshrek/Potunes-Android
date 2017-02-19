@@ -248,6 +248,7 @@ public class DownloadingFragment extends Fragment {
         @Override
         public void onClick(View v) {
             if (v.getId() == progressBar.getId()) {
+                if (downloadInfo.getState() == DownloadManager.DOWNLOADING) return;
                 reDownload(downloadInfo);
             }
         }
@@ -271,6 +272,7 @@ public class DownloadingFragment extends Fragment {
         @Override
         public void onFinish(DownloadInfo downloadInfo) {
             Track track = (Track) downloadInfo.getData();
+
             final DownloadManager downloadManager = DownloadManager.getInstance();
             if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
                 downloadManager.removeTask(track.getUrl(), false);
@@ -302,6 +304,7 @@ public class DownloadingFragment extends Fragment {
                 public void run() {
                     allTask = downloadManager.getAllTask();
                     adatper.notifyDataSetChanged();
+
                 }
             });
         }
