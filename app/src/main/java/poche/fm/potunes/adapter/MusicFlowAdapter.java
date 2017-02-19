@@ -20,6 +20,7 @@ import com.lzy.okserver.download.DownloadManager;
 import com.lzy.okserver.download.DownloadService;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconTextView;
+import com.sdsmdg.tastytoast.TastyToast;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -99,7 +100,7 @@ public class MusicFlowAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                             break;
                         case 1:
                             if (DownloadService.getDownloadManager().getAllTask().size() == 0) {
-                                Toast.makeText(mContext, "当前并无下载任务", Toast.LENGTH_SHORT).show();
+                                TastyToast.makeText(mContext, "当前并无下载任务", TastyToast.LENGTH_SHORT, TastyToast.CONFUSING);
                                 return;
                             }
                             EventBus.getDefault().post(new LocalTracksEvent("downloading"));

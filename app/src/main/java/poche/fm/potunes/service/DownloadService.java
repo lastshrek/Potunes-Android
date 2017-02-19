@@ -2,6 +2,7 @@ package poche.fm.potunes.service;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -47,8 +48,6 @@ public class DownloadService extends Service {
     private DownloadListener downloadListener;
     private MediaScanner mediaScanner;
     private Context mContext;
-
-
     private int msg;
     private ArrayList<Track> tracks = new ArrayList<>();
 
@@ -63,9 +62,7 @@ public class DownloadService extends Service {
         mediaScanner = new MediaScanner(mContext);
         downloadListener = new DownloadListener() {
             @Override
-            public void onProgress(DownloadInfo downloadInfo) {
-
-            }
+            public void onProgress(DownloadInfo downloadInfo) {}
 
             @Override
             public void onFinish(DownloadInfo downloadInfo) {
@@ -80,6 +77,8 @@ public class DownloadService extends Service {
                 track.setIsDownloaded(1);
                 track.setUrl(downloadManager.getTargetFolder() + downloadTitle);
                 track.save();
+
+
                 // rename
                 File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
                 File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
@@ -107,14 +106,16 @@ public class DownloadService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         msg = intent.getIntExtra("MSG", 0);
+
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         switch (msg) {
             case 1:
+                Log.d(TAG, "onStartCommand: 单曲下载");
                 Track track = (Track) intent.getSerializableExtra("track");
                 checkFiles(track);
-                downloadManager.pauseAllTask();
                 break;
             case 2:
+                Log.d(TAG, "onStartCommand: 专辑下载");
                 //获取本地Tracks数据
                 String json = preferences.getString("Tracks", "Tracks");
                 String album = preferences.getString("album", "album");
@@ -126,13 +127,12 @@ public class DownloadService extends Service {
                     mTrack.setAlbum(album);
                     checkFiles(mTrack);
                 }
-                downloadManager.pauseAllTask();
                 break;
             case 3:
                 downloadManager.pauseAllTask();
                 break;
             case 4:
-                Log.d(TAG, "onStartCommand: 继续下载");
+                Log.d(TAG, "onStartCommand: 继续下载" + downloadManager.getAllTask().size());
                 downloadManager.startAllTask();
                 break;
             case 5:
@@ -165,9 +165,8 @@ public class DownloadService extends Service {
     }
     private void checkFiles(Track track) {
         if (downloadManager.getDownloadInfo(track.getUrl()) != null || queryFromDB(track.getID())) {
-
+            Toast.makeText(mContext, track.getTitle() + "downloaded", Toast.LENGTH_SHORT).show();
         } else {
-            track.save();
             GetRequest request = OkGo.get(track.getUrl());
             downloadManager.addTask(track.getUrl(), track, request, downloadListener);
         }

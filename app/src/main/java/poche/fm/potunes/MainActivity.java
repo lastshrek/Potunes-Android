@@ -37,12 +37,16 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
+import org.litepal.crud.DataSupport;
+
+import java.util.List;
 
 import cn.jpush.android.api.JPushInterface;
 import poche.fm.potunes.Model.LocalAlbumMessageEvent;
 import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
+import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.fragment.DownloadingFragment;
 import poche.fm.potunes.fragment.LocalDownloadAlbumFragment;
 import poche.fm.potunes.fragment.LocalTracksFragment;
@@ -168,6 +172,16 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
+
+        List<Track> all = DataSupport.findAll(Track.class);
+        Log.d(TAG, "共有" + all.size());
+        List<Track> tracks = DataSupport.where("isDownloaded = ?", "0").find(Track.class);
+        Log.d(TAG, "伪数据" + tracks.size());
+
+        for (Track result: tracks) {
+            Log.d(TAG, "onCreate: " + result.getIsDownloaded());
+            Log.d(TAG, "onCreate: "+ result.getUrl());
+        }
     }
 
 

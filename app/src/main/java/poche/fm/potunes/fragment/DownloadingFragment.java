@@ -1,5 +1,6 @@
 package poche.fm.potunes.fragment;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -23,6 +24,7 @@ import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconButton;
 
 import org.litepal.LitePal;
+import org.litepal.crud.DataSupport;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -281,9 +283,12 @@ public class DownloadingFragment extends Fragment {
             String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
             downloadTitle = downloadTitle.replace("/", " ");
             // 将数据库的已下载修改状态
+
+            // 将数据库的已下载修改状态
             track.setIsDownloaded(1);
             track.setUrl(downloadManager.getTargetFolder() + downloadTitle);
             track.save();
+
 
 
             File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());

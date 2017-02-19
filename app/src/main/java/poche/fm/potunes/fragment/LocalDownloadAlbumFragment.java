@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -62,6 +63,7 @@ public class LocalDownloadAlbumFragment extends Fragment {
         ArrayList<Track> tracks = new ArrayList<>();
         for (Track track: list) {
             if (track.getIsDownloaded() == 0) continue;
+            Log.d(TAG, "initTracks: " + track.getIsDownloaded());
             tracks.add(track);
         }
         RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.local_tracks_recycler_view);

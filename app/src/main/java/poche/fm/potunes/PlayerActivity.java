@@ -32,6 +32,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
+import com.sdsmdg.tastytoast.TastyToast;
 import com.umeng.analytics.MobclickAgent;
 
 import org.litepal.crud.DataSupport;
@@ -251,20 +252,21 @@ public class PlayerActivity extends AppCompatActivity {
                     if(shuffle == 0) {
                         PlayerService.mPlayState.setMode(1);
                         mRepeat.setImageDrawable(mShuffle);
-                        Toast.makeText(PlayerActivity.this, "随机播放",
-                                Toast.LENGTH_SHORT).show();
+                        TastyToast.makeText(PlayerActivity.this, "随机播放",
+                                TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
+
                         shuffle = 1;
                     } else if (shuffle == 1) {
                         PlayerService.mPlayState.setMode(2);
                         mRepeat.setImageDrawable(mSingle);
-                        Toast.makeText(PlayerActivity.this, "单曲循环",
-                                Toast.LENGTH_SHORT).show();
+                        TastyToast.makeText(PlayerActivity.this, "单曲循环",
+                                TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
                         shuffle = 2;
                     } else if (shuffle == 2) {
                         mRepeat.setImageDrawable(mNoShuffle);
                         PlayerService.mPlayState.setMode(0);
-                        Toast.makeText(PlayerActivity.this, "列表循环",
-                                Toast.LENGTH_SHORT).show();
+                        TastyToast.makeText(PlayerActivity.this, "列表循环",
+                                TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
                         shuffle = 0;
                     }
                     break;

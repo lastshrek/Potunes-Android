@@ -167,6 +167,7 @@ public class LocalTrackAdatper extends RecyclerView.Adapter<LocalTrackAdatper.Vi
                                 }
                             }
                         })
+                        .setItemTextColor(mContext.getResources().getColor(R.color.colorAccent))
                         .createDialog();
                 dialog.setCanceledOnTouchOutside(true);
                 dialog.show();

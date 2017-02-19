@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.design.widget.BottomSheetDialog;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.TypedValue;
@@ -55,7 +56,7 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
     private Context mContext;
     private String TAG = "TrackItem";
     private PlayerService mPlayerService;
-
+    private CoordinatorLayout coordinatorLayout;
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView cover;
@@ -109,7 +110,6 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
                         .setMenu(R.menu.local_share_menu)
                         .setItemClickListener(new BottomSheetItemClickListener() {
                             Track track = mTrackList.get(position);
-
                             @Override
                             public void onBottomSheetItemClick(MenuItem item) {
                                 String title = item.getTitle().toString();
@@ -142,6 +142,7 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
                                 }
                             }
                         })
+                        .setItemTextColor(mContext.getResources().getColor(R.color.colorAccent))
                         .createDialog();
                 dialog.setCanceledOnTouchOutside(true);
                 dialog.show();

@@ -132,10 +132,7 @@ public class TrackListFragment extends Fragment {
                     return;
                 }
                 Toast.makeText(getContext(), "开始下载", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent();
-                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
-                intent.setPackage(getActivity().getPackageName());
+
                 //将json存到本地
                 SharedPreferences preference = getActivity().getSharedPreferences("user", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = preference.edit();
@@ -143,7 +140,12 @@ public class TrackListFragment extends Fragment {
                 MainActivity main = (MainActivity) getActivity();
                 editor.putString("album", main.mToolbarTitle.getText().toString());
                 editor.apply();
-                getContext().startService(intent);
+
+                Intent intent = new Intent();
+                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
+                intent.setPackage(getActivity().getPackageName());
+                getActivity().startService(intent);
 
                 checkNetWorkStatus();
             }
@@ -162,11 +164,6 @@ public class TrackListFragment extends Fragment {
         int networkType = NetworkHelper.getConnectedType(mContext);
         switch (networkType) {
             case WIFI:
-                Intent resume = new Intent();
-                resume.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                resume.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
-                resume.setPackage(getActivity().getPackageName());
-                getActivity().startService(resume);
                 break;
             case MOBILE:
                 boolean allow_mobile = appPreferences.getBoolean("allow_mobile_download", false);
@@ -197,14 +194,13 @@ public class TrackListFragment extends Fragment {
                                 }
                             })
                             .show();
-                } else {
                     Intent intent = new Intent();
                     intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                    intent.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
+                    intent.putExtra("MSG", AppConstant.DownloadMsg.PAUSE);
                     intent.setPackage(getActivity().getPackageName());
                     getActivity().startService(intent);
-                    appPreferences.put("allow_mobile_download", true);
                 }
+
                 break;
             default:
                 break;

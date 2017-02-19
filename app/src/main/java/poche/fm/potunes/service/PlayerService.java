@@ -316,7 +316,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         // All clients have unbound with unbindService()
         if(mediaPlayer != null) {
             mediaPlayer.stop();
-            mediaPlayer.release();
+            mediaPlayer = null;
         }
 
         if (mExecutorService != null && !mExecutorService.isShutdown()) {
@@ -405,7 +405,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                             .setWhen(System.currentTimeMillis())
                             .setOngoing(true)
                             .setContentIntent(pi)
-                            .setSmallIcon(R.drawable.actionbar_discover_selected);
+                            .setSmallIcon(R.drawable.ic_notification);
                     notification = mBuilder.build();
                     mManager.notify(1, notification);
                 }
