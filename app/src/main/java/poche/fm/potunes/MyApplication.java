@@ -2,6 +2,7 @@ package poche.fm.potunes;
 
 import android.app.Application;
 
+import com.liulishuo.filedownloader.FileDownloader;
 import com.lzy.okgo.OkGo;
 import com.lzy.okserver.download.DownloadManager;
 import com.umeng.analytics.MobclickAgent;
@@ -26,7 +27,6 @@ public class MyApplication extends Application {
         JPushInterface.init(this);
         MobclickAgent.startWithConfigure(new MobclickAgent.UMAnalyticsConfig(this, "58a412462ae85b1cf700184f", "poche.fm"));
         MobclickAgent.setDebugMode( true );
+        FileDownloader.init(getApplicationContext());
     }
-
-
 }

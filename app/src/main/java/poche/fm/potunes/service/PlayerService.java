@@ -155,6 +155,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             mAudioManager.abandonAudioFocus(audioFocusChangeListener);
         }
         next();
+
     }
 
     @Override
