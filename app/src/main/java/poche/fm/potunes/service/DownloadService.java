@@ -2,15 +2,21 @@ package poche.fm.potunes.service;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.MediaScannerConnection;
 import android.os.Binder;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.lzy.okgo.OkGo;
@@ -20,6 +26,9 @@ import com.lzy.okserver.download.DownloadManager;
 import com.lzy.okserver.listener.DownloadListener;
 import com.lzy.okserver.task.ExecutorWithListener;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 import org.litepal.crud.DataSupport;
 
@@ -27,17 +36,23 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
+import poche.fm.potunes.SplashActivity;
+import poche.fm.potunes.utils.NetworkHelper;
+import poche.fm.potunes.utils.SharedPreferencesUtil;
 
-public class DownloadService extends Service implements ExecutorWithListener.OnAllTaskEndListener {
+public class DownloadService extends Service {
     
     private String TAG = "DownloadService";
     public DownloadManager downloadManager;
     private DownloadListener downloadListener;
+    private MediaScanner mediaScanner;
+    private Context mContext;
     private int msg;
     private ArrayList<Track> tracks = new ArrayList<>();
-    private List<DownloadInfo> allTask = new ArrayList<>();
 
     public DownloadService() {
     }
@@ -46,12 +61,12 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
     public void onCreate() {
         super.onCreate();
         LitePal.initialize(getBaseContext());
-        // 设置DownloadManager
-        downloadManager = com.lzy.okserver.download.DownloadService.getDownloadManager();
-        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
-        downloadManager.getThreadPool().setCorePoolSize(1);
+        EventBus.getDefault().register(this);
+        mContext = getBaseContext();
+        mediaScanner = new MediaScanner(mContext);
         downloadListener = new DownloadListener() {
             @Override
+
             public void onProgress(DownloadInfo downloadInfo) {
                 Log.d(TAG, "onProgress: " + downloadManager.getTargetFolder());
             }
@@ -59,11 +74,9 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
             @Override
             public void onFinish(DownloadInfo downloadInfo) {
                 Track track = (Track) downloadInfo.getData();
-                Toast.makeText(getBaseContext(), track.getTitle() +  "下载完成", Toast.LENGTH_SHORT).show();
                 if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
                     downloadManager.removeTask(track.getUrl(), false);
                 }
-
                 // 重命名文件
                 String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
                 downloadTitle = downloadTitle.replace("/", " ");
@@ -73,30 +86,44 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
                 track.save();
 
 
+                // rename
                 File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
                 File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
                 old.renameTo(rename);
-                MediaScanner mediaScanner = new MediaScanner(getBaseContext());
+
                 mediaScanner.scanFile(downloadManager.getTargetFolder() + downloadTitle, null);
+                if (downloadManager.getAllTask().size() == 0) {
+                    Toast.makeText(getBaseContext(), "全部歌曲下载完毕", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
-                Log.d(TAG, "onError: ===============" + errorMsg);
+                Track track = (Track) downloadInfo.getData();
+                if (errorMsg != null) Toast.makeText(getBaseContext(), track.getTitle() + "下载失败，尝试重新下载", Toast.LENGTH_SHORT).show();
             }
         };
+
+        // 设置DownloadManager
+        downloadManager = com.lzy.okserver.download.DownloadService.getDownloadManager();
+        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
+        downloadManager.getThreadPool().setCorePoolSize(1);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         msg = intent.getIntExtra("MSG", 0);
+
         SharedPreferences preferences = getSharedPreferences("user", Context.MODE_PRIVATE);
         switch (msg) {
             case 1:
+                Log.d(TAG, "onStartCommand: 单曲下载");
                 Track track = (Track) intent.getSerializableExtra("track");
                 checkFiles(track);
+                downloadManager.stopAllTask();
                 break;
             case 2:
+                Log.d(TAG, "onStartCommand: 专辑下载");
                 //获取本地Tracks数据
                 String json = preferences.getString("Tracks", "Tracks");
                 String album = preferences.getString("album", "album");
@@ -108,63 +135,69 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
                     mTrack.setAlbum(album);
                     checkFiles(mTrack);
                 }
+                downloadManager.stopAllTask();
+                break;
+            case 3:
+                downloadManager.pauseAllTask();
+                break;
+            case 4:
+                Log.d(TAG, "onStartCommand: 继续下载");
+                downloadManager.startAllTask();
+                break;
+            case 5:
+                downloadManager.pauseAllTask();
+                downloadManager.removeAllTask();
+                break;
+            case 6:
+                String tag = intent.getStringExtra("URL");
+                downloadManager.restartTask(tag);
+                break;
+            case 7:
+                String fileName = intent.getStringExtra("SCAN");
+                mediaScanner.scanFile(fileName, null);
         }
 
         return super.onStartCommand(intent,flags, startId);
     }
+
+
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(LocalTracksEvent event) {
+        Log.d(TAG, "onMessageEvent: ==========");
+        if (event.local.equals("resume")) {
+            downloadManager.startAllTask();
+            DownloadInfo downloadInfo = downloadManager.getAllTask().get(0);
+            Log.d(TAG, "onMessageEvent: " + downloadInfo.getState());
+        }
+    }
+
     private boolean queryFromDB(int trackID) {
         List<Track> results = DataSupport.where("track_id = ?" , "" + trackID).find(Track.class);
         if(results.size() > 0) {
-            return true;
-        } else {
-            return false;
+            Track result = results.get(0);
+            return result.getIsDownloaded() > 0;
         }
+        return false;
     }
     private void checkFiles(Track track) {
         if (downloadManager.getDownloadInfo(track.getUrl()) != null || queryFromDB(track.getID())) {
-            Toast.makeText(getBaseContext(), track.getTitle() + "已下载", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, track.getTitle() + " downloaded", Toast.LENGTH_SHORT).show();
         } else {
-            track.save();
             GetRequest request = OkGo.get(track.getUrl());
             downloadManager.addTask(track.getUrl(), track, request, downloadListener);
         }
     }
 
-    @Override
-    public void onAllTaskEnd() {
-        for (DownloadInfo downloadInfo : allTask) {
-            if (downloadInfo.getState() != DownloadManager.FINISH) {
-                Toast.makeText(getBaseContext(), "尚有歌曲未完成", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-        Toast.makeText(getBaseContext(), "所有下载任务完成", Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
-        return new DownloadBinder();
+        return null;
     }
-
-    public class DownloadBinder extends Binder {
-        public DownloadService getDownloadService() {
-            return DownloadService.this;
-        }
-    }
-
     @Override
     public void onDestroy() {
        super.onDestroy();
-        //记得移除，否者会回调多次
-        downloadManager.getThreadPool().getExecutor().removeOnAllTaskEndListener(this);
+        EventBus.getDefault().unregister(this);
     }
-
-    public class MyReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            
-        }
-    }
-
 
 }

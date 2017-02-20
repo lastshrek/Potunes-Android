@@ -23,6 +23,7 @@ import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.FileCallback;
 import com.lzy.okserver.download.DownloadManager;
 import com.lzy.okserver.download.DownloadService;
+import com.sdsmdg.tastytoast.TastyToast;
 
 import java.io.File;
 import java.text.NumberFormat;
@@ -72,7 +73,7 @@ public class UpdateUtil {
                         showDialog();
                     } else {
                         if (!isSilenced) {
-                            Toast.makeText(mContext, R.string.now_latest, Toast.LENGTH_SHORT).show();
+                            TastyToast.makeText(mContext, "已经是最新版啦", TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
                         }
                     }
                     break;
@@ -93,7 +94,7 @@ public class UpdateUtil {
                 Gson gson = new Gson();
                 List<Version> versions = gson.fromJson(responseData, new TypeToken<List<Version>>(){}.getType());
                 if (versions.isEmpty()) {
-                    Toast.makeText(mContext, R.string.now_latest, Toast.LENGTH_SHORT).show();
+                    TastyToast.makeText(mContext, "已经是最新版啦", TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
                     return;
                 }
                 Message msg = Message.obtain();
@@ -161,7 +162,8 @@ public class UpdateUtil {
                                 .execute(new FileCallback() {
                                     @Override
                                     public void onSuccess(File file, Call call, Response response) {
-                                        Toast.makeText(mContext, R.string.on_apk_download_complete, Toast.LENGTH_SHORT).show();
+                                        TastyToast.makeText(mContext, "下载完成",
+                                                TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
                                         downloadDialog.hide();
                                         downloadDialog.dismiss();
                                         installApk(file.getAbsolutePath());

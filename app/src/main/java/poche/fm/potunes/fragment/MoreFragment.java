@@ -32,6 +32,7 @@ import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 
+import org.greenrobot.eventbus.EventBus;
 import org.litepal.LitePal;
 
 import java.io.BufferedInputStream;
@@ -43,6 +44,9 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
+import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.adapter.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
 import poche.fm.potunes.Model.Track;
@@ -179,9 +183,10 @@ public class MoreFragment extends DialogFragment {
                         Intent startIntent = new Intent(mContext, DownloadService.class);
                         startIntent.putExtra("MSG", AppConstant.DownloadMsg.SINGLE);
                         startIntent.putExtra("track", adapterMusicInfo);
-                        Log.d(TAG, "onItemClick: " + adapterMusicInfo.getAlbum());
                         mContext.startService(startIntent);
                         Toast.makeText(mContext, "开始下载", Toast.LENGTH_SHORT).show();
+
+                        EventBus.getDefault().post(new LocalTracksEvent("single_down"));
                         dismiss();
                         break;
                     case 1:

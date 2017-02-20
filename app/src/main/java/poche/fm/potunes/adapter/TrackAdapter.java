@@ -6,6 +6,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -82,7 +83,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
 
                 if (mPlayerService != null && mTrackList != null) {
                     mPlayerService.tracks = mTrackList;
-                    mPlayerService.play(holder.getAdapterPosition());
+                    mPlayerService.play(holder.getAdapterPosition(), mContext);
                 }
             }
         });

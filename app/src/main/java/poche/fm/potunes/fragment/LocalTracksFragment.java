@@ -16,6 +16,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import org.litepal.LitePal;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -77,7 +79,7 @@ public class LocalTracksFragment extends Fragment {
         swipeRefresh.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
         swipeRefresh.setEnabled(false);
         swipeRefresh.setRefreshing(true);
-
+        LitePal.initialize(getContext());
         initTracks();
         return view;
     }
@@ -101,7 +103,6 @@ public class LocalTracksFragment extends Fragment {
             String album = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
             String mime_type = cursor.getString(cursor
                     .getColumnIndex(MediaStore.Audio.Media.MIME_TYPE));
-
             if (path.indexOf(".mp3") > 0 || path.indexOf(".flac") > 0) {
                 track.setName(title);
                 track.setTrack_id((int)id);
@@ -142,17 +143,6 @@ public class LocalTracksFragment extends Fragment {
         super.onDetach();
         mListener = null;
     }
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);

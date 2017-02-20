@@ -16,8 +16,7 @@ public class MediaScanner {
     private String fileType = null;
     private String[] filePaths = null;
 
-    public MediaScanner(Context context)
-    {
+    public MediaScanner(Context context) {
         if (this.client == null) {
             this.client = new UploadFileSannerClient();
         }
@@ -42,8 +41,7 @@ public class MediaScanner {
 
         }
 
-        public void onMediaScannerConnected()
-        {
+        public void onMediaScannerConnected() {
             Log.i("MediaScanner", "onMediaScannerConnected(" + MediaScanner.this.filePath + ", " + MediaScanner.this.fileType + ")");
 
             if (MediaScanner.this.filePath != null) {
@@ -58,11 +56,7 @@ public class MediaScanner {
         }
 
         public void onScanCompleted(String path, Uri uri) {
-            // TODO Auto-generated method stub
-            Log.i("MediaScanner", "onScanCompleted(" + path + ", " + uri + ")");
-            Log.i("MediaScanner", "onScanCompleted(" + path + ", " + uri.toString() + ")");
-
-
+            Log.i("MediaScanner", "扫描成功(" + path + ", " + uri.toString() + ")");
             MediaScanner.this.mediaScanConn.disconnect();
         }
     }

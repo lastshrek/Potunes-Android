@@ -15,6 +15,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.design.widget.BottomSheetDialog;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.TypedValue;
@@ -41,6 +42,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.service.PlayerService;
@@ -54,7 +56,7 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
     private Context mContext;
     private String TAG = "TrackItem";
     private PlayerService mPlayerService;
-
+    private CoordinatorLayout coordinatorLayout;
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView cover;
@@ -69,7 +71,6 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
             artist = (TextView) view.findViewById(R.id.track_artist);
             name = (TextView) view.findViewById(R.id.track_title);
             menu = (ImageView) view.findViewById(R.id.track_item_menu);
-
         }
     }
 
@@ -95,7 +96,7 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
                 mPlayerService = main.getPlayerService();
                 if (mPlayerService != null && mTrackList != null) {
                     mPlayerService.tracks = mTrackList;
-                    mPlayerService.play(holder.getAdapterPosition());
+                    mPlayerService.play(holder.getAdapterPosition(), mContext);
                 }
             }
         });
@@ -109,34 +110,39 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
                         .setMenu(R.menu.local_share_menu)
                         .setItemClickListener(new BottomSheetItemClickListener() {
                             Track track = mTrackList.get(position);
-
                             @Override
                             public void onBottomSheetItemClick(MenuItem item) {
-
-                                switch (item.getItemId()) {
-                                    case 0:
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-
-                                            if (Settings.System.canWrite(mContext)) {
-                                                setRingtone(track);
-                                            }
-                                            else {
-                                                Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-                                                intent.setData(Uri.parse("package:" + mContext.getPackageName()));
-                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                mContext.startActivity(intent);
-                                            }
-                                        } else {
-
-                                            setRingtone(track);
+                                String title = item.getTitle().toString();
+                                if (title.equals("设置为铃声")) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                        if (!Settings.System.canWrite(mContext)) {
+                                            Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+                                            intent.setData(Uri.parse("package:" + mContext.getPackageName()));
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            mContext.startActivity(intent);
+                                            return;
                                         }
+                                    }
+                                    setRingtone(track);
+                                    return;
+                                }
 
-                                        break;
-                                    default:
-                                        break;
+                                if (title.equals("删除")) {
+                                    Track track = mTrackList.get(position);
+                                    File file = new File(track.getUrl());
+                                    if (file.exists()) {
+                                        MediaScanner scan = new MediaScanner(mContext);
+                                        scan.scanFile(track.getUrl(), null);
+                                        mTrackList.remove(position);
+                                        notifyDataSetChanged();
+                                        file.delete();
+                                        track.delete();
+                                    }
+                                    return;
                                 }
                             }
                         })
+                        .setItemTextColor(mContext.getResources().getColor(R.color.colorAccent))
                         .createDialog();
                 dialog.setCanceledOnTouchOutside(true);
                 dialog.show();
@@ -146,7 +152,6 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
     }
 
     private void setRingtone(Track track) {
-//
         String ringtoneuri = Environment.getExternalStorageDirectory().getAbsolutePath() + "/media/ringtone";
         File file1 = new File(ringtoneuri);
         file1.mkdirs();

@@ -15,14 +15,20 @@ import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+
+import net.grandcentrix.tray.AppPreferences;
+import net.grandcentrix.tray.TrayPreferences;
 
 import org.litepal.crud.DataSupport;
 
@@ -39,6 +45,8 @@ import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.PlayerActivity;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
+import poche.fm.potunes.utils.NetworkHelper;
+import poche.fm.potunes.utils.SharedPreferencesUtil;
 
 /**
  * Created by purchas on 2017/1/14.
@@ -57,17 +65,42 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private Notification notification;
     private AudioManager mAudioManager;
     private HeadsetPlugReceiver headsetPlugReceiver;
+    private Context mContext;
+    private SharedPreferencesUtil appPreferences;
+
 
     // 服务要发送的一些Action
     public static final String MUSIC_CURRENT = "fm.poche.action.MUSIC_CURRENT";  //当前音乐播放时间更新动作
     public static final String TAG = "PlayerService";
-
-
     public static final int MODE_ORDER = 0;
     public static final int MODE_RANDOM = 1;
     public static final int MODE_REPEAT = 2;
 
+    public static final int NO_NETWORK = -1;
+    public static final int MOBILE = 0;
+    public static final int WIFI = 1;
+
     public static PlayState mPlayState = new PlayState();
+    //创建单个线程池
+    private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
+    private Runnable updateStatusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            while(true){
+                if (mediaPlayer == null) continue;
+                if (!mediaPlayer.isPlaying()) continue;
+                mPlayState.setProgress(getCurrentProgress());
+                Intent intent = new Intent();
+                intent.setAction(MUSIC_CURRENT);
+                sendBroadcast(intent);
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    };
 
     public PlayerService() {
         mediaPlayer = new MediaPlayer();
@@ -84,12 +117,11 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             return PlayerService.this;
         }
     }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         msg = intent.getIntExtra("MSG", 0);
         if (msg == AppConstant.PlayerMsg.PLAY_MSG) {
-            play(0);
+            play(0, mContext);
         } else if (msg == AppConstant.PlayerMsg.PAUSE_MSG) {
             //暂停
             pause();
@@ -107,28 +139,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         }
         return super.onStartCommand(intent, flags, startId);
     }
-
-
-
-    //创建单个线程池
-    private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
-
-    private Runnable updateStatusRunnable = new Runnable() {
-        @Override
-        public void run() {
-            while(true){
-                mPlayState.setProgress(getCurrentProgress());
-                Intent intent = new Intent();
-                intent.setAction(MUSIC_CURRENT);
-                sendBroadcast(intent);
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    };
 
     public int getCurrentProgress(){
         if(mediaPlayer != null ) {
@@ -152,48 +162,96 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         super.onCreate();
         mManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        mContext = getBaseContext();
+        appPreferences = new SharedPreferencesUtil(mContext);
         registerHeadsetPlugReceiver();
     }
 
+    public void checkNetWorkStatus(final String url, final int position) {
+        if (requestFocus()) {
+            int networkType = NetworkHelper.getConnectedType(getBaseContext());
+            switch (networkType) {
+                case WIFI:
+                    startPlay(url, position);
+                break;
+                case MOBILE:
+                    boolean allow_mobile = appPreferences.getBoolean("allow_mobile", false);
+                    if (!allow_mobile) {
+                        stop();
+                        // 需要用户确认
+                        MaterialDialog dialog = new MaterialDialog.Builder(mContext)
+                                .title("温馨提示")
+                                .content("您当前处于移动网络中，是否允许继续播放")
+                                .positiveText("继续播放")
+                                .negativeText("暂停播放")
+                                .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                    @Override
+                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                        startPlay(url, position);
+                                        appPreferences.put("allow_mobile", true);
+                                    }
+                                })
+                                .onNegative(new MaterialDialog.SingleButtonCallback() {
+                                    @Override
+                                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                        dialog.hide();
+                                        dialog.dismiss();
+                                        appPreferences.put("allow_mobile", false);
+                                    }
+                                })
+                                .show();
+                    } else {
+                        startPlay(url, position);
+                    }
+                    break;
+                default:
+                    startPlay(url, position);
+                break;
+            }
+        }
+    }
     /**
      * 播放音乐
      */
-    public void play(final int position) {
-        if (requestFocus()) {
-            Track track = tracks.get(position);
-            String url;
-            List<Track> tracks = DataSupport.select("url").where("artist = ? and name = ? and isDownloaded = ?", track.getArtist(), track.getTitle(), "1").find(Track.class);
-            if (tracks.size() > 0) {
-                url = tracks.get(0).getUrl();
-            } else {
-                url = track.getUrl();
-            }
-            try {
-                mediaPlayer.reset();
-                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                mediaPlayer.setDataSource(url);
-                mediaPlayer.prepareAsync();
-                mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-                    @Override
-                    public void onBufferingUpdate(MediaPlayer mp, int percent) {
-                        Log.d(TAG, "onBufferingUpdate: " + percent);
-                    }
-                });
-                mPlayState.setCurrentPosition(position);
-                mPlayState.setPlaying(true);
+    public void play(final int position , Context context) {
+        mContext = context;
+        Track track = tracks.get(position);
+        String url;
+        List<Track> tracks = DataSupport.select("url").where("artist = ? and name = ? and isDownloaded = ?", track.getArtist(), track.getTitle(), "1").find(Track.class);
+        if (tracks.size() > 0) {
+            url = tracks.get(0).getUrl();
+            startPlay(url, position);
+        } else {
+            url = track.getUrl();
+            checkNetWorkStatus(url, position);
+        }
+    }
 
-                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                    @Override
-                    public void onPrepared(MediaPlayer mp) {
-                        mPlayState.setDuration(mediaPlayer.getDuration());
-                        mediaPlayer.start();
-                        getNotification();
-                    }
-                });
+    private void startPlay(String url, int position) {
+        try {
+            if (mediaPlayer.isPlaying()) mediaPlayer.pause();
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(url);
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+                @Override
+                public void onBufferingUpdate(MediaPlayer mp, int percent) {
+                    Log.d(TAG, "onBufferingUpdate: " + percent);
+                }
+            });
+            mPlayState.setCurrentPosition(position);
+            mPlayState.setPlaying(true);
+            mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    mPlayState.setDuration(mediaPlayer.getDuration());
+                    mediaPlayer.start();
+                    getNotification();
+                }
+            });
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
     public void pause() {
@@ -219,7 +277,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             currentPosition--;
         }
         mPlayState.setCurrentPosition(currentPosition);
-        play(currentPosition);
+        play(currentPosition, mContext);
     }
     public void next() {
         int currentPosition = mPlayState.getCurrentPosition();
@@ -242,7 +300,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
             }
 
             mPlayState.setCurrentPosition(currentPosition);
-            play(currentPosition);
+            play(currentPosition, mContext);
         }
     }
     public void stop() {
@@ -258,7 +316,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
         // All clients have unbound with unbindService()
         if(mediaPlayer != null) {
             mediaPlayer.stop();
-            mediaPlayer.release();
+            mediaPlayer = null;
         }
 
         if (mExecutorService != null && !mExecutorService.isShutdown()) {
@@ -347,7 +405,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                             .setWhen(System.currentTimeMillis())
                             .setOngoing(true)
                             .setContentIntent(pi)
-                            .setSmallIcon(R.drawable.actionbar_discover_selected);
+                            .setSmallIcon(R.drawable.ic_notification);
                     notification = mBuilder.build();
                     mManager.notify(1, notification);
                 }
@@ -406,7 +464,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     }
     // 耳机插拔
     public class HeadsetPlugReceiver extends BroadcastReceiver {
-        private static final String TAG = "HeadsetPlugReceiver";
         @Override
         public void onReceive(Context context, Intent intent) {
             if (mediaPlayer == null) return;

@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
@@ -17,6 +18,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.lzy.okserver.download.DownloadManager;
@@ -34,12 +37,16 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.adapter.TrackAdapter;
 import poche.fm.potunes.domain.AppConstant;
+import poche.fm.potunes.utils.NetworkHelper;
+import poche.fm.potunes.utils.SharedPreferencesUtil;
 
 /**
  * A fragment representing a list of Items.
@@ -62,6 +69,13 @@ public class TrackListFragment extends Fragment {
     private IconButton downloadAll;
     private DownloadManager downloadManager;
     private SwipeRefreshLayout swipeRefresh;
+    private Context mContext;
+
+    private SharedPreferencesUtil appPreferences;
+
+    public static final int NO_NETWORK = -1;
+    public static final int MOBILE = 0;
+    public static final int WIFI = 1;
 
     private String json;
 
@@ -91,6 +105,8 @@ public class TrackListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mContext = getContext();
+        appPreferences = new SharedPreferencesUtil(mContext);
     }
 
 
@@ -115,12 +131,8 @@ public class TrackListFragment extends Fragment {
                     Toast.makeText(getContext(), "还没有歌曲, 别着急", Toast.LENGTH_SHORT).show();
                     return;
                 }
-
                 Toast.makeText(getContext(), "开始下载", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent();
-                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
-                intent.setPackage(getActivity().getPackageName());
+
                 //将json存到本地
                 SharedPreferences preference = getActivity().getSharedPreferences("user", Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = preference.edit();
@@ -128,13 +140,16 @@ public class TrackListFragment extends Fragment {
                 MainActivity main = (MainActivity) getActivity();
                 editor.putString("album", main.mToolbarTitle.getText().toString());
                 editor.apply();
-                getContext().startService(intent);
+
+                Intent intent = new Intent();
+                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                intent.putExtra("MSG", AppConstant.DownloadMsg.ALBUM);
+                intent.setPackage(getActivity().getPackageName());
+                getActivity().startService(intent);
+
+                checkNetWorkStatus();
             }
         });
-
-        downloadManager = DownloadService.getDownloadManager();
-        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music/");
-        downloadManager.getThreadPool().setCorePoolSize(1);
 
         initTracks(playlist.getPlaylist_id());
 
@@ -144,6 +159,61 @@ public class TrackListFragment extends Fragment {
         return view;
     }
 
+
+    public void checkNetWorkStatus() {
+        int networkType = NetworkHelper.getConnectedType(mContext);
+        switch (networkType) {
+            case WIFI:
+                Intent intent = new Intent();
+                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                intent.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
+                intent.setPackage(getActivity().getPackageName());
+                getActivity().startService(intent);
+                appPreferences.put("allow_mobile_download", true);
+                break;
+            case MOBILE:
+                boolean allow_mobile = appPreferences.getBoolean("allow_mobile_download", false);
+                if (!allow_mobile) {
+                    // 需要用户确认
+                    MaterialDialog dialog = new MaterialDialog.Builder(mContext)
+                            .title("温馨提示")
+                            .content("您当前处于移动网络中，是否允许继续下载")
+                            .positiveText("继续下载")
+                            .negativeText("暂停下载")
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    Intent intent = new Intent();
+                                    intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                                    intent.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
+                                    intent.setPackage(getActivity().getPackageName());
+                                    getContext().startService(intent);
+                                    appPreferences.put("allow_mobile_download", true);
+
+                                }
+                            })
+                            .onNegative(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    dialog.hide();
+                                    dialog.dismiss();
+                                    appPreferences.put("allow_mobile_download", false);
+                                }
+                            })
+                            .show();
+                } else {
+                    Intent resume = new Intent();
+                    resume.setAction("fm.poche.media.DOWNLOAD_SERVICE");
+                    resume.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
+                    resume.setPackage(getActivity().getPackageName());
+                    getContext().startService(resume);
+
+                }
+                break;
+            default:
+                break;
+        }
+    }
     public void initTracks(final int playlist_id) {
         tracks.clear();
         new Thread(new Runnable() {
@@ -226,8 +296,14 @@ public class TrackListFragment extends Fragment {
 
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(MessageEvent event) {
-        Log.d(TAG, "onMessageEvent: ");
         playlist = event.playlist;
+    }
+
+    @Subscribe(threadMode = ThreadMode.POSTING)
+    public void onMessageEvent(LocalTracksEvent event) {
+        if (event.local.equals("single_down")) {
+            checkNetWorkStatus();
+        }
     }
 
     @Override

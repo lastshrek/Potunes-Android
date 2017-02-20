@@ -53,6 +53,7 @@ import com.mikepenz.materialdrawer.model.interfaces.IProfile;
 import com.mikepenz.materialdrawer.model.interfaces.Nameable;
 
 import poche.fm.potunes.fragment.LocalDownloadAlbumFragment;
+import poche.fm.potunes.utils.SharedPreferencesUtil;
 import poche.fm.potunes.utils.UpdateUtil;
 
 
@@ -64,6 +65,7 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     private boolean mToolbarInitialized;
     private Drawer result = null;
     private ActionBarDrawerToggle mDrawerToggle;
+    private SharedPreferencesUtil appPreferences;
 
     private final FragmentManager.OnBackStackChangedListener mBackStackChangedListener =
         new FragmentManager.OnBackStackChangedListener() {
@@ -76,16 +78,30 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     private OnCheckedChangeListener onCheckedChangeListener = new OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(IDrawerItem drawerItem, CompoundButton buttonView, boolean isChecked) {
-            if (drawerItem instanceof Nameable) {
-                Toast.makeText(getApplicationContext(), R.string.not_available, Toast.LENGTH_SHORT).show();
-            } else {
-                Log.i("material-drawer", "toggleChecked: " + isChecked);
+            int identifier = (int)drawerItem.getIdentifier();
+            switch (identifier) {
+                case 2:
+                    //切换网络
+                    boolean allow_mobile = appPreferences.getBoolean("allow_mobile", false);
+                    appPreferences.put("allow_mobile", !allow_mobile);
+                    break;
+                case 3:
+                    //切换网络下载
+                    boolean allow_mobile_download = appPreferences.getBoolean("allow_mobile_download", false);
+                    appPreferences.put("allow_mobile_download", !allow_mobile_download);
+                    break;
+                case 4:
+                    Toast.makeText(getApplicationContext(), R.string.not_available, Toast.LENGTH_SHORT).show();
+                    break;
+                    //切换锁屏
+
             }
         }
     };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        appPreferences = new SharedPreferencesUtil(getBaseContext());
         super.onCreate(savedInstanceState);
     }
 
@@ -101,9 +117,6 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     @Override
     public void onResume() {
         super.onResume();
-        // Whenever the fragment back stack changes, we may need to update the
-        // action bar toggle: only top level screens show the hamburger-like icon, inner
-        // screens - either Activities or fragments - show the "Up" icon instead.
         getSupportFragmentManager().addOnBackStackChangedListener(mBackStackChangedListener);
     }
 
@@ -170,10 +183,12 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
     }
 
     protected void createDrawer() {
-        PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName(R.string.drawer_item_home);
-        SwitchDrawerItem item2 = new SwitchDrawerItem().withIdentifier(2).withChecked(true).withName(R.string.drawer_item_mobile_play).withOnCheckedChangeListener(onCheckedChangeListener);
-        SwitchDrawerItem item3 = new SwitchDrawerItem().withIdentifier(3).withChecked(true).withName(R.string.drawer_item_mobile_download).withOnCheckedChangeListener(onCheckedChangeListener);
-        SwitchDrawerItem item4 = new SwitchDrawerItem().withIdentifier(4).withChecked(true).withName(R.string.drawer_item_lock_screen).withOnCheckedChangeListener(onCheckedChangeListener);
+        final PrimaryDrawerItem item1 = new PrimaryDrawerItem().withIdentifier(1).withName(R.string.drawer_item_home);
+        boolean allow_mobile = appPreferences.getBoolean("allow_mobile", false);
+        boolean allow_mobile_download = appPreferences.getBoolean("allow_mobile_download", false);
+        final SwitchDrawerItem item2 = new SwitchDrawerItem().withIdentifier(2).withChecked(allow_mobile).withName(R.string.drawer_item_mobile_play).withOnCheckedChangeListener(onCheckedChangeListener);
+        final SwitchDrawerItem item3 = new SwitchDrawerItem().withIdentifier(3).withChecked(allow_mobile_download).withName(R.string.drawer_item_mobile_download).withOnCheckedChangeListener(onCheckedChangeListener);
+        final SwitchDrawerItem item4 = new SwitchDrawerItem().withIdentifier(4).withChecked(true).withName(R.string.drawer_item_lock_screen).withOnCheckedChangeListener(onCheckedChangeListener);
         PrimaryDrawerItem item5= new PrimaryDrawerItem().withIdentifier(5).withName(R.string.drawer_item_check_update);
 
         AccountHeader headerResult = new AccountHeaderBuilder()
@@ -202,6 +217,25 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                         item4,
                         item5
                 )
+                .withOnDrawerListener(new Drawer.OnDrawerListener() {
+                    @Override
+                    public void onDrawerOpened(View drawerView) {
+                        boolean allow_mobile = appPreferences.getBoolean("allow_mobile", false);
+                        boolean allow_mobile_download = appPreferences.getBoolean("allow_mobile_download", false);
+                        item2.withChecked(allow_mobile);
+                        item3.withChecked(allow_mobile_download);
+                        result.updateItem(item2);
+                        result.updateItem(item3);
+                        result.updateItem(item4);
+                    }
+                    @Override
+                    public void onDrawerClosed(View drawerView) {
+                    }
+
+                    @Override
+                    public void onDrawerSlide(View drawerView, float slideOffset) {
+                    }
+                })
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
@@ -217,6 +251,19 @@ public abstract class ActionBarCastActivity extends AppCompatActivity {
                                 Toast.makeText(getApplicationContext(), R.string.check_update, Toast.LENGTH_LONG).show();
                                 UpdateUtil update = new UpdateUtil(ActionBarCastActivity.this);
                                 update.checkUpdate(false);
+                                break;
+                            case 3:
+                                //移动网络播放
+                                boolean allow_mobile = appPreferences.getBoolean("allow_mobile", false);
+                                appPreferences.put("allow_mobile", !allow_mobile);
+                                break;
+                            case 4:
+                                //移动网络下载
+                                boolean allow_mobile_download = appPreferences.getBoolean("allow_mobile_download", false);
+                                appPreferences.put("allow_mobile_download", !allow_mobile_download);
+                                break;
+                            case 5:
+                                // 默认锁屏
                                 break;
                             default:
                                 Toast.makeText(getApplicationContext(), R.string.not_available, Toast.LENGTH_SHORT).show();
