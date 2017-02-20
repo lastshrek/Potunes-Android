@@ -63,7 +63,7 @@ public class LocalDownloadAlbumFragment extends Fragment {
         ArrayList<Track> tracks = new ArrayList<>();
         for (Track track: list) {
             if (track.getIsDownloaded() == 0) continue;
-            Log.d(TAG, "initTracks: " + track.getIsDownloaded());
+            Log.d(TAG, "initTracks: " + track.getUrl());
             tracks.add(track);
         }
         RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.local_tracks_recycler_view);

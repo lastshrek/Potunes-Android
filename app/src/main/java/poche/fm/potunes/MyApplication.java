@@ -1,13 +1,14 @@
 package poche.fm.potunes;
 
 import android.app.Application;
+import android.content.Intent;
 
-import com.liulishuo.filedownloader.FileDownloader;
+
 import com.lzy.okgo.OkGo;
-import com.lzy.okserver.download.DownloadManager;
 import com.umeng.analytics.MobclickAgent;
+import com.zhuiji7.filedownloader.download.DownLoadService;
 
-import javax.net.ssl.HostnameVerifier;
+
 
 import cn.jpush.android.api.JPushInterface;
 
@@ -21,12 +22,11 @@ public class MyApplication extends Application {
     public void onCreate() {
 
         super.onCreate();
-
         OkGo.init(this);
         JPushInterface.setDebugMode(true);
         JPushInterface.init(this);
         MobclickAgent.startWithConfigure(new MobclickAgent.UMAnalyticsConfig(this, "58a412462ae85b1cf700184f", "poche.fm"));
         MobclickAgent.setDebugMode( true );
-        FileDownloader.init(getApplicationContext());
+        this.startService(new Intent(this, DownLoadService.class));
     }
 }

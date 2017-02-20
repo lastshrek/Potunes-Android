@@ -71,6 +71,5 @@ dependencies {
     compile 'com.afollestad.material-dialogs:core:0.9.3.0'
     compile 'net.grandcentrix.tray:tray:0.11.1'
     compile 'com.sdsmdg.tastytoast:tastytoast:0.1.1'
-    compile 'com.liulishuo.filedownloader:library:1.4.1'
     testCompile 'junit:junit:4.12'
 }

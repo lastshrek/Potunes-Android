@@ -150,6 +150,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
     @Override
     public void onCompletion(MediaPlayer mp) {
+        if (mediaPlayer == null) return;
         //播放完成时进行下一曲
         if (!mediaPlayer.isLooping()) {
             mAudioManager.abandonAudioFocus(audioFocusChangeListener);

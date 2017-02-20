@@ -19,6 +19,11 @@ import com.lzy.okgo.request.GetRequest;
 import com.lzy.okserver.download.DownloadInfo;
 import com.lzy.okserver.download.DownloadManager;
 import com.lzy.okserver.listener.DownloadListener;
+import com.sdsmdg.tastytoast.TastyToast;
+import com.zhuiji7.filedownloader.download.DownLoadListener;
+import com.zhuiji7.filedownloader.download.DownLoadManager;
+import com.zhuiji7.filedownloader.download.DownLoadService;
+import com.zhuiji7.filedownloader.download.dbcontrol.bean.SQLDownLoadInfo;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -37,16 +42,12 @@ import poche.fm.potunes.Model.Track;
 public class DownloadService extends Service {
     
     private String TAG = "DownloadService";
-    public DownloadManager downloadManager;
-    private DownloadListener downloadListener;
     private MediaScanner mediaScanner;
     private Context mContext;
     private int msg;
-    private ArrayList<Track> tracks = new ArrayList<>();
 
-    private FileDownloader fileDownloader;
-    private FileDownloadListener targetListener;
-    final FileDownloadSerialQueue queue = new FileDownloadSerialQueue();
+    private DownLoadManager manager;
+    private DownLoadListener downloadListener;
     private String targetFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/";
 
     public DownloadService() {
@@ -59,88 +60,48 @@ public class DownloadService extends Service {
         mContext = getBaseContext();
         mediaScanner = new MediaScanner(mContext);
         LitePal.initialize(mContext);
-        fileDownloader = FileDownloader.getImpl();
-        downloadListener = new DownloadListener() {
+
+        manager = DownLoadService.getDownLoadManager();
+
+        downloadListener = new DownLoadListener() {
             @Override
-            public void onProgress(DownloadInfo downloadInfo) {
-//                Log.d(TAG, "onProgress: " + downloadManager.getTargetFolder());
+            public void onStart(SQLDownLoadInfo sqlDownLoadInfo) {
+
             }
 
             @Override
-            public void onFinish(DownloadInfo downloadInfo) {
-                Track track = (Track) downloadInfo.getData();
-                if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
-                    downloadManager.removeTask(track.getUrl(), false);
-                }
-                // 重命名文件
-                String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
-                downloadTitle = downloadTitle.replace("/", " ");
-                // 将数据库的已下载修改状态
-                track.setIsDownloaded(1);
-                track.setUrl(downloadManager.getTargetFolder() + downloadTitle);
-                track.save();
+            public void onProgress(SQLDownLoadInfo sqlDownLoadInfo, boolean isSupportBreakpoint) {
 
-
-                // rename
-                File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
-                File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
-                old.renameTo(rename);
-
-                mediaScanner.scanFile(downloadManager.getTargetFolder() + downloadTitle, null);
-                if (downloadManager.getAllTask().size() == 0) {
-                    Toast.makeText(getBaseContext(), "全部歌曲下载完毕", Toast.LENGTH_SHORT).show();
-                }
             }
 
             @Override
-            public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
-                Track track = (Track) downloadInfo.getData();
-                if (errorMsg != null) Toast.makeText(getBaseContext(), track.getTitle() + "下载失败，尝试重新下载", Toast.LENGTH_SHORT).show();
+            public void onStop(SQLDownLoadInfo sqlDownLoadInfo, boolean isSupportBreakpoint) {
+
+            }
+
+            @Override
+            public void onError(SQLDownLoadInfo sqlDownLoadInfo) {
+
+            }
+
+            @Override
+            public void onSuccess(SQLDownLoadInfo sqlDownLoadInfo) {
+
             }
         };
 
-        targetListener = new FileDownloadListener() {
-            @Override
-            protected void pending(BaseDownloadTask task, int soFarBytes, int totalBytes) {
-            }
 
-            @Override
-            protected void connected(BaseDownloadTask task, String etag, boolean isContinue, int soFarBytes, int totalBytes) {
-            }
 
-            @Override
-            protected void progress(BaseDownloadTask task, int soFarBytes, int totalBytes) {
-                Log.d(TAG, "progress: " + task.getTargetFilePath());
-            }
 
-            @Override
-            protected void blockComplete(BaseDownloadTask task) {
-            }
+//                Track track = (Track) task.getTag();
+//                track.setIsDownloaded(1);
+//                track.setUrl(task.getTargetFilePath());
+//                track.save();
+//
+//
+//
+//                mediaScanner.scanFile(task.getTargetFilePath(), null);
 
-            @Override
-            protected void retry(final BaseDownloadTask task, final Throwable ex, final int retryingTimes, final int soFarBytes) {
-            }
-
-            @Override
-            protected void completed(BaseDownloadTask task) {
-            }
-
-            @Override
-            protected void paused(BaseDownloadTask task, int soFarBytes, int totalBytes) {
-            }
-
-            @Override
-            protected void error(BaseDownloadTask task, Throwable e) {
-            }
-
-            @Override
-            protected void warn(BaseDownloadTask task) {
-            }
-        };
-        // 设置DownloadManager
-        downloadManager = com.lzy.okserver.download.DownloadService.getDownloadManager();
-        downloadManager.setTargetFolder(targetFolder);
-        downloadManager.getThreadPool().setCorePoolSize(1);
 
 
 
@@ -158,42 +119,37 @@ public class DownloadService extends Service {
                 Track track = (Track) intent.getSerializableExtra("track");
 //                checkFiles(track);
 //                downloadManager.stopAllTask();
+                manager.addTask(track.getUrl(), track.getUrl(), ddd);
 
-                String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
-                downloadTitle = downloadTitle.replace("/", " ");
-                BaseDownloadTask baseDownloadTask = fileDownloader.create(track.getUrl())
-                        .setTag(track.getUrl())
-                        .setListener(targetListener)
-                        .setPath(targetFolder + downloadTitle, false);
-                queue.enqueue(baseDownloadTask);
+                enqueueTrack(track);
+
                 break;
             case 2:
                 //获取本地Tracks数据
                 String json = preferences.getString("Tracks", "Tracks");
                 String album = preferences.getString("album", "album");
                 Gson gson = new Gson();
-                tracks.clear();
                 //获取专辑名称
                 ArrayList<Track> datas = gson.fromJson(json, new TypeToken<List<Track>>(){}.getType());
                 for (Track mTrack : datas) {
                     mTrack.setAlbum(album);
-                    checkFiles(mTrack);
+                    enqueueTrack(mTrack);
                 }
-                downloadManager.stopAllTask();
                 break;
             case 3:
-                downloadManager.pauseAllTask();
+                manager.stopAllTask();
                 break;
             case 4:
-                downloadManager.startAllTask();
+                manager.startAllTask();
                 break;
             case 5:
-                downloadManager.pauseAllTask();
-                downloadManager.removeAllTask();
+                manager.stopAllTask();
+                manager.c.clearAllTaskData();
                 break;
             case 6:
                 String tag = intent.getStringExtra("URL");
-                downloadManager.restartTask(tag);
+                //restart download
+//                downloadManager.restartTask(tag);
                 break;
             case 7:
                 String fileName = intent.getStringExtra("SCAN");
@@ -201,6 +157,27 @@ public class DownloadService extends Service {
         }
 
         return super.onStartCommand(intent,flags, startId);
+    }
+    private void enqueueTrack(Track track) {
+        String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
+        downloadTitle = downloadTitle.replace("/", " ");
+
+        List<Track> results = DataSupport.where("url = ?", targetFolder + downloadTitle).find(Track.class);
+        if (!results.isEmpty()) {
+            TastyToast.makeText(mContext, "该文件已经下载过啦", TastyToast.LENGTH_SHORT, TastyToast.WARNING);
+            return;
+        }
+
+        BaseDownloadTask.InQueueTask baseDownloadTask = fileDownloader.create(track.getUrl())
+                .setTag(track)
+                .setListener(targetListener)
+                .setPath(targetFolder + downloadTitle, false)
+                .setForceReDownload(true)
+                .asInQueueTask();
+
+
+
+        queue.enqueue(baseDownloadTask);
     }
 
 
@@ -211,18 +188,16 @@ public class DownloadService extends Service {
     public void onMessageEvent(LocalTracksEvent event) {
         Log.d(TAG, "onMessageEvent: ==========");
         if (event.local.equals("resume")) {
-            downloadManager.startAllTask();
-            DownloadInfo downloadInfo = downloadManager.getAllTask().get(0);
-            Log.d(TAG, "onMessageEvent: " + downloadInfo.getState());
+
         }
     }
     private void checkFiles(Track track) {
-        if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
-            Toast.makeText(mContext, track.getTitle() + " downloaded", Toast.LENGTH_SHORT).show();
-        } else {
-            GetRequest request = OkGo.get(track.getUrl());
-            downloadManager.addTask(track.getUrl(), track, request, downloadListener);
-        }
+//        if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
+//            Toast.makeText(mContext, track.getTitle() + " downloaded", Toast.LENGTH_SHORT).show();
+//        } else {
+//            GetRequest request = OkGo.get(track.getUrl());
+//            downloadManager.addTask(track.getUrl(), track, request, downloadListener);
+//        }
     }
     private boolean queryFromDB(int trackID) {
         List<Track> results = DataSupport.where("track_id = ?" , "" + trackID).find(Track.class);
