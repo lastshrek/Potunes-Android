@@ -53,7 +53,7 @@ public class DownloadService extends Service implements ExecutorWithListener.OnA
         downloadListener = new DownloadListener() {
             @Override
             public void onProgress(DownloadInfo downloadInfo) {
-
+                Log.d(TAG, "onProgress: " + downloadManager.getTargetFolder());
             }
 
             @Override
