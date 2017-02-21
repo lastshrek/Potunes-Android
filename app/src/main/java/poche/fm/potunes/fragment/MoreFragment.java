@@ -26,6 +26,7 @@ import android.widget.Toast;
 import com.github.rubensousa.bottomsheetbuilder.BottomSheetBuilder;
 import com.github.rubensousa.bottomsheetbuilder.adapter.BottomSheetItemClickListener;
 import com.lzy.okserver.download.DownloadManager;
+import com.sdsmdg.tastytoast.TastyToast;
 import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
 import com.tencent.mm.opensdk.modelmsg.WXMediaMessage;
 import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
@@ -44,8 +45,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
-import poche.fm.potunes.MainActivity;
-import poche.fm.potunes.Model.LocalAlbumMessageEvent;
+import poche.fm.potunes.Model.DownloadSingleMessage;
 import poche.fm.potunes.Model.LocalTracksEvent;
 import poche.fm.potunes.adapter.MusicFlowAdapter;
 import poche.fm.potunes.Model.OverFlowItem;
@@ -53,7 +53,6 @@ import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
 import poche.fm.potunes.handler.HandlerUtil;
-import poche.fm.potunes.service.DownloadService;
 
 public class MoreFragment extends DialogFragment {
 
@@ -180,13 +179,10 @@ public class MoreFragment extends DialogFragment {
                 switch (Integer.parseInt(data)) {
                     case 0:
                         // 数据库存储
-                        Intent startIntent = new Intent(mContext, DownloadService.class);
-                        startIntent.putExtra("MSG", AppConstant.DownloadMsg.SINGLE);
-                        startIntent.putExtra("track", adapterMusicInfo);
-                        mContext.startService(startIntent);
-                        Toast.makeText(mContext, "开始下载", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(mContext, "开始下载", Toast.LENGTH_SHORT).show();
+                        TastyToast.makeText(mContext, "开始下载", TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
+                        EventBus.getDefault().post(new DownloadSingleMessage(adapterMusicInfo));
 
-                        EventBus.getDefault().post(new LocalTracksEvent("single_down"));
                         dismiss();
                         break;
                     case 1:

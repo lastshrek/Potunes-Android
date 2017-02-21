@@ -443,7 +443,6 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                 // Pause playback
                 pause();
             } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-                Log.d(TAG, "onAudioFocusChange: " + focusChange);
                 // Resume playback
                 resume();
             } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {

@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -25,11 +24,20 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.lzy.okgo.OkGo;
+import com.lzy.okgo.request.GetRequest;
+import com.lzy.okserver.download.DownloadInfo;
+import com.lzy.okserver.download.DownloadManager;
+import com.lzy.okserver.download.DownloadService;
+import com.lzy.okserver.listener.DownloadListener;
+import com.sdsmdg.tastytoast.TastyToast;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.umeng.analytics.MobclickAgent;
 
@@ -39,11 +47,16 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 import org.litepal.crud.DataSupport;
 
+import java.io.File;
 import java.util.List;
 
 import cn.jpush.android.api.JPushInterface;
+import poche.fm.potunes.Model.DownloadAlbumMessage;
+import poche.fm.potunes.Model.DownloadCompleteMessage;
+import poche.fm.potunes.Model.DownloadSingleMessage;
 import poche.fm.potunes.Model.LocalAlbumMessageEvent;
 import poche.fm.potunes.Model.LocalTracksEvent;
+import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.MessageEvent;
 import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.Track;
@@ -55,10 +68,11 @@ import poche.fm.potunes.fragment.MyMusicFragment;
 import poche.fm.potunes.adapter.PlaylistAdapter;
 import poche.fm.potunes.fragment.PlaylistFragment;
 import poche.fm.potunes.fragment.TrackListFragment;
-import poche.fm.potunes.service.DownloadService;
 import poche.fm.potunes.service.LockScreenService;
 import poche.fm.potunes.service.PlayerService;
 import poche.fm.potunes.utils.ExampleUtil;
+import poche.fm.potunes.utils.NetworkHelper;
+import poche.fm.potunes.utils.SharedPreferencesUtil;
 import poche.fm.potunes.utils.UpdateUtil;
 
 public class MainActivity extends BaseActivity implements PlaylistFragment.OnListFragmentInteractionListener,
@@ -91,11 +105,14 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     private static final String APP_ID = "wx0fc8d0673ec86694";
     private static final String FRAGMENT_TAG = "playlist_fragment";
     private String TAG = "MainActivity";
-    private SQLiteDatabase db;
     private IWXAPI api;
     public Playlist playlist;
     public String mLocalAlbum;
     public static boolean isForeground = false;
+
+    public static final int NO_NETWORK = -1;
+    public static final int MOBILE = 0;
+    public static final int WIFI = 1;
 
 
     private PlayerService playerService;
@@ -103,6 +120,10 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         return playerService;
     }
     public Fragment currentFragment;
+    DownloadManager downloadManager;
+    DownloadListener downloadListener;
+    MediaScanner mediaScanner;
+    private SharedPreferencesUtil appPreferences;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -132,6 +153,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             }
         });
 
+        // 初始化首页
         PlaylistFragment mPlaylistFragment = getPlaylistFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         if (mPlaylistFragment == null) {
@@ -140,7 +162,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             transaction.replace(R.id.container, mPlaylistFragment, FRAGMENT_TAG);
             transaction.commit();
         }
-        init();
 
         //绑定服务
         bindService(new Intent(this, PlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
@@ -148,16 +169,40 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         Intent intent = new Intent();
         intent.setClass(MainActivity.this, LockScreenService.class);
         startService(intent);
+
         Fresco.initialize(MainActivity.this);
         // initial database
         LitePal.initialize(MainActivity.this);
-        db = LitePal.getDatabase();
         EventBus.getDefault().register(this);
+        appPreferences = new SharedPreferencesUtil(this);
 
+        //初始化下载器
+        downloadManager = DownloadManager.getInstance();
+        downloadListener = new DownloadListener() {
+            @Override
+            public void onProgress(DownloadInfo downloadInfo) {
+                Log.d(TAG, "onProgress: " + downloadInfo.getProgress());
+            }
+
+            @Override
+            public void onFinish(DownloadInfo downloadInfo) {
+                onMessageEvent(new DownloadCompleteMessage(downloadInfo));
+            }
+
+            @Override
+            public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
+
+            }
+        };
+        mediaScanner = new MediaScanner(this);
+
+
+        // 推送
+        init();
         registerMessageReceiver();  // used for receive msg
 
+        // 获取读写磁盘权限
         int permissionCheck = ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.READ_EXTERNAL_STORAGE);
-
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             final int REQUEST_EXTERNAL_STORAGE = 1;
             ActivityCompat.requestPermissions(
@@ -171,20 +216,12 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
-
-
-        List<Track> all = DataSupport.findAll(Track.class);
-        Log.d(TAG, "共有" + all.size());
-        List<Track> tracks = DataSupport.where("isDownloaded = ?", "0").find(Track.class);
-        Log.d(TAG, "伪数据" + tracks.size());
-
-        for (Track result: tracks) {
-            Log.d(TAG, "onCreate: " + result.getIsDownloaded());
-            Log.d(TAG, "onCreate: "+ result.getUrl());
-        }
     }
 
 
+
+
+    // 极光推送
     public void registerMessageReceiver() {
         mMessageReceiver = new MessageReceiver();
         IntentFilter filter = new IntentFilter();
@@ -192,7 +229,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         filter.addAction(MESSAGE_RECEIVED_ACTION);
         registerReceiver(mMessageReceiver, filter);
     }
-
     public class MessageReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -208,26 +244,16 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             }
         }
     }
-
     private void setCostomMsg(String msg){
         Log.d(TAG, "setCostomMsg: " + msg);
     }
-
     // 初始化 JPush。如果已经初始化，但没有登录成功，则执行重新登录。
     private void init(){
         JPushInterface.init(getApplicationContext());
     }
-    @Override
-    public void onDestroy() {
-        EventBus.getDefault().unregister(this);
-        unbindService(serviceConnection);
-        unregisterReceiver(mMessageReceiver);
-        MobclickAgent.onKillProcess(this);
-        // 程序结束时销毁状态栏
-        NotificationManager manager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        manager.cancel(1);
-        super.onDestroy();
-    }
+
+
+    // EventBus通知
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(MessageEvent event) {
         if (event.playlist != null) {
@@ -245,9 +271,8 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
     }
     @Subscribe(threadMode = ThreadMode.POSTING)
     public void onMessageEvent(LocalTracksEvent event) {
-        Log.d(TAG, "onMessageEvent: " + event.local);
-
         if (event.local.equals("local")) return;
+        // 跳转至本地音乐
         if (event.local.equals("localtracks")) {
             LocalTracksFragment mLocalTracksFragment = LocalTracksFragment.newInstance();
             switchFragment(currentFragment, mLocalTracksFragment);
@@ -255,15 +280,109 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
             return;
         }
 
+        //
         if (event.local.equals("downloading")) {
-
             DownloadingFragment mDownloadingFragment = DownloadingFragment.newInstance();
             switchFragment(currentFragment, mDownloadingFragment);
 //            setTitle("正在下载");
         }
 
     }
+    @Subscribe
+    public void onMessageEvent(DownloadAlbumMessage event) {
+        for (Track track: event.tracks) {
+            checkFiles(track);
+        }
+        checkNetWorkStatus();
+    }
+    @Subscribe
+    public void onMessageEvent(DownloadSingleMessage event) {
+        checkFiles(event.track);
+        checkNetWorkStatus();
+    }
+    @Subscribe
+    public void onMessageEvent(DownloadCompleteMessage event) {
+        Track track = (Track) event.info.getData();
+        if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
+            downloadManager.removeTask(track.getUrl(), false);
+        }
+        // 重命名文件
+        String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
+        downloadTitle = downloadTitle.replace("/", " ");
+        // 将数据库的已下载修改状态
+        track.setIsDownloaded(1);
+        track.setUrl(downloadManager.getTargetFolder() + downloadTitle);
+        track.save();
 
+        // rename
+        File old = new File(downloadManager.getTargetFolder(), event.info.getFileName());
+        File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
+        old.renameTo(rename);
+
+        mediaScanner.scanFile(downloadManager.getTargetFolder() + downloadTitle, null);
+        if (downloadManager.getAllTask().size() == 0) {
+            Toast.makeText(getBaseContext(), "全部歌曲下载完毕", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void checkNetWorkStatus() {
+        int networkType = NetworkHelper.getConnectedType(this);
+        switch (networkType) {
+            case MOBILE:
+                boolean allow_mobile = appPreferences.getBoolean("allow_mobile_download", false);
+                if (!allow_mobile) {
+                    downloadManager.pauseAllTask();
+                    DownloadManager.getInstance().pauseAllTask();
+                    // 需要用户确认
+                    MaterialDialog dialog = new MaterialDialog.Builder(this)
+                            .title("温馨提示")
+                            .content("您当前处于移动网络中，是否允许继续下载")
+                            .positiveText("继续下载")
+                            .negativeText("暂停下载")
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    downloadManager.startAllTask();
+                                    appPreferences.put("allow_mobile_download", true);
+
+                                }
+                            })
+                            .onNegative(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    dialog.hide();
+                                    dialog.dismiss();
+                                    appPreferences.put("allow_mobile_download", false);
+                                }
+                            })
+                            .show();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+
+    private void checkFiles(Track track) {
+        if (downloadManager.getDownloadInfo(track.getUrl()) != null || queryFromDB(track.getID())) {
+            TastyToast.makeText(this, track.getTitle() + " downloaded", TastyToast.LENGTH_SHORT, TastyToast.CONFUSING);
+        } else {
+            GetRequest request = OkGo.get(track.getUrl());
+            downloadManager.addTask(track.getUrl(), track, request, downloadListener);
+        }
+    }
+    private boolean queryFromDB(int trackID) {
+        List<Track> results = DataSupport.where("track_id = ?" , "" + trackID).find(Track.class);
+        if(results.size() > 0) {
+            Track result = results.get(0);
+            return result.getIsDownloaded() > 0;
+        }
+        return false;
+    }
+
+
+    // 切换fragment
     public void switchFragment(Fragment from, Fragment to) {
         if (currentFragment != to) {
             currentFragment = to;
@@ -370,7 +489,19 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         MobclickAgent.onPause(this);
         super.onPause();
     }
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        unbindService(serviceConnection);
+        unregisterReceiver(mMessageReceiver);
+        MobclickAgent.onKillProcess(this);
+        // 程序结束时销毁状态栏
+        NotificationManager manager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        manager.cancel(1);
+        super.onDestroy();
+    }
 
+    // 获取扫描音乐权限
     @Override
     public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

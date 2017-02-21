@@ -1,15 +1,13 @@
 package poche.fm.potunes;
 
 import android.app.Application;
-import android.content.Intent;
+import android.os.Environment;
 
 
 import com.lzy.okgo.OkGo;
+import com.lzy.okserver.download.DownloadManager;
+import com.lzy.okserver.download.DownloadService;
 import com.umeng.analytics.MobclickAgent;
-import com.zhuiji7.filedownloader.download.DownLoadService;
-
-
-
 import cn.jpush.android.api.JPushInterface;
 
 /**
@@ -27,6 +25,9 @@ public class MyApplication extends Application {
         JPushInterface.init(this);
         MobclickAgent.startWithConfigure(new MobclickAgent.UMAnalyticsConfig(this, "58a412462ae85b1cf700184f", "poche.fm"));
         MobclickAgent.setDebugMode( true );
-        this.startService(new Intent(this, DownLoadService.class));
+        // 设置DownloadManager
+        DownloadManager downloadManager = DownloadManager.getInstance();
+        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
+        downloadManager.getThreadPool().setCorePoolSize(1);
     }
 }

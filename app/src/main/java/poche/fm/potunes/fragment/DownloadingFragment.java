@@ -19,6 +19,7 @@ import android.widget.Toast;
 import com.dinuscxj.progressbar.CircleProgressBar;
 import com.lzy.okserver.download.DownloadInfo;
 import com.lzy.okserver.download.DownloadManager;
+import com.lzy.okserver.download.DownloadService;
 import com.lzy.okserver.listener.DownloadListener;
 import com.malinskiy.materialicons.Iconify;
 import com.malinskiy.materialicons.widget.IconButton;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.DownloadCompleteMessage;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.domain.AppConstant;
@@ -83,29 +85,21 @@ public class DownloadingFragment extends Fragment {
         mOperationView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                intent.setPackage(getActivity().getPackageName());
                 String buttonText = mOperationView.getText().toString();
                 if (buttonText.indexOf("开始") >= 0) {
                     mOperationView.setText("{zmdi-pause-circle-outline}  全部暂停");
-                    intent.putExtra("MSG", AppConstant.DownloadMsg.RESUME);
+                    DownloadService.getDownloadManager().startAllTask();
                 } else {
                     mOperationView.setText("{zmdi-download}  全部开始");
-                    intent.putExtra("MSG", AppConstant.DownloadMsg.PAUSE);
-
+                    DownloadManager.getInstance().pauseAllTask();
                 }
-                getContext().startService(intent);
             }
         });
         mDeleteView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-                intent.setPackage(main.getPackageName());
-                intent.putExtra("MSG", AppConstant.DownloadMsg.DELETE);
-                getContext().startService(intent);
+                DownloadManager.getInstance().pauseAllTask();
+                DownloadManager.getInstance().removeAllTask();
 
                 main.runOnUiThread(new Runnable() {
                     @Override
@@ -253,19 +247,12 @@ public class DownloadingFragment extends Fragment {
         public void onClick(View v) {
             if (v.getId() == progressBar.getId()) {
                 if (downloadInfo.getState() == DownloadManager.DOWNLOADING) return;
-                reDownload(downloadInfo);
+                DownloadManager.getInstance().restartTask(downloadInfo.getTaskKey());
             }
         }
     }
 
-    private void reDownload(DownloadInfo downloadInfo) {
-        Intent intent = new Intent();
-        intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-        intent.setPackage(main.getPackageName());
-        intent.putExtra("MSG", AppConstant.DownloadMsg.RESTART);
-        intent.putExtra("URL", downloadInfo.getUrl());
-        getContext().startService(intent);
-    }
+
     private class MyDownloadListener extends DownloadListener {
         @Override
         public void onProgress(DownloadInfo downloadInfo) {
@@ -275,43 +262,13 @@ public class DownloadingFragment extends Fragment {
         }
         @Override
         public void onFinish(DownloadInfo downloadInfo) {
-            Track track = (Track) downloadInfo.getData();
-
-            final DownloadManager downloadManager = DownloadManager.getInstance();
-            if (downloadManager.getDownloadInfo(track.getUrl()) != null) {
-                downloadManager.removeTask(track.getUrl(), false);
-            }
-            // 重命名文件
-            String downloadTitle = track.getArtist() + " - " + track.getTitle() + ".mp3";
-            downloadTitle = downloadTitle.replace("/", " ");
-            // 将数据库的已下载修改状态
-
-            // 将数据库的已下载修改状态
-            track.setIsDownloaded(1);
-            track.setUrl(downloadManager.getTargetFolder() + downloadTitle);
-            track.save();
-
-
-
-            File old = new File(downloadManager.getTargetFolder(), downloadInfo.getFileName());
-            File rename = new File(downloadManager.getTargetFolder(), downloadTitle);
-            old.renameTo(rename);
-
-            // 文件入媒体库
-            String filename = downloadManager.getTargetFolder() + downloadTitle;
-            Intent intent = new Intent();
-            intent.setAction("fm.poche.media.DOWNLOAD_SERVICE");
-            intent.setPackage(main.getPackageName());
-            intent.putExtra("MSG", AppConstant.DownloadMsg.SCAN);
-            intent.putExtra("SCAN", filename);
-            main.startService(intent);
+            EventBus.getDefault().post(new DownloadCompleteMessage(downloadInfo));
 
             main.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    allTask = downloadManager.getAllTask();
+                    allTask = DownloadService.getDownloadManager().getAllTask();
                     adatper.notifyDataSetChanged();
-
                 }
             });
         }
@@ -320,7 +277,7 @@ public class DownloadingFragment extends Fragment {
         public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
             Track track = (Track) downloadInfo.getData();
             if (errorMsg != null) Toast.makeText(getContext(), track.getTitle() + "下载失败，尝试重新下载", Toast.LENGTH_SHORT).show();
-            reDownload(downloadInfo);
+            DownloadManager.getInstance().restartTask(downloadInfo.getTaskKey());
         }
     }
 }
