@@ -68,8 +68,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
                 Playlist playlist = mPlaylist.get(position);
                 EventBus.getDefault().post(new MessageEvent(playlist));
                 MainActivity activity = (MainActivity) mContext;
-                TrackListFragment mTrackListFragment = TrackListFragment.newInstance();
-                mTrackListFragment.playlist = activity.playlist;
+                TrackListFragment mTrackListFragment = TrackListFragment.newInstance(playlist.getTitle(), playlist.getPlaylist_id());
                 PlaylistFragment mPlaylistFragment = (PlaylistFragment) activity.getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG);
                 activity.switchFragment(mPlaylistFragment , mTrackListFragment);
             }

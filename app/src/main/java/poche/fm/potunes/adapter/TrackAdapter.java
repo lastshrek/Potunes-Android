@@ -1,25 +1,52 @@
 package poche.fm.potunes.adapter;
 
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import android.support.design.widget.BottomSheetDialog;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.cocosw.bottomsheet.BottomSheet;
+import com.github.rubensousa.bottomsheetbuilder.BottomSheetBuilder;
+import com.github.rubensousa.bottomsheetbuilder.adapter.BottomSheetItemClickListener;
+import com.sdsmdg.tastytoast.TastyToast;
+import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
+import com.tencent.mm.opensdk.modelmsg.WXMediaMessage;
+import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
+import com.tencent.mm.opensdk.openapi.IWXAPI;
+import com.tencent.mm.opensdk.openapi.WXAPIFactory;
+
+import org.greenrobot.eventbus.EventBus;
+import org.litepal.crud.DataSupport;
+
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import poche.fm.potunes.MainActivity;
+import poche.fm.potunes.Model.DownloadSingleMessage;
+import poche.fm.potunes.Model.MediaScanner;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.fragment.MoreFragment;
@@ -36,6 +63,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
     private FragmentManager mFragmentManager;
     private String TAG = "TrackItem";
     private PlayerService mPlayerService;
+    private BottomSheetDialog shareDialog;
 
 
 
@@ -92,15 +120,85 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.ViewHolder> 
             @Override
             public void onClick(View v) {
                 int position = holder.getAdapterPosition();
-                Bitmap image = ((BitmapDrawable)holder.cover.getDrawable()).getBitmap();
-                byte[] byteArray = bmpToByteArray(image, false);
-                MoreFragment morefragment = MoreFragment.newInstance(mTrackList.get(position), 0, byteArray);
-                morefragment.show(((AppCompatActivity) mContext).getSupportFragmentManager(), "music");
+                final Track track = mTrackList.get(position);
+                new BottomSheet.Builder(mContext, R.style.BottomSheet_Dialog).title("选择您想进行的操作").sheet(R.menu.online_track_share_menu)
+                        .listener(new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                switch (which) {
+                                    case R.id.download:
+                                        TastyToast.makeText(mContext, "开始下载", TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
+                                        EventBus.getDefault().post(new DownloadSingleMessage(track));
+                                        break;
+                                    case R.id.share_to_wechat:
+                                        shareDialog = new BottomSheetBuilder(mContext, R.style.AppTheme_BottomSheetDialog)
+                                                .setMode(BottomSheetBuilder.MODE_GRID)
+                                                .setMenu(R.menu.share_menu)
+                                                .setItemClickListener(new BottomSheetItemClickListener() {
+                                                    @Override
+                                                    public void onBottomSheetItemClick(final MenuItem item) {
+                                                        shareDialog.dismiss();
+                                                        final MaterialDialog dialog = new MaterialDialog.Builder(mContext)
+                                                                .title("请稍候")
+                                                                .content("正在加载歌曲封面")
+                                                                .progress(true, 0)
+                                                                .show();
+
+                                                        final IWXAPI api = WXAPIFactory.createWXAPI(mContext, "wx0fc8d0673ec86694", true);
+                                                        api.registerApp("wx0fc8d0673ec86694");
+
+                                                        if (!api.isWXAppInstalled()) {
+                                                            Toast.makeText(mContext, "您没有安装微信", Toast.LENGTH_SHORT).show();
+                                                            return;
+                                                        }
+
+                                                        WXMusicObject sharedTrack = new WXMusicObject();
+                                                        sharedTrack.musicUrl = track.getUrl();
+
+                                                        final WXMediaMessage msg = new WXMediaMessage();
+                                                        msg.mediaObject = sharedTrack;
+                                                        msg.title = track.getTitle();
+                                                        msg.description = track.getArtist();
+
+
+
+                                                        Glide.with(mContext).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(100, 100) {
+                                                            @Override
+                                                            public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
+                                                                dialog.dismiss();
+                                                                msg.thumbData = bmpToByteArray(resource, false);
+                                                                Log.d(TAG, "onResourceReady: " + msg.thumbData.toString());
+                                                                //构造一个Req
+                                                                final SendMessageToWX.Req req = new SendMessageToWX.Req();
+                                                                req.transaction = String.valueOf(System.currentTimeMillis());
+                                                                req.message = msg;
+                                                                if (item.getTitle().equals("微信好友")) {
+                                                                    req.scene = SendMessageToWX.Req.WXSceneSession;
+                                                                } else if (item.getTitle().equals("微信朋友圈")) {
+                                                                    req.scene = SendMessageToWX.Req.WXSceneTimeline;
+                                                                }
+                                                                api.sendReq(req);
+                                                            }
+                                                        });
+
+//
+
+
+                                                    }
+                                                })
+                                                .createDialog();
+                                        shareDialog.setCanceledOnTouchOutside(true);
+                                        shareDialog.show();
+
+                                        break;
+                                }
+                            }
+                        }).show();
             }
         });
         return holder;
     }
-
+    // 转换微信朋友圈图片
     private static byte[] bmpToByteArray(final Bitmap bmp, final boolean needRecycle) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         bmp.compress(Bitmap.CompressFormat.PNG, 100, output);

@@ -180,9 +180,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         downloadManager = DownloadManager.getInstance();
         downloadListener = new DownloadListener() {
             @Override
-            public void onProgress(DownloadInfo downloadInfo) {
-                Log.d(TAG, "onProgress: " + downloadInfo.getProgress());
-            }
+            public void onProgress(DownloadInfo downloadInfo) {}
 
             @Override
             public void onFinish(DownloadInfo downloadInfo) {
@@ -191,7 +189,9 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
 
             @Override
             public void onError(DownloadInfo downloadInfo, String errorMsg, Exception e) {
-
+                Track track = (Track) downloadInfo.getData();
+                TastyToast.makeText(getBaseContext(), track.getTitle() + "下载失败，尝试重新下载", TastyToast.LENGTH_SHORT, TastyToast.ERROR);
+                downloadManager.restartTask(downloadInfo.getTaskKey());
             }
         };
         mediaScanner = new MediaScanner(this);
@@ -322,6 +322,10 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         mediaScanner.scanFile(downloadManager.getTargetFolder() + downloadTitle, null);
         if (downloadManager.getAllTask().size() == 0) {
             Toast.makeText(getBaseContext(), "全部歌曲下载完毕", Toast.LENGTH_SHORT).show();
+            List<Track> results = DataSupport.where("isDownloaded = ?", "0").find(Track.class);
+            for (Track result: results) {
+                result.delete();
+            }
         }
     }
 
@@ -362,8 +366,6 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
                 break;
         }
     }
-
-
     private void checkFiles(Track track) {
         if (downloadManager.getDownloadInfo(track.getUrl()) != null || queryFromDB(track.getID())) {
             TastyToast.makeText(this, track.getTitle() + " downloaded", TastyToast.LENGTH_SHORT, TastyToast.CONFUSING);

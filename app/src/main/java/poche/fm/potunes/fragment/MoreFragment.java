@@ -182,7 +182,6 @@ public class MoreFragment extends DialogFragment {
 //                        Toast.makeText(mContext, "开始下载", Toast.LENGTH_SHORT).show();
                         TastyToast.makeText(mContext, "开始下载", TastyToast.LENGTH_SHORT, TastyToast.SUCCESS);
                         EventBus.getDefault().post(new DownloadSingleMessage(adapterMusicInfo));
-
                         dismiss();
                         break;
                     case 1:

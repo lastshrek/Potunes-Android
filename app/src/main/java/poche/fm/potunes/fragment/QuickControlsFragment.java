@@ -96,6 +96,7 @@ public class QuickControlsFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.bottom_nav, container, false);
+        registeReceiver();
 
 
         mPlayPause = (TintImageView) rootView.findViewById(R.id.control);
@@ -125,6 +126,7 @@ public class QuickControlsFragment extends Fragment {
         mPlayPause.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (mPlayerService == null) return;
                 if (PlayerService.mPlayState.isPlaying()) {
                     mPlayerService.pause();
                     PlayerService.mPlayState.setPlaying(false);
@@ -158,7 +160,6 @@ public class QuickControlsFragment extends Fragment {
         });
         
         mProgress.setMax(100);
-        registeReceiver();
         return rootView;
     }
 
@@ -193,16 +194,7 @@ public class QuickControlsFragment extends Fragment {
                     //刷新文本信息
                     mTitle.setText(track.getTitle());
                     mArtist.setText(track.getArtist());
-                    if (track.getAlbumid() == 0) {
-                        Glide.with(mContext).load(track.getCover()).into(mAlbumArt);
-                    } else {
-                        long albumid = track.getAlbumid();
-                        long trackid = track.getID();
-                        Bitmap bitmap = MediaUtil.getArtwork(mContext, trackid, albumid, true, true);
-                        mAlbumArt.setImageBitmap(bitmap);
-                    }
                 }
-
                 isPlaying = PlayerService.mPlayState.isPlaying();
                 if (!isPlaying) {
                     mPlayPause.setImageResource(R.drawable.playbar_btn_play);
@@ -215,6 +207,9 @@ public class QuickControlsFragment extends Fragment {
                         int progress = (int)(position * 100 / duration);
                         mProgress.setProgress(progress);
                     }
+                }
+                if (mPlayerService.bitmap != null) {
+                    mAlbumArt.setImageBitmap(mPlayerService.bitmap);
                 }
             }
         }

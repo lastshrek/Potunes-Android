@@ -1,13 +1,9 @@
 package poche.fm.potunes.fragment;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
@@ -18,17 +14,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.lzy.okserver.download.DownloadManager;
-import com.lzy.okserver.download.DownloadService;
 import com.malinskiy.materialicons.widget.IconButton;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,16 +28,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.DownloadAlbumMessage;
-import poche.fm.potunes.Model.LocalAlbumMessageEvent;
-import poche.fm.potunes.Model.LocalTracksEvent;
-import poche.fm.potunes.Model.MessageEvent;
-import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.Model.Track;
 import poche.fm.potunes.R;
 import poche.fm.potunes.adapter.TrackAdapter;
-import poche.fm.potunes.domain.AppConstant;
-import poche.fm.potunes.utils.NetworkHelper;
-import poche.fm.potunes.utils.SharedPreferencesUtil;
 
 /**
  * A fragment representing a list of Items.
@@ -60,7 +43,6 @@ public class TrackListFragment extends Fragment {
     private OnListFragmentInteractionListener mListener;
     private static final String ARG_MEDIA_ID = "media_id";
     private String TAG = "TrackListFragment";
-    public Playlist playlist;
     public List<Track> tracks = new ArrayList<>();
     protected static final int TRACK = 1;
 
@@ -68,13 +50,10 @@ public class TrackListFragment extends Fragment {
     private TrackAdapter adpter;
     private RecyclerView mRecyclerView;
     private IconButton downloadAll;
-    private DownloadManager downloadManager;
     private SwipeRefreshLayout swipeRefresh;
     private Context mContext;
-
-
-
-    private String json;
+    private String title;
+    private int playlist_id;
 
     private Handler sHandler = new Handler() {
         public void handleMessage(android.os.Message msg) {
@@ -94,19 +73,23 @@ public class TrackListFragment extends Fragment {
      */
     public TrackListFragment() {
     }
-
-    public static TrackListFragment newInstance() {
-        return new TrackListFragment();
+    public static TrackListFragment newInstance(String title, int playlist_id) {
+        TrackListFragment fragment = new TrackListFragment();
+        Bundle args = new Bundle();
+        args.putString("title", title);
+        args.putInt("playlist_id", playlist_id);
+        fragment.setArguments(args);
+        return fragment;
     }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            title = getArguments().getString("title");
+            playlist_id = getArguments().getInt("playlist_id");
+        }
         mContext = getContext();
     }
-
-
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -132,15 +115,13 @@ public class TrackListFragment extends Fragment {
             }
         });
 
-        initTracks(playlist.getPlaylist_id());
+        initTracks(playlist_id);
 
         MainActivity main = (MainActivity) getActivity();
-        main.setTitle(playlist.getTitle());
+        main.setTitle(title);
 
         return view;
     }
-
-
 
     public void initTracks(final int playlist_id) {
         tracks.clear();
@@ -154,7 +135,6 @@ public class TrackListFragment extends Fragment {
                             .build();
                     Response response = client.newCall(request).execute();
                     String responseData = response.body().string();
-                    json = responseData;
                     parseJSONWithGSON(responseData);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -186,19 +166,6 @@ public class TrackListFragment extends Fragment {
             }
         }).start();
     }
-    public String getMediaId() {
-        Bundle args = getArguments();
-        if (args != null) {
-            return args.getString(ARG_MEDIA_ID);
-        }
-        return null;
-    }
-
-    public void setMediaId(String mediaId) {
-        Bundle args = new Bundle(1);
-        args.putString(ARG_MEDIA_ID, mediaId);
-        setArguments(args);
-    }
 
     @Override
     public void onAttach(Context context) {
@@ -211,39 +178,8 @@ public class TrackListFragment extends Fragment {
         }
     }
     @Override
-    public void onStart() {
-        super.onStart();
-        EventBus.getDefault().register(this);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        EventBus.getDefault().unregister(this);
-    }
-
-    @Subscribe(threadMode = ThreadMode.POSTING)
-    public void onMessageEvent(MessageEvent event) {
-        playlist = event.playlist;
-    }
-
-
-
-    @Override
     public void onDetach() {
         super.onDetach();
     }
-
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnListFragmentInteractionListener {
-    }
+    public interface OnListFragmentInteractionListener {}
 }

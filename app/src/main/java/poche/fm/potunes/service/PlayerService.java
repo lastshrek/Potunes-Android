@@ -61,7 +61,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
     private NotificationManager mManager;
     private RemoteViews mBigContentViews;
     private RemoteViews mContentViews;
-    private Bitmap bitmap;
+    public Bitmap bitmap;
     private Notification notification;
     private AudioManager mAudioManager;
     private HeadsetPlugReceiver headsetPlugReceiver;
@@ -251,6 +251,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
                     getNotification();
                 }
             });
+            bitmap = null;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -389,7 +390,7 @@ public class PlayerService extends Service implements MediaPlayer.OnCompletionLi
 
         if (track.getAlbumid() == 0) {
             //设置封面
-            Glide.with(getBaseContext()).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(200, 200) {
+            Glide.with(getBaseContext()).load(track.getCover()).asBitmap().into(new SimpleTarget<Bitmap>(500, 500) {
                 @Override
                 public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
 

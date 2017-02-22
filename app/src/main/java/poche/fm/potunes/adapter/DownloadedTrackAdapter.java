@@ -4,6 +4,7 @@ import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
@@ -30,8 +31,11 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
+import com.cocosw.bottomsheet.BottomSheet;
 import com.github.rubensousa.bottomsheetbuilder.BottomSheetBuilder;
 import com.github.rubensousa.bottomsheetbuilder.adapter.BottomSheetItemClickListener;
+
+import org.litepal.crud.DataSupport;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -40,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import poche.fm.potunes.MainActivity;
 import poche.fm.potunes.Model.MediaScanner;
@@ -105,47 +110,43 @@ public class DownloadedTrackAdapter extends RecyclerView.Adapter<DownloadedTrack
             @Override
             public void onClick(View v) {
                 final int position = holder.getAdapterPosition();
-                final BottomSheetDialog dialog = new BottomSheetBuilder(mContext, R.style.AppTheme_BottomSheetDialog)
-                        .setMode(BottomSheetBuilder.MODE_LIST)
-                        .setMenu(R.menu.local_share_menu)
-                        .setItemClickListener(new BottomSheetItemClickListener() {
-                            Track track = mTrackList.get(position);
+                final Track track = mTrackList.get(position);
+                new BottomSheet.Builder(mContext, R.style.BottomSheet_Dialog).title("选择您想进行的操作").sheet(R.menu.local_track_share_menu)
+                        .listener(new DialogInterface.OnClickListener() {
                             @Override
-                            public void onBottomSheetItemClick(MenuItem item) {
-                                String title = item.getTitle().toString();
-                                if (title.equals("设置为铃声")) {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                        if (!Settings.System.canWrite(mContext)) {
-                                            Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
-                                            intent.setData(Uri.parse("package:" + mContext.getPackageName()));
-                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                            mContext.startActivity(intent);
-                                            return;
+                            public void onClick(DialogInterface dialog, int which) {
+                                switch (which) {
+                                    case R.id.set_ringtone:
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                            if (!Settings.System.canWrite(mContext)) {
+                                                Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+                                                intent.setData(Uri.parse("package:" + mContext.getPackageName()));
+                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                                mContext.startActivity(intent);
+                                                return;
+                                            }
                                         }
-                                    }
-                                    setRingtone(track);
-                                    return;
-                                }
-
-                                if (title.equals("删除")) {
-                                    Track track = mTrackList.get(position);
-                                    File file = new File(track.getUrl());
-                                    if (file.exists()) {
-                                        MediaScanner scan = new MediaScanner(mContext);
-                                        scan.scanFile(track.getUrl(), null);
-                                        mTrackList.remove(position);
-                                        notifyDataSetChanged();
-                                        file.delete();
-                                        track.delete();
-                                    }
-                                    return;
+                                        setRingtone(track);
+                                        break;
+                                    case R.id.delete:
+                                        File file = new File(track.getUrl());
+                                        if (file.exists()) {
+                                            MediaScanner scan = new MediaScanner(mContext);
+                                            scan.scanFile(track.getUrl(), null);
+                                            mTrackList.remove(position);
+                                            notifyDataSetChanged();
+                                            file.delete();
+                                        }
+                                        List<Track> tracks = DataSupport.where("url = ?", track.getUrl()).find(Track.class);
+                                        if (tracks.size() > 0) {
+                                            for (Track result: tracks) {
+                                                result.delete();
+                                            }
+                                        }
+                                        break;
                                 }
                             }
-                        })
-                        .setItemTextColor(mContext.getResources().getColor(R.color.colorAccent))
-                        .createDialog();
-                dialog.setCanceledOnTouchOutside(true);
-                dialog.show();
+                        }).show();
             }
         });
         return holder;

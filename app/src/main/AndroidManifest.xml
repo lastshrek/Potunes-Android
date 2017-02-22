@@ -3,12 +3,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:name="org.litepal.LitePalApplication"
     package="poche.fm.potunes">
+    <uses-feature android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen"
+        android:required="false" />
 
     <uses-sdk android:minSdkVersion="4" />
     <!-- Required -->
     <permission
         android:name="poche.fm.potunes.permission.JPUSH_MESSAGE"
         android:protectionLevel="signature" />
+
+
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -52,6 +58,7 @@
             android:name=".MainActivity"
             android:label="破音万里"
             android:screenOrientation="portrait">
+
         </activity>
         <activity
             android:name=".PlayerActivity"
@@ -65,8 +72,6 @@
                 <action android:name="fm.poche.media.MUSIC_SERVICE" />
             </intent-filter>
         </service>
-
-        <service android:name="com.zhuiji7.filedownloader.download.DownLoadService" />
 
         <activity android:name=".BaseActivity" />
 
@@ -164,7 +169,7 @@
         <service
             android:name="cn.jpush.android.service.DownloadService"
             android:enabled="true"
-            android:exported="false"></service>
+            android:exported="false" />
 
         <!-- Required SDK核心功能 -->
         <receiver android:name="cn.jpush.android.service.AlarmReceiver" />
@@ -190,12 +195,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Required. For publish channel feature -->
-        <!-- JPUSH_CHANNEL 是为了方便开发者统计APK分发渠道。 -->
-        <!-- 例如: -->
-        <!-- 发到 Google Play 的APK可以设置为 google-play; -->
-        <!-- 发到其他市场的 APK 可以设置为 xxx-market。 -->
-        <!-- 目前这个渠道统计功能的报表还未开放。 -->
         <meta-data
             android:name="JPUSH_CHANNEL"
             android:value="developer-default" />
@@ -209,6 +208,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".MainTVActivity">
+            android:label="@string/app_name">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+
         </activity>
     </application>
 

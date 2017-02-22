@@ -346,19 +346,19 @@ public class PlayerActivity extends AppCompatActivity {
                     mToolbarTitle.setText(track.getTitle());
                     mToolbarArtist.setText(track.getArtist());
 
-                    if (track.getAlbumid() == 0) {
-                        // 封面
-                        String thumb = track.getCover();
-                        Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
-                        Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
-                        loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
-                    } else {
-                        long albumid = track.getAlbumid();
-                        long trackid = track.getID();
-                        Bitmap bitmap = poche.fm.potunes.Model.MediaUtil.getArtwork(getBaseContext(), trackid, albumid, true, false);
-                        mBackgroundImage.setImageBitmap(bitmap);
-                        mPlayingCover.setImageBitmap(bitmap);
-                    }
+//                    if (track.getAlbumid() == 0) {
+//                        // 封面
+//                        String thumb = track.getCover();
+//                        Glide.with(getBaseContext()).load(thumb).into(mBackgroundImage);
+//                        Glide.with(getBaseContext()).load(thumb).into(mPlayingCover);
+//                        loadLrc("https://poche.fm/api/app/lyrics/" + track.getID());
+//                    } else {
+//                        long albumid = track.getAlbumid();
+//                        long trackid = track.getID();
+//                        Bitmap bitmap = poche.fm.potunes.Model.MediaUtil.getArtwork(getBaseContext(), trackid, albumid, true, false);
+//                        mBackgroundImage.setImageBitmap(bitmap);
+//                        mPlayingCover.setImageBitmap(bitmap);
+//                    }
 
                     List<Track> tracks = DataSupport.select("track_id").where("artist = ? and name = ?", track.getArtist(), track.getTitle()).find(Track.class);
                     if (tracks.size() > 0) {
@@ -368,6 +368,11 @@ public class PlayerActivity extends AppCompatActivity {
                         mLrcView.loadLrc(null, null);
                     }
 
+                }
+
+                if (mPlayerService.bitmap != null) {
+                    mBackgroundImage.setImageBitmap(mPlayerService.bitmap);
+                    mPlayingCover.setImageBitmap(mPlayerService.bitmap);
                 }
 
                 currentTime = PlayerService.mPlayState.getProgress();

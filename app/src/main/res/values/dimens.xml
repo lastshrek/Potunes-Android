@@ -32,4 +32,7 @@
     <dimen name="text_view_margin">16dp</dimen>
     <dimen name="end_text_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
+
+    <dimen name="recycler_total_width">1656dp</dimen>
+    <dimen name="recycler_item_width">414dp</dimen>
 </resources>

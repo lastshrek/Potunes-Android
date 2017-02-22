@@ -111,9 +111,6 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
                         .createDialog();
                 dialog.setCanceledOnTouchOutside(true);
                 dialog.show();
-
-
-
             }
         });
         return holder;
@@ -123,7 +120,6 @@ public class DownloadAlbumAdapter extends RecyclerView.Adapter<DownloadAlbumAdap
     public void onBindViewHolder(final DownloadAlbumAdapter.ViewHolder holder, int position) {
         Track track = mAlbumList.get(position);
         holder.name.setText(track.getAlbum());
-        Log.d(TAG, "onBindViewHolder: " + track.getAlbum());
         String thumb = track.getCover() + "!/fw/150";
         Glide.with(mContext).load(thumb).into(holder.cover);
         holder.itemView.setClickable(true);
