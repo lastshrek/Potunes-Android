@@ -10,6 +10,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -120,7 +121,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         return playerService;
     }
     public Fragment currentFragment;
-    DownloadManager downloadManager;
+    final DownloadManager downloadManager = DownloadManager.getInstance();
     DownloadListener downloadListener;
     MediaScanner mediaScanner;
     private SharedPreferencesUtil appPreferences;
@@ -143,6 +144,12 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+
+        // 设置DownloadManager
+        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
+        downloadManager.getThreadPool().setCorePoolSize(1);
+
         initializeToolbar();
         mMyMusic = (ImageView) findViewById(R.id.my_music);
         mMyMusic.setOnClickListener(new View.OnClickListener() {
@@ -176,8 +183,7 @@ public class MainActivity extends BaseActivity implements PlaylistFragment.OnLis
         EventBus.getDefault().register(this);
         appPreferences = new SharedPreferencesUtil(this);
 
-        //初始化下载器
-        downloadManager = DownloadManager.getInstance();
+
         downloadListener = new DownloadListener() {
             @Override
             public void onProgress(DownloadInfo downloadInfo) {}

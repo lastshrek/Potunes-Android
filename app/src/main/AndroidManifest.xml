@@ -47,6 +47,8 @@
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.GET_TASKS" />
 
+
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -54,6 +56,21 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:replace="android:icon, android:theme">
+
+        <activity android:name=".SplashActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+
+            </intent-filter>
+        </activity>
+        <activity android:name=".MainTVActivity"
+            android:label="@string/app_name"
+            >
+            <action android:name="android.intent.action.MAIN" />
+
+        </activity>
         <activity
             android:name=".MainActivity"
             android:label="破音万里"
@@ -203,21 +220,7 @@
             android:name="JPUSH_APPKEY"
             android:value="6b51ad41f3a844a73ba22894" />
 
-        <activity android:name=".SplashActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".MainTVActivity">
-            android:label="@string/app_name">
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-
-        </activity>
     </application>
 
 </manifest>

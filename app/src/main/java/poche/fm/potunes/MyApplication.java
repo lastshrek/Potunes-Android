@@ -1,6 +1,7 @@
 package poche.fm.potunes;
 
 import android.app.Application;
+import android.content.Context;
 import android.os.Environment;
 
 
@@ -15,19 +16,17 @@ import cn.jpush.android.api.JPushInterface;
  */
 
 public class MyApplication extends Application {
+    public static Context mContext;
 
     @Override
     public void onCreate() {
 
         super.onCreate();
+        mContext = this;
+        MobclickAgent.startWithConfigure(new MobclickAgent.UMAnalyticsConfig(this, "58a412462ae85b1cf700184f", "poche.fm"));
+        MobclickAgent.setDebugMode( true );
         OkGo.init(this);
         JPushInterface.setDebugMode(true);
         JPushInterface.init(this);
-        MobclickAgent.startWithConfigure(new MobclickAgent.UMAnalyticsConfig(this, "58a412462ae85b1cf700184f", "poche.fm"));
-        MobclickAgent.setDebugMode( true );
-        // 设置DownloadManager
-        DownloadManager downloadManager = DownloadManager.getInstance();
-        downloadManager.setTargetFolder(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Potunes/Music/");
-        downloadManager.getThreadPool().setCorePoolSize(1);
     }
 }

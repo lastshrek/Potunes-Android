@@ -115,4 +115,21 @@
         <attr name="dividerHeight" format="dimension" />
         <attr name="rows" format="integer" />
     </declare-styleable>
+
+    <!-- 倒影控件属性 -->
+    <declare-styleable name="reflectItemView">
+        <attr name="isReflect"  format="boolean" />
+        <attr name="isShape"  format="boolean" />
+        <attr name="reflect_height"  format="dimension" />
+        <attr name="radius"  format="dimension" />
+        <attr name="refle_spacing"  format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="RoundAngleFrameLayout">
+        <attr name="ral_radius" format="dimension" />
+        <attr name="topLeftRadius" format="dimension" />
+        <attr name="topRightRadius" format="dimension" />
+        <attr name="bottomLeftRadius" format="dimension" />
+        <attr name="bottomRightRadius" format="dimension" />
+    </declare-styleable>
 </resources>
