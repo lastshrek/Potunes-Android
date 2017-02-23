@@ -189,7 +189,6 @@ public class PlaylistFragment extends Fragment {
             playlists.add(mPlaylist);
             mPlaylist.save();
         }
-
     }
     public void refreshPlaylists() {
         new Thread(new Runnable() {

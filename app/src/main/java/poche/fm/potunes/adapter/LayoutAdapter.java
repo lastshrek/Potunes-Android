@@ -17,6 +17,8 @@
 package poche.fm.potunes.adapter;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,24 +28,27 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.owen.tvrecyclerview.TwoWayLayoutManager;
 import com.owen.tvrecyclerview.widget.SpannableGridLayoutManager;
 import com.owen.tvrecyclerview.widget.StaggeredGridLayoutManager;
 import com.owen.tvrecyclerview.widget.TvRecyclerView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import poche.fm.potunes.Model.Playlist;
 import poche.fm.potunes.R;
 
 public class LayoutAdapter extends RecyclerView.Adapter<LayoutAdapter.SimpleViewHolder> {
-    private static final int COUNT = 30;
-
+    private String TAG = "LayoutAdapter";
     private final Context mContext;
-    private final TvRecyclerView mRecyclerView;
-    private final List<Integer> mItems;
-    private final int mLayoutId;
-    private int mCurrentItemId = 0;
+    private List<Playlist> mPlaylists = new ArrayList<>();
 
     public static class SimpleViewHolder extends RecyclerView.ViewHolder {
         public final TextView title;
@@ -56,41 +61,12 @@ public class LayoutAdapter extends RecyclerView.Adapter<LayoutAdapter.SimpleView
         }
     }
 
-    public LayoutAdapter(Context context, TvRecyclerView recyclerView, int layoutId) {
+    public LayoutAdapter(Context context, List<Playlist> playlists) {
         mContext = context;
-        mItems = new ArrayList<Integer>(COUNT);
-        for (int i = 0; i < COUNT; i++) {
-            addItem(i);
-        }
-
-        mRecyclerView = recyclerView;
-        mLayoutId = layoutId;
-    }
-    
-    public void appendDatas() {
-        Log.i("@@@@", "appendDatas: ");
-        mRecyclerView.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 20; i++) {
-                    final int id = mCurrentItemId++;
-                    mItems.add(id);
-                }
-                notifyItemRangeInserted(mCurrentItemId, 20);
-            }
-        }, 1000);
+        mPlaylists = playlists;
     }
 
-    public void addItem(int position) {
-        final int id = mCurrentItemId++;
-        mItems.add(position, id);
-        notifyItemInserted(position);
-    }
 
-    public void removeItem(int position) {
-        mItems.remove(position);
-        notifyItemRemoved(position);
-    }
 
     @Override
     public SimpleViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -100,9 +76,10 @@ public class LayoutAdapter extends RecyclerView.Adapter<LayoutAdapter.SimpleView
 
     @Override
     public void onBindViewHolder(SimpleViewHolder holder, final int position) {
-        holder.title.setText(mItems.get(position).toString());
+        Playlist playlist = mPlaylists.get(position);
+        holder.title.setText(playlist.getTitle());
         Glide.with(mContext)
-                .load("http://img.pconline.com.cn/images/upload/upc/tx/photoblog/1503/17/c2/3974346_1426551981202_mthumb.jpg")
+                .load(playlist.getCover())
                 .into(holder.image);
 
 
@@ -110,7 +87,7 @@ public class LayoutAdapter extends RecyclerView.Adapter<LayoutAdapter.SimpleView
 
     @Override
     public int getItemCount() {
-        return mItems.size();
+        return mPlaylists.size();
     }
     
     public interface OnItemSelectedListenner {

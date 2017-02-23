@@ -13,7 +13,7 @@
 
         <Button
             android:id="@+id/btn1"
-            android:layout_width="50dp"
+            android:layout_width="300dp"
             android:layout_height="match_parent"/>
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
@@ -29,10 +29,13 @@
 
     </LinearLayout>
 
-    <com.owen.tvrecyclerview.example.bridge.MainUpView
-        android:id="@+id/mainUpView1"
+    <poche.fm.potunes.bridge.MainUpView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:id="@+id/main_up_view">
+
+    </poche.fm.potunes.bridge.MainUpView>
+
 
 
 

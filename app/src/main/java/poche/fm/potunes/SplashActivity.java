@@ -6,10 +6,12 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 
 public class SplashActivity extends Activity {
+    private String TAG = "SplashActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

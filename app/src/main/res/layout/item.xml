@@ -28,21 +28,28 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/item_background">
+        android:layout_height="match_parent">
 
         <ImageView
             android:id="@+id/image"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:scaleType="centerInside"
             android:src="@drawable/ic_launcher"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:alpha="0.7"
+            />
 
         <TextView
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:textColor="@android:color/holo_green_dark"
+            android:textColor="@android:color/white"
             android:textSize="22sp"
             android:textStyle="bold"/>
 

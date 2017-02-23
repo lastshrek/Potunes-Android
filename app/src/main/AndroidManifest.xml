@@ -3,18 +3,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:name="org.litepal.LitePalApplication"
     package="poche.fm.potunes">
-    <uses-feature android:name="android.software.leanback"
-        android:required="false" />
-    <uses-feature android:name="android.hardware.touchscreen"
-        android:required="false" />
 
     <uses-sdk android:minSdkVersion="4" />
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
     <!-- Required -->
     <permission
         android:name="poche.fm.potunes.permission.JPUSH_MESSAGE"
         android:protectionLevel="signature" />
-
-
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -23,7 +24,6 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
-
     <!-- Required -->
     <uses-permission android:name="poche.fm.potunes.permission.JPUSH_MESSAGE" />
     <uses-permission android:name="android.permission.RECEIVE_USER_PRESENT" />
@@ -37,7 +37,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-
     <!-- Optional. Required for location feature -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- 用于开启 debug 版本的应用在6.0 系统上 层叠窗口权限 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -46,8 +45,7 @@
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.GET_TASKS" />
-
-
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:name=".MyApplication"
@@ -57,19 +55,27 @@
         android:theme="@style/AppTheme"
         tools:replace="android:icon, android:theme">
 
+
         <activity android:name=".SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
 
             </intent-filter>
         </activity>
-        <activity android:name=".MainTVActivity"
-            android:label="@string/app_name"
-            >
-            <action android:name="android.intent.action.MAIN" />
 
+        <activity
+            android:name=".MainTVActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="landscape"
+            android:banner="@drawable/app_icon_your_company"
+            android:icon="@drawable/app_icon_your_company"
+            android:logo="@drawable/app_icon_your_company">
+
+            <intent-filter>
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+                <action android:name="android.intent.action.MAIN" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".MainActivity"
@@ -77,6 +83,7 @@
             android:screenOrientation="portrait">
 
         </activity>
+
         <activity
             android:name=".PlayerActivity"
             android:launchMode="singleTask" />
@@ -91,9 +98,8 @@
         </service>
 
         <activity android:name=".BaseActivity" />
-
+        <!-- 锁屏服务-->
         <service android:name=".service.LockScreenService" />
-
         <activity
             android:name=".LockScreenActivity"
             android:label="@string/app_name"
@@ -103,7 +109,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <action android:name="android.intent.lockscreen" />
-
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -132,7 +137,6 @@
                 <action android:name="cn.jpush.android.intent.PUSH_TIME" />
             </intent-filter>
         </service>
-
         <!-- since 1.8.0 option 可选项。用于同一设备中不同应用的JPush服务相互拉起的功能。 -->
         <!-- 若不启用该功能可删除该组件，将不拉起其他应用也不能被其他应用拉起 -->
         <service
@@ -145,7 +149,6 @@
                 <category android:name="poche.fm.potunes" />
             </intent-filter>
         </service>
-
         <!-- Required SDK核心功能 -->
         <receiver
             android:name="cn.jpush.android.service.PushReceiver"
@@ -167,7 +170,6 @@
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
-
         <!-- Required SDK核心功能 -->
         <activity
             android:name="cn.jpush.android.ui.PushActivity"
@@ -181,22 +183,18 @@
                 <category android:name="poche.fm.potunes" />
             </intent-filter>
         </activity>
-
         <!-- Required SDK核心功能 -->
         <service
             android:name="cn.jpush.android.service.DownloadService"
             android:enabled="true"
             android:exported="false" />
-
         <!-- Required SDK核心功能 -->
         <receiver android:name="cn.jpush.android.service.AlarmReceiver" />
-
         <!-- User defined. 用户自定义的广播接收器 -->
         <receiver
             android:name=".Model.PushReceiver"
             android:enabled="true">
             <intent-filter>
-
                 <!-- Required 用户注册SDK的intent -->
                 <action android:name="cn.jpush.android.intent.REGISTRATION" />
                 <!-- Required 用户接收SDK消息的intent -->
@@ -211,7 +209,6 @@
                 <category android:name="poche.fm.potunes" />
             </intent-filter>
         </receiver>
-
         <meta-data
             android:name="JPUSH_CHANNEL"
             android:value="developer-default" />
@@ -219,8 +216,5 @@
         <meta-data
             android:name="JPUSH_APPKEY"
             android:value="6b51ad41f3a844a73ba22894" />
-
-
     </application>
-
 </manifest>

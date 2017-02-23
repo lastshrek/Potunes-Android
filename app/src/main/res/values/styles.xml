@@ -247,7 +247,7 @@
     <style name="TwoWayView" parent="TwoWayViewBase">
         <item name="android:orientation">horizontal</item>
         <item name="android:scrollbars">none</item>
-        <item name="android:background">#DDDD22</item>
+        <item name="android:background">@color/colorAccent</item>
         <item name="android:layout_margin">0dp</item>
         <item name="android:padding">20dp</item>
         <item name="android:clipToPadding">false</item>
